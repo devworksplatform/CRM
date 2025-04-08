@@ -1,0 +1,207 @@
+<ScrollView
+	android:id="@+id/scrollView1"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:fillViewport="true">
+
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:orientation="vertical">
+
+		<ProgressBar
+			android:id="@+id/progressbar1"
+			android:layout_width="match_parent"
+			android:layout_height="25dp"
+			android:indeterminate="false"
+			style="?android:progressBarStyle" />
+
+		<androidx.recyclerview.widget.RecyclerView
+			android:id="@+id/recyclerview1"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:nestedScrollingEnabled="false"
+			android:padding="8dp" />
+
+		<RelativeLayout
+			android:id="@+id/linear2"
+			android:layout_width="match_parent"
+			android:layout_height="300dp"
+			android:background="#FFFFFF"
+			android:orientation="vertical" >
+
+			<LinearLayout
+				android:id="@+id/costLinear"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:orientation="vertical">
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginTop="10dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/subtotalLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Sub Total"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/subTotalTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/gstTotalLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="GST Amount"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/gstTotalTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+				<View
+					android:layout_width="match_parent"
+					android:layout_height="1dp"
+					android:background="#E0E0E0"
+					android:layout_marginTop="6dp"
+					android:layout_marginBottom="6dp"/>
+
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/totalNoDiscountLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Sub Total + GST Amount"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/totalNoDiscountTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/discountTotalLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Discount Total"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/discountTotalTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/grandTotalLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Grand Total"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/grandTotalTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+				<LinearLayout
+					android:layout_marginRight="20dp"
+					android:layout_marginLeft="20dp"
+					android:layout_marginBottom="10dp"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<TextView
+						android:id="@+id/creditLabelTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="Available Credits"
+						android:textSize="16sp"
+						android:layout_weight="1"
+						android:textColor="#30476c"/>
+					<TextView
+						android:id="@+id/creditTextView"
+						android:layout_width="wrap_content"
+						android:layout_height="wrap_content"
+						android:text="₹ 0.00"
+						android:textSize="16sp"
+						android:textColor="#000000"/>
+				</LinearLayout>
+
+			</LinearLayout>
+
+			<LinearLayout
+				android:id="@+id/progress_overlay"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent"
+				android:background="#88000000"
+				android:visibility="gone"
+				android:gravity="center"
+				android:clickable="true"
+				android:focusable="true">
+
+				<ProgressBar
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"/>
+
+			</LinearLayout>
+		</RelativeLayout>
+	</LinearLayout>
+</ScrollView>
