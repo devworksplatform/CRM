@@ -1,66 +1,40 @@
 package shopline.com;
 
 import android.animation.*;
-import android.app.*;
 import android.content.*;
 import android.content.Intent;
-import android.content.res.*;
 import android.graphics.*;
 import android.graphics.Typeface;
 import android.graphics.drawable.*;
-import android.media.*;
-import android.net.*;
 import android.net.Uri;
 import android.os.*;
-import android.text.*;
-import android.text.style.*;
 import android.util.*;
 import android.view.*;
 import android.view.View.*;
 import android.view.animation.*;
-import android.webkit.*;
 import android.widget.*;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import androidx.annotation.*;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.RecyclerView.Adapter;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
 import com.bumptech.glide.Glide;
-import com.facebook.shimmer.*;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.material.*;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 
-import java.io.*;
 import java.text.*;
-import java.util.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.regex.*;
-import org.json.*;
 
 import shopline.com.JLogics.Business;
 import shopline.com.JLogics.Callbacker;
+import shopline.com.JLogics.JHelpers;
 import shopline.com.JLogics.Models.CartProduct;
 import shopline.com.JLogics.Models.Product;
 
@@ -90,10 +64,14 @@ public class CartFragmentActivity extends Fragment {
 	private Intent i = new Intent();
 
 	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView;
-	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView;
+	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel;
 
-	private LinearLayout costLinear,progress_overlay;
+	private RelativeLayout linear2;
+	private LinearLayout costLinear,progress_overlay,linearDrag;
+	private ImageView bottomDragImage;
 	DecimalFormat df = new DecimalFormat("#.###");
+
+	private boolean isOpen = false;
 
 
 	@NonNull
@@ -108,10 +86,13 @@ public class CartFragmentActivity extends Fragment {
 	private void initialize(Bundle _savedInstanceState, View _view) {
 		localDB = getContext().getSharedPreferences("localDB", Context.MODE_PRIVATE);
 		linear1 = _view.findViewById(R.id.linear1);
+		linear2 = _view.findViewById(R.id.linear2);
 		costLinear = _view.findViewById(R.id.costLinear);
+		linearDrag = _view.findViewById(R.id.linearDrag);
 		progress_overlay = _view.findViewById(R.id.progress_overlay);
 		recyclerview1 = _view.findViewById(R.id.recyclerview1);
 		progressbar1 = _view.findViewById(R.id.progressbar1);
+		bottomDragImage = _view.findViewById(R.id.bottomDragImage);
 
 		subTotalTextview = _view.findViewById(R.id.subTotalTextView);
 		subTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
@@ -143,6 +124,11 @@ public class CartFragmentActivity extends Fragment {
 		totalNoDiscountLabelTextView = _view.findViewById(R.id.totalNoDiscountLabelTextView);
 		totalNoDiscountLabelTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
 
+		textviewTotal = _view.findViewById(R.id.textviewTotal);
+		textviewTotal.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		textviewTotalLabel = _view.findViewById(R.id.textviewTotalLabel);
+		textviewTotalLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+
 
 		auth = FirebaseAuth.getInstance();
 
@@ -153,18 +139,6 @@ public class CartFragmentActivity extends Fragment {
 		recyclerview1.setLayoutManager(gridlayoutManager);
 		listmap = new ArrayList<>();
 		recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-
-//		updateCartListFromFirebase();
-
-//		localDB.registerOnSharedPreferenceChangeListener(new SharedPreferences.OnSharedPreferenceChangeListener() {
-//			@Override
-//			public void onSharedPreferenceChanged(SharedPreferences localDB, @Nullable String key) {
-//				if(key != null && key.equals(Business.localDB_SharedPref.PREF_KEY)){
-//					HashMap<String, Object> cartData = Business.localDB_SharedPref.getCart(localDB);
-//					updateCartListUI(cartData);
-//				}
-//			}
-//		});
 
 		final Handler handler = new Handler(Looper.getMainLooper());
 		final Runnable cartUpdateRunnable = new Runnable() {
@@ -185,60 +159,69 @@ public class CartFragmentActivity extends Fragment {
 		handler.postDelayed(cartUpdateRunnable, 100);
 
 
-//		cart.addChildEventListener(new ChildEventListener() {
-//			@Override
-//			public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-//				HashMap<String, Object> cartData = (HashMap<String, Object>) dataSnapshot.getValue();
-//				updateCartListUI(cartData);
-//			}
-//
-//			@Override
-//			public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-//				updateCartListFromFirebase();
-//			}
-//
-//			@Override
-//			public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-//				HashMap<String, Object> cartData = (HashMap<String, Object>) dataSnapshot.getValue();
-//				updateCartListUI(cartData);
-//			}
-//
-//			@Override
-//			public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-//
-//			}
-//
-//			@Override
-//			public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//			}
-//		});
+		linearDrag.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				toggleTranslateY(linear2, isOpen);
+				rotateDragImageView(bottomDragImage, isOpen);
+				isOpen = !isOpen;
+			}
+		});
 
 
 	}
 
 
 
-//	private void updateCartListFromFirebase() {
-//		cart.addListenerForSingleValueEvent(new ValueEventListener() {
-//			@Override
-//			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//				// Get the data as a HashMap
-//				HashMap<String, Object> cartData = (HashMap<String, Object>) dataSnapshot.getValue();
-//
-//				if (cartData == null) {
-//					cartData = new HashMap<>();
-//				}
-//
-//				updateCartListUI(cartData);
-//			}
-//
-//			@Override
-//			public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//			}
-//		});
-//	}
+
+	private final int AnimateDuration = 300;
+
+	private ValueAnimator animator; // Global animator
+
+	private void toggleTranslateY(View targetView, boolean isOpen) {
+		if (animator != null && animator.isRunning()) {
+			animator.cancel();
+		}
+
+		float currentY = targetView.getTranslationY();
+		float targetDp = isOpen ? -50f : -280f;
+		float targetPx = TypedValue.applyDimension(
+				TypedValue.COMPLEX_UNIT_DIP, targetDp, targetView.getResources().getDisplayMetrics()
+		);
+
+		animator = ValueAnimator.ofFloat(currentY, targetPx);
+		animator.setDuration(AnimateDuration);
+		animator.setInterpolator(new LinearInterpolator());
+		animator.addUpdateListener(animation -> {
+			float value = (float) animation.getAnimatedValue();
+			targetView.setTranslationY(value);
+		});
+		animator.start();
+	}
+
+
+	private ValueAnimator rotateAnimator; // Global for rotation
+
+	private void rotateDragImageView(ImageView imageView, boolean isOpen) {
+		if (rotateAnimator != null && rotateAnimator.isRunning()) {
+			rotateAnimator.cancel();
+		}
+
+		float from = imageView.getRotation();
+		float to = isOpen ? 0f : 180f;
+
+		rotateAnimator = ValueAnimator.ofFloat(from, to);
+		rotateAnimator.setDuration(AnimateDuration);
+		rotateAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+		rotateAnimator.addUpdateListener(animation -> {
+			float value = (float) animation.getAnimatedValue();
+			imageView.setRotation(value);
+		});
+		rotateAnimator.start();
+	}
+
+
+
 	private void updateCartListUI(HashMap<String,Object> cartData) {
 		Business.BulkDetailsApiClient bulkDetailsApiClient = new Business.BulkDetailsApiClient();
 
@@ -280,16 +263,20 @@ public class CartFragmentActivity extends Fragment {
 					totalNoDiscountTextView.setText("₹ 0.00");
 					discountTotalTextview.setText("- ₹ 0.00");
 					grandTotalTextview.setText("₹ 0.00");
+					textviewTotal.setText("₹ 0.00");
 				} else {
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.VISIBLE);
 
 					Business.BulkDetailsApiClient.CostDetails costDetails = response.getCostDetails();
+
+					JHelpers.TransitionManager(costLinear, 300);
 					subTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalRate())));
 					gstTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalGst())));
 					totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));
 					discountTotalTextview.setText("- ₹ ".concat(String.valueOf(costDetails.getTotalDiscount())));
 					grandTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
+					textviewTotal.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
 //					creditTextview.setText(String.valueOf(costDetails.getTotalDiscount()));
 				}
 
@@ -443,8 +430,6 @@ public class CartFragmentActivity extends Fragment {
 				discountShow.setVisibility(View.VISIBLE);
 			}
 
-
-
 			linear22.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)16, (int)2, 0xFFBDBDBD, 0xFFFFFFFF));
 			linear22.setElevation((float)1);
 			textview11.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)16, (int)2, 0xFFBDBDBD, 0xFFFFFFFF));
@@ -463,6 +448,12 @@ public class CartFragmentActivity extends Fragment {
 			plus.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View _view) {
+
+					if(product.getStock() < product.productCount+1) {
+						Toast.makeText(getContext().getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
+						return;
+					}
+
 					product.productCount = product.productCount + 1;
 //					textview10.setText(String.valueOf(product.productCount));
 //					updateCountToCart(_firebase.getReference("datas/cart/" + userId + "/products/" +  String.valueOf(product.getProductId())), product.productCount);
@@ -492,16 +483,6 @@ public class CartFragmentActivity extends Fragment {
 				}
 			});
 		}
-
-//		private void updateCountToCart(DatabaseReference cart_,Long count) {
-//			if (count == 0) {
-//				cart_.removeValue();
-//			} else {
-//				HashMap<String,Object> map = new HashMap<>();
-//				map.put("count", count);
-//				cart_.updateChildren(map);
-//			}
-//		}
 
 		private void updateCountToCart(String productID,Long count) {
 			if (count == 0) {

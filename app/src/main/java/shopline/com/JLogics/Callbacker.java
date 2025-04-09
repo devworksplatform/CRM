@@ -2,6 +2,12 @@ package shopline.com.JLogics;
 
 public class Callbacker {
 
+    public static class Timer {
+        public void onEnd() {
+
+        }
+    }
+
     public static class ApiResponseWaiters {
         public static class QueryApiCallback {
             public void onReceived(Business.QueryApiClient.QueryApiResponse response) {

@@ -1,62 +1,39 @@
 package shopline.com;
 
-import android.animation.*;
 import android.app.*;
 import android.app.Activity;
 import android.content.*;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.*;
 import android.graphics.*;
-import android.graphics.Typeface;
-import android.graphics.drawable.*;
-import android.media.*;
-import android.net.*;
 import android.net.Uri;
 import android.os.*;
 import android.text.*;
-import android.text.style.*;
 import android.util.*;
 import android.view.*;
 import android.view.View;
 import android.view.View.*;
-import android.view.animation.*;
-import android.webkit.*;
 import android.widget.*;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
-import androidx.annotation.*;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
-import androidx.fragment.app.DialogFragment;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
+
 import com.bumptech.glide.Glide;
-import com.facebook.shimmer.*;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.android.material.*;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
-import java.io.*;
+
 import java.text.*;
 import java.util.*;
 import java.util.HashMap;
-import java.util.regex.*;
-import org.json.*;
 
 import shopline.com.JLogics.Business;
+import shopline.com.JLogics.Callbacker;
+import shopline.com.JLogics.JHelpers;
 import shopline.com.JLogics.Models.Product;
 
 public class ProductviewActivity extends AppCompatActivity {
@@ -68,9 +45,10 @@ public class ProductviewActivity extends AppCompatActivity {
 	Integer currentCount = 0;
 
 	private EditText edittext1;
+	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear;
 	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,productIdTextView,discountTextView,discountRsTextView;
 	private Button addButton;
-	private ImageView productImageView;
+	private ImageView productImageView,plus,minus;
 	DecimalFormat df = new DecimalFormat("#.###");
 	SharedPreferences localDB;
 
@@ -89,8 +67,10 @@ public class ProductviewActivity extends AppCompatActivity {
 
 		localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
 
-		addButton = (Button) findViewById(R.id.addButton);
+		linear22 = (LinearLayout) findViewById(R.id.linear22);
 		productImageView = (ImageView) findViewById(R.id.productImageView);
+		plus = (ImageView) findViewById(R.id.plus);
+		minus = (ImageView) findViewById(R.id.minus);
 		edittext1 = (EditText) findViewById(R.id.edittext1);
 		productSecondaryNameTextView = (TextView) findViewById(R.id.productSecondaryNameTextView);
 		productNameTextView = (TextView) findViewById(R.id.productNameTextView);
@@ -103,6 +83,13 @@ public class ProductviewActivity extends AppCompatActivity {
 		productIdTextView = (TextView) findViewById(R.id.productIdTextView);
 		discountTextView = (TextView) findViewById(R.id.discountTextView);
 		discountRsTextView = (TextView) findViewById(R.id.discountRsTextView);
+
+		rootLinear = (LinearLayout) findViewById(R.id.rootLinear);
+		mrpRateLinear = (LinearLayout) findViewById(R.id.mrpRateLinear);
+		gstDiscountLinear = (LinearLayout) findViewById(R.id.gstDiscountLinear);
+		linear5 = (LinearLayout) findViewById(R.id.linear5);
+		countLinear = (LinearLayout) findViewById(R.id.countLinear);
+
 	}
 	
 	private void initializeLogic() {
@@ -124,10 +111,9 @@ public class ProductviewActivity extends AppCompatActivity {
 		discountRsTextView.setText(df.format(discount).concat(" ₹"));
 
 		productDescriptionTextView.setText(product.getProductDesc());
-		productSecondaryNameTextView.setText(String.format("%s > %s", product.getCatId(), product.getProductName()));
-
-//		cart = _firebase.getReference("datas/cart/" + userId + "/products/" + String.valueOf(product.getProductId()));
-//		_Custom_Loading(true);
+		productSecondaryNameTextView.setText("");
+		productSecondaryNameTextView.setVisibility(View.GONE);
+//		productSecondaryNameTextView.setText(String.format("%s > %s", product.getCatId(), product.getProductName()));
 
 		HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
 		currentCount = 0;
@@ -150,54 +136,12 @@ public class ProductviewActivity extends AppCompatActivity {
 		}
 
 		if(currentCount <= 0) {
-			edittext1.setText("");
-		} else {
-			edittext1.setText(String.valueOf(currentCount));
+			currentCount = 0;
 		}
 
+		edittext1.setText(String.valueOf(currentCount));
 
 
-//		cart.addListenerForSingleValueEvent(new ValueEventListener() {
-//			@Override
-//			public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//				_Custom_Loading(false);
-//				currentCount = 0;
-//				if (dataSnapshot.exists()) {
-//					// Product already exists in the cart
-//					if (dataSnapshot.hasChild("count")) {
-//						Object value = dataSnapshot.child("count").getValue();
-//
-//						if (value instanceof Number) {
-//							currentCount = ((Number) value).intValue();
-//						} else if (value instanceof String) {
-//							try {
-//								currentCount = Integer.parseInt((String) value);
-//							} catch (NumberFormatException e) {
-//								currentCount = 0;
-//							}
-//						} else {
-//							currentCount = 0;
-//						}
-//					} else {
-//						currentCount = 0;
-//					}
-//
-//				}
-//
-//				if(currentCount <= 0) {
-//					edittext1.setText("");
-//				} else {
-//					edittext1.setText(String.valueOf(currentCount));
-//				}
-//
-//			}
-//
-//			@Override
-//			public void onCancelled(@NonNull DatabaseError databaseError) {
-//				// Handle errors here
-//				System.err.println("Error checking cart item: " + databaseError.getMessage());
-//			}
-//		});
 
 
 		if (product.getStock() < 10) {
@@ -212,16 +156,22 @@ public class ProductviewActivity extends AppCompatActivity {
 			Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(productImageView);
 		}
 
-		addButton.setOnClickListener(new OnClickListener() {
+		plus.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				Toast.makeText(getApplicationContext(),"Product Added to the cart",Toast.LENGTH_SHORT).show();
+				edittext1.setText(String.valueOf(currentCount+1));
+			}
+		});
 
-				currentCount += 1;
-				edittext1.setText(String.valueOf(currentCount));
+		minus.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if(currentCount <= 0) {
 
-//				updateCountToCart(currentCount);
-
+				} else {
+					edittext1.setText(String.valueOf(currentCount-1));
+				}
 			}
 		});
 
@@ -232,6 +182,7 @@ public class ProductviewActivity extends AppCompatActivity {
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
 				final String _charSeq = _param1.toString();
 
+				int temp = currentCount;
 				if (_charSeq.equals("")) {
 					currentCount = 0;
 				} else {
@@ -242,13 +193,17 @@ public class ProductviewActivity extends AppCompatActivity {
 					}
 				}
 
+				if(temp == currentCount) {
+					return;
+				}
+
 				if(currentCount <= 0) {
 					if(!_charSeq.equals("")) {
 						edittext1.setText("");
 					}
 				}
 
-				updateCountToCart(currentCount);
+				updateCountToCart();
 			}
 
 			@Override
@@ -261,21 +216,97 @@ public class ProductviewActivity extends AppCompatActivity {
 
 			}
 		});
+
+
+
+
+		linear5.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				finish();
+			}
+		});
+
+
+
+
+		gstDiscountLinear.setVisibility(View.GONE);
+		mrpRateLinear.setVisibility(View.GONE);
+		countLinear.setVisibility(View.GONE);
+		productDescriptionTextView.setVisibility(View.GONE);
+
+
+		Activity activity = this;
+
+		JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
+			@Override
+			public void onEnd() {
+				JHelpers.TransitionManager(rootLinear, 200);
+				mrpRateLinear.setVisibility(View.VISIBLE);
+
+				JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
+					@Override
+					public void onEnd() {
+						JHelpers.TransitionManager(rootLinear, 200);
+						gstDiscountLinear.setVisibility(View.VISIBLE);
+						productDescriptionTextView.setVisibility(View.VISIBLE);
+
+						JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
+							@Override
+							public void onEnd() {
+								JHelpers.TransitionManager(rootLinear, 200);
+								countLinear.setVisibility(View.VISIBLE);
+							}
+						});
+					}
+				});
+
+			}
+		});
+
+
+		_firebase.getReference("datas/category/".concat(product.getCatId())).addListenerForSingleValueEvent(new ValueEventListener() {
+			@Override
+			public void onDataChange(DataSnapshot _dataSnapshot) {
+				if (_dataSnapshot.exists()) {
+					// Get category image and name
+//					String img = _dataSnapshot.child("img").getValue(String.class);
+					String name = _dataSnapshot.child("name").getValue(String.class);
+
+
+					if(name == null || name.isEmpty()) {
+						name = product.getProductId();
+					}
+
+					productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
+					JHelpers.TransitionManager(rootLinear,200);
+					productSecondaryNameTextView.setVisibility(View.VISIBLE);
+				}
+
+			}
+			@Override
+			public void onCancelled(DatabaseError _databaseError) {
+			}
+		});
+
+
+
 	}
 
 
-	private void updateCountToCart(Integer count) {
-		if (count == 0) {
-//			cart.removeValue();
+	private void updateCountToCart() {
+		if(product.getStock() < currentCount) {
+			currentCount = product.getStock();
+			Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
+			edittext1.setText(String.valueOf(currentCount));
+		}
+
+		if (currentCount <= 0) {
 			Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
 		} else {
 			HashMap<String,Object> map = new HashMap<>();
-			map.put("count", count);
-//			_Custom_Loading(true);
-//			cart.updateChildren(map).addOnCompleteListener(task -> _Custom_Loading(false));
-//			cart.updateChildren(map);
+			map.put("count", currentCount);
 			Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
-
 		}
 	}
 

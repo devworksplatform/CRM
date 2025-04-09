@@ -36,6 +36,8 @@ import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
+import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.facebook.shimmer.*;
 import com.google.android.material.*;
@@ -57,22 +59,24 @@ import org.json.*;
 
 import shopline.com.JLogics.Business;
 import shopline.com.JLogics.Callbacker;
+import shopline.com.JLogics.Models.CartProduct;
 import shopline.com.JLogics.Models.Product;
 
 public class SearchActivity extends AppCompatActivity {
 	
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
-	
+	SharedPreferences localDB;
+
 	private double count1 = 0;
 	private double length = 0;
 	
 	private ArrayList<Product> listmap = new ArrayList<>();
 	
-	private LinearLayout linear1;
+	private LinearLayout linear1, linearSearchImage;
 	private LinearLayout linear;
 	private LinearLayout linear3;
-	private LinearLayout linear4;
-	private LinearLayout linear5;
+//	private LinearLayout linear4;
+//	private LinearLayout linear5;
 	private ImageView imageview1;
 	private EditText edittext1;
 	private ImageView imageview2;
@@ -108,11 +112,12 @@ public class SearchActivity extends AppCompatActivity {
 	}
 	
 	private void initialize(Bundle _savedInstanceState) {
+		localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
+
 		linear1 = findViewById(R.id.linear1);
 		linear = findViewById(R.id.linear);
 		linear3 = findViewById(R.id.linear3);
-		linear4 = findViewById(R.id.linear4);
-		linear5 = findViewById(R.id.linear5);
+//		linear4 = findViewById(R.id.linear4);
 		imageview1 = findViewById(R.id.imageview1);
 		edittext1 = findViewById(R.id.edittext1);
 		imageview2 = findViewById(R.id.imageview2);
@@ -125,24 +130,22 @@ public class SearchActivity extends AppCompatActivity {
 		linear14 = findViewById(R.id.linear14);
 		linear15 = findViewById(R.id.linear15);
 		linear16 = findViewById(R.id.linear16);
+		linearSearchImage = findViewById(R.id.linear5111);
 		circle = findViewById(R.id.circle);
 		linear9 = findViewById(R.id.linear9);
 		linear10 = findViewById(R.id.linear10);
 		linear11 = findViewById(R.id.linear11);
 		textview1 = findViewById(R.id.textview1);
-		
-		linear5.setOnClickListener(new View.OnClickListener() {
+
+
+
+		linearSearchImage.setOnClickListener(new OnClickListener() {
 			@Override
-			public void onClick(View _view) {
-				if (edittext1.getText().toString().equals("")) {
-					finish();
-				}
-				else {
-					edittext1.setText("");
-				}
+			public void onClick(View v) {
+				finish();
 			}
 		});
-		
+
 		edittext1.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
@@ -165,9 +168,9 @@ public class SearchActivity extends AppCompatActivity {
 	private void initializeLogic() {
 		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 		getWindow().setStatusBarColor(0xFFFFFFFF);
-		_ICC(imageview1, "#9e9e9e", "#9e9e9e");
-		linear4.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)15, 0xFFF6F2F1));
-		linear4.setElevation((float)1);
+		_ICC(imageview2, "#9e9e9e", "#9e9e9e");
+//		linear4.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)15, 0xFFF6F2F1));
+//		linear4.setElevation((float)1);
 		edittext1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 		linear10.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
@@ -217,20 +220,43 @@ public class SearchActivity extends AppCompatActivity {
 			final TextView textviewRate = _view.findViewById(R.id.rateTextView);
 			final TextView textviewGST = _view.findViewById(R.id.gstTextView);
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
-//			final Button addToCartButton = _view.findViewById(R.id.addToCartButton);
+			final LottieAnimationView addToCart = _view.findViewById(R.id.addToCart);
 
 
-			if (listmap.get((int)_position).getProductImg() != null && listmap.get((int)_position).getProductImg().size() > 0 && listmap.get((int)_position).getProductImg().get(0) != null && !listmap.get((int)_position).getProductImg().get(0).equals("")) {
-				Glide.with(getApplicationContext()).load(Uri.parse(listmap.get((int)_position).getProductImg().get(0))).into(imageview1);
+
+			CartProduct product = new CartProduct(listmap.get((int)_position));
+
+			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
+
+			if(map.containsKey("count")) {
+				long currentCount = 0L;
+				if (map.containsKey("count")) {
+					Object value = map.get("count");
+					if (value instanceof Number) {
+						currentCount = ((Number) value).intValue();
+					} else if (value instanceof String) {
+						try {
+							currentCount = Integer.parseInt((String) value);
+						} catch (NumberFormatException e) {}
+					}
+				}
+
+				product.productCount = currentCount;
+			} else {
+				product.productCount = 0L;
+			}
+
+			if (product.getProductImg() != null && product.getProductImg().size() > 0 && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
+				Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
 			}
 
 
-			textviewRefId.setText(listmap.get((int)_position).getProductId());
-			textviewName.setText(listmap.get((int)_position).getProductName());
-			textviewMRP.setText("₹".concat(df.format(listmap.get((int)_position).getCostMrp())));
-			textviewRate.setText("₹".concat(df.format(listmap.get((int)_position).getCostRate())));
-			textviewGST.setText("+".concat(df.format(listmap.get((int)_position).getCostGst())).concat("% GST"));
-			discountShow.setText(df.format(listmap.get((int)_position).getCostDis()).concat("% OFF"));
+			textviewRefId.setText(product.getProductId());
+			textviewName.setText(product.getProductName());
+			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
+			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
+			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
+			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
 
 			textviewRefId.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 			textviewName.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
@@ -240,7 +266,7 @@ public class SearchActivity extends AppCompatActivity {
 			discountShow.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 
 
-			if (listmap.get((int)_position).getCostDis() <= 0) {
+			if (product.getCostDis() <= 0) {
 				discountShow.setVisibility(View.GONE);
 			} else {
 				discountShow.setVisibility(View.VISIBLE);
@@ -248,16 +274,41 @@ public class SearchActivity extends AppCompatActivity {
 
 
 			rootLinear.setOnClickListener(_view2 -> {
-                Product product = listmap.get((int)_position);
-
                 Intent intent = new Intent();
-                intent.putExtra("product",product);
+                intent.putExtra("product",(Product) product);
                 intent.setClass(getApplicationContext(), ProductviewActivity.class);
                 startActivity(intent);
             });
 
+
+			if (product.productCount <= 0) {
+				addToCart.setProgress(0f); // 0f = start frame
+			} else {
+				addToCart.setProgress(1f); // 1f = last frame
+			}
+
+			addToCart.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					if(product.productCount <= 0) {
+						addToCart.setSpeed(1f);  // Normal speed
+						addToCart.playAnimation();
+						product.productCount = 1L;
+						HashMap<String,Object> map = new HashMap<>();
+						map.put("count", product.productCount);
+						Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
+					} else {
+						addToCart.setSpeed(-1f);
+						addToCart.playAnimation();
+						product.productCount = 0L;
+						Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
+					}
+				}
+			});
+
+
 //			addToCartButton.setOnClickListener(_view1 -> {
-//                Product product = listmap.get((int)_position);
+//                Product product = product;
 //
 //                Intent intent = new Intent();
 //                intent.putExtra("product",product);
