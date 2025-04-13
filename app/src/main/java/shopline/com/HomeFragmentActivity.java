@@ -1,27 +1,16 @@
 package shopline.com;
 
-import android.animation.*;
-import android.app.*;
 import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.*;
 import android.graphics.*;
 import android.graphics.Typeface;
 import android.graphics.drawable.*;
-import android.media.*;
-import android.net.*;
 import android.net.Uri;
 import android.os.*;
-import android.text.*;
-import android.text.style.*;
-import android.util.*;
 import android.view.*;
 import android.view.View;
-import android.view.View.*;
-import android.view.animation.*;
-import android.webkit.*;
 import android.widget.*;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
@@ -29,36 +18,39 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.*;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.recyclerview.widget.RecyclerView.Adapter;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
-import androidx.viewpager.widget.ViewPager.OnAdapterChangeListener;
-import androidx.viewpager.widget.ViewPager.OnPageChangeListener;
+
 import com.bumptech.glide.Glide;
 import com.facebook.shimmer.*;
-import com.google.android.material.*;
 import com.google.firebase.FirebaseApp;
-import java.io.*;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.text.*;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.regex.*;
-import org.json.*;
+
 import androidx.core.widget.NestedScrollView;
+
+import shopline.com.JLogics.Callbacker;
+import shopline.com.JLogics.JHelpers;
 
 
 public class HomeFragmentActivity extends Fragment {
-	
+
+	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
 	private Timer _timer = new Timer();
 	
 	private double postion = 0;
@@ -79,7 +71,7 @@ public class HomeFragmentActivity extends Fragment {
 	private LinearLayout linear3;
 	private LinearLayout linear26;
 	private LinearLayout linear4;
-	private LinearLayout linear11;
+	private LinearLayout linear11,totalCreditsLinear;
 	private LinearLayout linear13;
 	private LinearLayout load;
 	private LinearLayout sk;
@@ -89,7 +81,7 @@ public class HomeFragmentActivity extends Fragment {
 	private LinearLayout linear37;
 	private ShimmerFrameLayout linear28;
 	private ShimmerFrameLayout linear29;
-	private ShimmerFrameLayout linear31;
+	private ShimmerFrameLayout linear31,linear319;
 	private ShimmerFrameLayout linear33;
 	private ShimmerFrameLayout linear34;
 	private ShimmerFrameLayout linear35;
@@ -124,6 +116,8 @@ public class HomeFragmentActivity extends Fragment {
 	private TextView textview7;
 	private TextView textview8;
 	private TextView textview9;
+
+	private TextView tvBalanceLabel, tvBalanceAmount;
 	private ProgressBar progressbar1;
 	
 	private Intent action = new Intent();
@@ -157,6 +151,7 @@ public class HomeFragmentActivity extends Fragment {
 		linear26 = _view.findViewById(R.id.linear26);
 		linear4 = _view.findViewById(R.id.linear4);
 		linear11 = _view.findViewById(R.id.linear11);
+		totalCreditsLinear = _view.findViewById(R.id.totalCreditsLinear);
 		linear13 = _view.findViewById(R.id.linear13);
 		load = _view.findViewById(R.id.load);
 		sk = _view.findViewById(R.id.sk);
@@ -167,6 +162,7 @@ public class HomeFragmentActivity extends Fragment {
 		linear28 = _view.findViewById(R.id.linear28);
 		linear29 = _view.findViewById(R.id.linear29);
 		linear31 = _view.findViewById(R.id.linear31);
+		linear319 = _view.findViewById(R.id.linear319);
 		linear33 = _view.findViewById(R.id.linear33);
 		linear34 = _view.findViewById(R.id.linear34);
 		linear35 = _view.findViewById(R.id.linear35);
@@ -201,6 +197,9 @@ public class HomeFragmentActivity extends Fragment {
 		textview7 = _view.findViewById(R.id.textview7);
 		textview8 = _view.findViewById(R.id.textview8);
 		textview9 = _view.findViewById(R.id.textview9);
+		tvBalanceLabel = _view.findViewById(R.id.tvBalanceLabel);
+		tvBalanceAmount = _view.findViewById(R.id.tvBalanceAmount);
+
 		progressbar1 = _view.findViewById(R.id.progressbar1);
 		sp = getContext().getSharedPreferences("sp", Activity.MODE_PRIVATE);
 		
@@ -285,28 +284,47 @@ public class HomeFragmentActivity extends Fragment {
 		}
 		hscroll1.setOverScrollMode(ScrollView.OVER_SCROLL_NEVER);
 		hscroll1.setHorizontalScrollBarEnabled(false);
-		t = new TimerTask() {
+
+		JHelpers.runAfterDelay(getActivity(), 1000, new Callbacker.Timer(){
 			@Override
-			public void run() {
-				getActivity().runOnUiThread(new Runnable() {
+			public void onEnd() {
+				JHelpers.TransitionManager(linear3, 400);
+				linear26.setVisibility(View.GONE);
+				linear4.setVisibility(View.VISIBLE);
+
+				JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
 					@Override
-					public void run() {
-						linear4.setVisibility(View.VISIBLE);
-						sk.setVisibility(View.VISIBLE);
-						linear11.setVisibility(View.VISIBLE);
-						linear13.setVisibility(View.VISIBLE);
-						linear26.setVisibility(View.GONE);
-						t.cancel();
+					public void onEnd() {
+						JHelpers.TransitionManager(linear3, 400);
+						totalCreditsLinear.setVisibility(View.VISIBLE);
+
+						JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
+							@Override
+							public void onEnd() {
+								JHelpers.TransitionManager(linear3, 400);
+								linear11.setVisibility(View.VISIBLE);
+								linear13.setVisibility(View.VISIBLE);
+								sk.setVisibility(View.VISIBLE);
+								loadCredits();
+							}
+						});
 					}
 				});
 			}
-		};
-		_timer.schedule(t, (int)(3000));
+		});
+
+
+
 		linear26.setVisibility(View.VISIBLE);
 		linear4.setVisibility(View.GONE);
 		sk.setVisibility(View.GONE);
 		linear11.setVisibility(View.GONE);
+		totalCreditsLinear.setVisibility(View.GONE);
 		linear13.setVisibility(View.GONE);
+
+		tvBalanceAmount.setText("...");
+
+
 		All.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)0, Color.TRANSPARENT, 0xFF616B7C));
 		All.setElevation((float)3);
 		Dress.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
@@ -329,6 +347,15 @@ public class HomeFragmentActivity extends Fragment {
 		textview7.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 		textview8.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 		textview9.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+
+		tvBalanceLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+		tvBalanceAmount.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+
+
+
+
+
+
 		{
 			HashMap<String, Object> _item = new HashMap<>();
 			_item.put("img", "https://i.imgur.com/rfWqkEi.png");
@@ -362,6 +389,7 @@ public class HomeFragmentActivity extends Fragment {
 		linear28.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear29.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear31.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)25, 0xFFBDBDBD));
+		linear319.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)25, 0xFFBDBDBD));
 		linear33.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear34.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear35.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
@@ -370,6 +398,11 @@ public class HomeFragmentActivity extends Fragment {
 		linear39.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear40.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear41.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
+
+
+
+
+
 	}
 	
 	public void _rippleRoundStroke(final View _view, final String _focus, final String _pressed, final double _round, final double _stroke, final String _strokeclr) {
@@ -381,8 +414,55 @@ public class HomeFragmentActivity extends Fragment {
 		android.graphics.drawable.RippleDrawable RE = new android.graphics.drawable.RippleDrawable(new android.content.res.ColorStateList(new int[][]{new int[]{}}, new int[]{ Color.parseColor(_pressed)}), GG, null);
 		_view.setBackground(RE);
 	}
-	
-	
+
+
+
+	public void loadCredits() {
+
+		JHelpers.runAfterDelay(getActivity(),400,new Callbacker.Timer(){
+			@Override
+			public void onEnd() {
+				_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+
+					@Override
+					public void onDataChange(DataSnapshot _dataSnapshot) {
+						double credits = 0;
+						String creditsStr = "No Credits Left";
+
+						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+							creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+							try{
+								credits = Double.parseDouble(creditsStr);
+							} catch (Exception e) {}
+						}
+
+
+						if(credits > 0) {
+							double finalCredits = credits;
+							JHelpers.JValueAnimator.animate(0,(int)credits,2000, new Callbacker.onAnimateUpdate(){
+								@Override
+								public void onUpdate(int _value) {
+									tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(_value)));
+								}
+								@Override
+								public void onEnd() {
+									tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(finalCredits)));
+								}
+							});
+						} else {
+							tvBalanceAmount.setText(creditsStr);
+						}
+					}
+
+					@Override
+					public void onCancelled(DatabaseError _databaseError) { }
+				});
+			}
+		});
+
+	}
+
+
 	public void _loadHomeFragment() {
 		Fragment fragment = new Frag1FragmentActivity();
 		getChildFragmentManager()

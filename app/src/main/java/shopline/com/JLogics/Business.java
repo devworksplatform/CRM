@@ -157,6 +157,8 @@ public class Business {
         }
     }
 
+
+
     public static class QueryApiClient {
         private static final String URL = ServerURL + "/products/query";
         private final OkHttpClient client = new OkHttpClient();
@@ -242,8 +244,6 @@ public class Business {
         }
 
     }
-
-
     public static class BulkDetailsApiClient {
         private static final String URL = ServerURL + "/products/bulk-details";
         private final OkHttpClient client = new OkHttpClient();
@@ -369,6 +369,155 @@ public class Business {
             }
             return list;
         }
+    }
+    public static class OrderCheckoutApiClient {
+
+        // Define ServerURL here or pass it in constructor/method if needed
+        private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
+        private static final String BASE_URL = ServerURL + "/orders/checkout/"; // Note the trailing slash
+        private final OkHttpClient client = new OkHttpClient();
+
+        /**
+         * Calls the order checkout API.
+         * The API now returns a simple status ("stored" or "failed").
+         *
+         * @param userId   The ID of the user placing the order.
+         * @param data     A HashMap representing the order payload, e.g., {"product_id1": {"count": 2}}
+         * @param callback The callback to handle the API response.
+         */
+        public void callApi(String userId, HashMap<String, Object> data, Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                String url = BASE_URL + userId; // Append user ID to the base URL
+                try {
+                    JSONObject jsonBody = new JSONObject(data);
+                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
+                    Request request = new Request.Builder()
+                            .url(url) // Use the constructed URL with user ID
+                            .addHeader("Content-Type", "application/json")
+                            .post(body)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    int statusCode = response.code();
+
+                    OrderCheckoutApiResponse apiResponse = null;
+
+                    // According to the *new* API spec, even errors might return HTTP 200.
+                    // We need to parse the body regardless of statusCode to get the "status" field.
+                    String parsedStatus = null;
+                    String errorMessage = null; // Store potential error message
+
+                    try {
+                        JSONObject responseObject = new JSONObject(responseBody);
+                        parsedStatus = responseObject.optString("status", null); // Get the status field
+                        if (parsedStatus == null) {
+                            // If status field is missing, treat it as an unexpected response format
+                            errorMessage = "API response missing 'status' field.";
+                            if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
+                        }
+                    } catch (JSONException e) {
+                        // Failed to parse JSON - means unexpected response format
+                        System.err.println("Order Checkout API - JSON Parsing Error: " + e.getMessage());
+                        errorMessage = "Invalid JSON response from server.";
+                        if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
+                        parsedStatus = "failed"; // Default to failed if parsing fails
+                    }
+
+                    // Create the response object using the parsed status and original HTTP code
+                    apiResponse = new OrderCheckoutApiResponse(statusCode, parsedStatus, errorMessage);
+
+
+                    // Post result back to the main thread
+                    OrderCheckoutApiResponse finalApiResponse = apiResponse; // Need final variable for lambda
+                    callback.onReceived(finalApiResponse);
+
+                } catch (IOException e) {
+                    // Handle exceptions during request execution (Network error)
+                    System.err.println("Order Checkout API - Network Error: " + e.getMessage());
+                    e.printStackTrace();
+                    // Create error response for client-side network issue
+                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(503, "failed", "Network Error: " + e.getMessage()); // 503 Service Unavailable might fit
+                    callback.onReceived(errorResponse);
+
+                } catch (Exception e) {
+                    // Handle exceptions during JSON conversion of the *request* body
+                    System.err.println("Order Checkout API - Request JSON Error: " + e.getMessage());
+                    e.printStackTrace();
+                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(400, "failed", "Invalid request data format."); // 400 Bad Request
+                    callback.onReceived(errorResponse);
+
+                }
+            });
+        }
+
+        /**
+         * Data class to hold the simplified response from the Order Checkout API.
+         */
+        public class OrderCheckoutApiResponse {
+            private final int statusCode;
+            private final String status; // "stored" or "failed" (or null if parsing fails)
+            private final String errorMessage; // For client-side or parsing errors
+
+            /**
+             * Constructor for the checkout API response.
+             *
+             * @param statusCode   The HTTP status code received.
+             * @param status       The value of the "status" field from the response JSON ("stored", "failed", or null).
+             * @param errorMessage An optional error message for client-side/parsing issues.
+             */
+            public OrderCheckoutApiResponse(int statusCode, String status, String errorMessage) {
+                this.statusCode = statusCode;
+                this.status = status;
+                this.errorMessage = errorMessage;
+            }
+
+            /**
+             * Gets the raw HTTP status code.
+             */
+            public int getStatusCode() {
+                return statusCode;
+            }
+
+            /**
+             * Gets the status message from the API response body ("stored" or "failed").
+             * Can be null if the response format was unexpected.
+             */
+            public String getStatus() {
+                return status;
+            }
+
+            /**
+             * Gets any error message generated during client-side processing or parsing.
+             * Null if no such error occurred.
+             */
+            public String getErrorMessage() {
+                return errorMessage;
+            }
+
+            /**
+             * Checks if the operation was successful according to the API logic.
+             * Requires both a 2xx HTTP status code AND the status field to be "stored".
+             *
+             * @return true if the order was successfully stored, false otherwise.
+             */
+            public boolean isSuccessful() {
+                // Check HTTP status AND the API's own status field
+                return statusCode >= 200 && statusCode < 300 && "stored".equalsIgnoreCase(status);
+            }
+
+            /**
+             * Checks specifically if the API reported a "failed" status in its response body.
+             * This is independent of the HTTP status code, as the API might return HTTP 200 OK
+             * even when reporting {"status": "failed"}.
+             * @return true if the API response body contained {"status": "failed"}
+             */
+            public boolean isApiReportedFailure() {
+                return "failed".equalsIgnoreCase(status);
+            }
+        }
+
     }
 
 }

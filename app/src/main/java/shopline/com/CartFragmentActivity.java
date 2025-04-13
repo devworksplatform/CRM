@@ -64,10 +64,10 @@ public class CartFragmentActivity extends Fragment {
 	private Intent i = new Intent();
 
 	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView;
-	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel;
+	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel,textviewConfirmLabel;
 
 	private RelativeLayout linear2;
-	private LinearLayout costLinear,progress_overlay,linearDrag;
+	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear;
 	private ImageView bottomDragImage;
 	DecimalFormat df = new DecimalFormat("#.###");
 
@@ -89,6 +89,8 @@ public class CartFragmentActivity extends Fragment {
 		linear2 = _view.findViewById(R.id.linear2);
 		costLinear = _view.findViewById(R.id.costLinear);
 		linearDrag = _view.findViewById(R.id.linearDrag);
+		confirmOrderLinear = _view.findViewById(R.id.confirmOrderLinear);
+
 		progress_overlay = _view.findViewById(R.id.progress_overlay);
 		recyclerview1 = _view.findViewById(R.id.recyclerview1);
 		progressbar1 = _view.findViewById(R.id.progressbar1);
@@ -129,6 +131,9 @@ public class CartFragmentActivity extends Fragment {
 		textviewTotalLabel = _view.findViewById(R.id.textviewTotalLabel);
 		textviewTotalLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
 
+		textviewConfirmLabel = _view.findViewById(R.id.textviewConfirmLabel);
+		textviewConfirmLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+
 
 		auth = FirebaseAuth.getInstance();
 
@@ -157,6 +162,8 @@ public class CartFragmentActivity extends Fragment {
 
 		// To start the periodic updates:
 		handler.postDelayed(cartUpdateRunnable, 100);
+
+//		updateCartListUI(Business.localDB_SharedPref.getCart(localDB));
 
 
 		linearDrag.setOnClickListener(new OnClickListener() {
