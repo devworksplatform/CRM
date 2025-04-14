@@ -299,6 +299,7 @@
 			android:background="?android:attr/selectableItemBackground" />
 
 		<View
+			android:id="@+id/middleView"
 			android:layout_width="1dp"
 			android:layout_height="match_parent"
 			android:background="#E0E0E0"

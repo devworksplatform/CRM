@@ -78,6 +78,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 	}
 
 
+	private CardView confirmOrderLinearCard;
 	private LinearLayout lback,confirmOrderLinear,progressBarLinear,linear2,linear33,linear5;
 	private TextView subtotalLabelTextView,subTotalTextView;
 	private TextView gstTotalLabelTextView,gstTotalTextView;
@@ -94,6 +95,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 		lback = (LinearLayout) findViewById(R.id.linear5111);
 		confirmOrderLinear = (LinearLayout) findViewById(R.id.confirmOrderLinear);
+		confirmOrderLinearCard = (CardView) findViewById(R.id.confirmOrderLinearCard);
 		progressBarLinear = (LinearLayout) findViewById(R.id.progressBarLinear);
 		linear5 = (LinearLayout) findViewById(R.id.linear5);
 		linear2 = (LinearLayout) findViewById(R.id.linear2);
@@ -137,7 +139,12 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 	}
 
+	Double credits = 0.0;
+	Business.BulkDetailsApiClient.CostDetails costDetails;
 	private void initializeLogic() {
+		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+		getWindow().setStatusBarColor(0xFFFFFFFF);
+
 		lback.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -157,6 +164,25 @@ public class OrderreviewActivity extends AppCompatActivity {
 			@Override
 			public void onEnd() {
 
+				_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+					@Override
+					public void onDataChange(DataSnapshot _dataSnapshot) {
+						String creditsStr = "0";
+						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+							creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+							try{
+								credits = Double.parseDouble(creditsStr);
+							} catch (Exception e) {}
+						}
+
+						JHelpers.TransitionManager(linear5, 300);
+						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
+					}
+
+					@Override
+					public void onCancelled(DatabaseError _databaseError) { }
+				});
+
 				bulkDetailsApiClient.callApi(cartData,
 						new Callbacker.ApiResponseWaiters.BulkDetailsApiCallback() {
 							@Override
@@ -174,9 +200,8 @@ public class OrderreviewActivity extends AppCompatActivity {
 									totalNoDiscountTextView.setText("₹ 0.00");
 									discountTotalTextView.setText("- ₹ 0.00");
 									grandTotalTextView.setText("₹ 0.00");
-
 								} else {
-									Business.BulkDetailsApiClient.CostDetails costDetails = response.getCostDetails();
+									costDetails = response.getCostDetails();
 									startIntroAnimation(costDetails);
 								}
 							}
@@ -188,17 +213,68 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 		Business.OrderCheckoutApiClient orderCheckoutApiClient = new Business.OrderCheckoutApiClient();
 
-		confirmOrderLinear.setOnClickListener(new OnClickListener() {
+		confirmOrderLinearCard.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				orderCheckoutApiClient.callApi(userId, cartData, new Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback(){
+				if(credits <= 0 || (credits<costDetails.getTotal())) {
+					new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Insufficient Credits ₹")
+							.setMessage("Contact our admin to recharge the credits to make orders. try again after credits added to you. current balance ₹ ".concat(String.valueOf(credits)).concat(". Required for the order is ₹ ").concat(String.valueOf(costDetails.getTotal())))
+							.setCancelable(false)
+							.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+								@Override
+								public void onClick(DialogInterface dialog, int which) {
+									dialog.dismiss();
+									finish();
+								}
+							}).show();
+					Toast.makeText(OrderreviewActivity.this, "Insufficient Credits", Toast.LENGTH_SHORT).show();
+					return;
+				}
 
+				ProgressDialog progressDialog = new ProgressDialog(OrderreviewActivity.this);
+				progressDialog.setMessage("Processing Order...");
+				progressDialog.setIndeterminate(true); // Indeterminate for loading animation
+				progressDialog.setCancelable(false); // Make it non-cancelable
+				progressDialog.show();
+
+				orderCheckoutApiClient.callApi(userId, cartData, new Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback(){
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
+						progressDialog.hide();
 						if(response.getStatusCode() == 200) {
-							finish();
+							if(response.isSuccessful()) {
+								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+										.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+										.setCancelable(false)
+										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+											@Override
+											public void onClick(DialogInterface dialog, int which) {
+												Business.localDB_SharedPref.clearCart(localDB);
+												dialog.dismiss();
+												finish();
+											}
+										}).show();
+							} else {
+								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+										.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+										.setCancelable(false)
+										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+											@Override
+											public void onClick(DialogInterface dialog, int which) {
+												dialog.dismiss();
+											}
+										}).show();
+							}
 						} else {
-
+							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+									.setMessage("Order was failed due to server busy, Please try again or Contact our admin team about the issue.")
+									.setCancelable(false)
+									.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											dialog.dismiss();
+										}
+									}).show();
 						}
 					}
 				});
@@ -224,7 +300,6 @@ public class OrderreviewActivity extends AppCompatActivity {
 						totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));
 						discountTotalTextView.setText("- ₹ ".concat(String.valueOf(costDetails.getTotalDiscount())));
 						grandTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
-						creditTextView.setText(String.valueOf(costDetails.getTotalDiscount()));
 					}
 				});
 			}

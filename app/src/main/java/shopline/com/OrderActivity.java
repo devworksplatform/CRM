@@ -58,36 +58,32 @@ import java.util.HashMap;
 import java.util.regex.*;
 import org.json.*;
 
+import shopline.com.JLogics.Business;
+import shopline.com.JLogics.Models.Product;
+
 public class OrderActivity extends AppCompatActivity {
 	
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 	
-	private ArrayList<HashMap<String, Object>> listmap = new ArrayList<>();
+	private ArrayList<Business.OrderQueryApiClient.Order> listmap = new ArrayList<>();
 	
 	private LinearLayout linear2;
 	private LinearLayout linear1;
-	private LinearLayout linear3;
+	private LinearLayout linear5;
 	private LinearLayout linear4;
+	private LinearLayout linear10;
+	private LinearLayout linear11;
+	private LinearLayout circle;
+	private LinearLayout linear15;
+	private LinearLayout linear16;
+	private LinearLayout circle2;
+	private LinearLayout noDataLinear;
+
 	private ImageView imageview1;
-	private TextView textview1;
+	private TextView textview1,textviewTemp;
 	private RecyclerView recyclerview1;
 	private ProgressBar progressbar1;
-	
-	private DatabaseReference order = _firebase.getReference("order");
-	private ChildEventListener _order_child_listener;
-	private FirebaseAuth auth;
-	private OnCompleteListener<AuthResult> _auth_create_user_listener;
-	private OnCompleteListener<AuthResult> _auth_sign_in_listener;
-	private OnCompleteListener<Void> _auth_reset_password_listener;
-	private OnCompleteListener<Void> auth_updateEmailListener;
-	private OnCompleteListener<Void> auth_updatePasswordListener;
-	private OnCompleteListener<Void> auth_emailVerificationSentListener;
-	private OnCompleteListener<Void> auth_deleteUserListener;
-	private OnCompleteListener<Void> auth_updateProfileListener;
-	private OnCompleteListener<AuthResult> auth_phoneAuthListener;
-	private OnCompleteListener<AuthResult> auth_googleSignInListener;
-	
-	private Intent i = new Intent();
 	
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
@@ -101,248 +97,99 @@ public class OrderActivity extends AppCompatActivity {
 	private void initialize(Bundle _savedInstanceState) {
 		linear2 = findViewById(R.id.linear2);
 		linear1 = findViewById(R.id.linear1);
-		linear3 = findViewById(R.id.linear3);
+		linear5 = findViewById(R.id.linear5);
 		linear4 = findViewById(R.id.linear4);
 		imageview1 = findViewById(R.id.imageview1);
 		textview1 = findViewById(R.id.textview1);
+		textviewTemp = findViewById(R.id.textviewTemp);
 		recyclerview1 = findViewById(R.id.recyclerview1);
 		progressbar1 = findViewById(R.id.progressbar1);
-		auth = FirebaseAuth.getInstance();
-		
-		linear3.setOnClickListener(new View.OnClickListener() {
+
+		linear10 = findViewById(R.id.linear10);
+		linear11 = findViewById(R.id.linear11);
+		circle = findViewById(R.id.circle);
+		linear15 = findViewById(R.id.linear15);
+		linear16 = findViewById(R.id.linear16);
+		circle2 = findViewById(R.id.circle2);
+
+		noDataLinear = findViewById(R.id.noDataLinear);
+		noDataLinear.setVisibility(View.GONE);
+
+
+
+		linear5.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
 				finish();
 			}
 		});
-		
-		_order_child_listener = new ChildEventListener() {
+
+
+		// Assuming you have instantiated your OrderQueryApiClient somewhere in your activity or fragment
+		Business.OrderQueryApiClient orderApiClient = new Business.OrderQueryApiClient();
+
+		// Prepare the query data as a HashMap
+		HashMap<String, Object> queryData = new HashMap<>();
+
+		// Create the filters list
+		List<Map<String, String>> filters = new ArrayList<>();
+		Map<String, String> filter = new HashMap<>();
+		filter.put("field", "user_id");
+		filter.put("operator", "eq");
+		filter.put("value", userId);
+		filters.add(filter);
+		queryData.put("filters", filters);
+
+		// Add other parameters
+		queryData.put("order_by", "created_at");
+		queryData.put("order_direction", "DESC");
+		queryData.put("limit", 1000);
+		queryData.put("offset", 0);
+
+		progressbar1.setVisibility(View.VISIBLE);
+		recyclerview1.setVisibility(View.GONE);
+
+		orderApiClient.callApi(queryData, new Business.OrderQueryApiClient.OrderApiCallback() {
 			@Override
-			public void onChildAdded(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
-				recyclerview1.setLayoutManager(gridlayoutManager);
-				order.addListenerForSingleValueEvent(new ValueEventListener() {
-					@Override
-					public void onDataChange(DataSnapshot _dataSnapshot) {
-						listmap = new ArrayList<>();
-						try {
-							GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-							for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-								HashMap<String, Object> _map = _data.getValue(_ind);
-								listmap.add(_map);
-							}
-						}
-						catch (Exception _e) {
-							_e.printStackTrace();
-						}
-						recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-						_reverse(listmap);
-					}
-					@Override
-					public void onCancelled(DatabaseError _databaseError) {
-					}
-				});
-			}
-			
-			@Override
-			public void onChildChanged(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
-				recyclerview1.setLayoutManager(gridlayoutManager);
-				order.addListenerForSingleValueEvent(new ValueEventListener() {
-					@Override
-					public void onDataChange(DataSnapshot _dataSnapshot) {
-						listmap = new ArrayList<>();
-						try {
-							GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-							for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-								HashMap<String, Object> _map = _data.getValue(_ind);
-								listmap.add(_map);
-							}
-						}
-						catch (Exception _e) {
-							_e.printStackTrace();
-						}
-						recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-						_reverse(listmap);
-					}
-					@Override
-					public void onCancelled(DatabaseError _databaseError) {
-					}
-				});
-			}
-			
-			@Override
-			public void onChildMoved(DataSnapshot _param1, String _param2) {
-				
-			}
-			
-			@Override
-			public void onChildRemoved(DataSnapshot _param1) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
-			}
-			
-			@Override
-			public void onCancelled(DatabaseError _param1) {
-				final int _errorCode = _param1.getCode();
-				final String _errorMessage = _param1.getMessage();
-				
-			}
-		};
-		order.addChildEventListener(_order_child_listener);
-		
-		auth_updateEmailListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updatePasswordListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_emailVerificationSentListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_deleteUserListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_phoneAuthListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updateProfileListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_googleSignInListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_create_user_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_sign_in_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_reset_password_listener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				
-			}
-		};
-	}
-	
-	private void initializeLogic() {
-		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
-		recyclerview1.setLayoutManager(gridlayoutManager);
-		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-		getWindow().setStatusBarColor(0xFFFFFFFF);
-		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
-		order.addListenerForSingleValueEvent(new ValueEventListener() {
-			@Override
-			public void onDataChange(DataSnapshot _dataSnapshot) {
-				listmap = new ArrayList<>();
-				try {
-					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-						HashMap<String, Object> _map = _data.getValue(_ind);
-						listmap.add(_map);
-					}
+			public void onReceived(Business.OrderQueryApiClient.OrderQueryApiResponse response) {
+				if(response.getStatusCode() == 200) {
+					listmap = response.getOrders();
 				}
-				catch (Exception _e) {
-					_e.printStackTrace();
-				}
+				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
+				recyclerview1.setLayoutManager(gridlayoutManager);
 				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-				_reverse(listmap);
-			}
-			@Override
-			public void onCancelled(DatabaseError _databaseError) {
-			}
-		});
-		order.addListenerForSingleValueEvent(new ValueEventListener() {
-			@Override
-			public void onDataChange(DataSnapshot _dataSnapshot) {
-				listmap = new ArrayList<>();
-				try {
-					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-						HashMap<String, Object> _map = _data.getValue(_ind);
-						listmap.add(_map);
-					}
-				}
-				catch (Exception _e) {
-					_e.printStackTrace();
-				}
-				if (listmap.size() == 0) {
-					progressbar1.setVisibility(View.VISIBLE);
+				recyclerview1.getAdapter().notifyDataSetChanged();
+
+				if(listmap.isEmpty()) {
+					noDataLinear.setVisibility(View.VISIBLE);
+					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.GONE);
-				}
-				else {
+				} else {
+					noDataLinear.setVisibility(View.GONE);
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.VISIBLE);
 				}
 			}
-			@Override
-			public void onCancelled(DatabaseError _databaseError) {
-			}
 		});
+
+		
+
+	}
+	
+	private void initializeLogic() {
+		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+		getWindow().setStatusBarColor(0xFFFFFFFF);
+
+		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+
+		textviewTemp.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+		linear10.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		linear11.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		circle.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+		linear15.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		linear16.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		circle2.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+
 	}
 	
 	public void _rippleRoundStroke(final View _view, final String _focus, final String _pressed, final double _round, final double _stroke, final String _strokeclr) {
@@ -402,15 +249,15 @@ public class OrderActivity extends AppCompatActivity {
 	}
 	
 	
-	public void _reverse(final ArrayList<HashMap<String, Object>> _mapname) {
+	public void _reverse(final ArrayList<Business.OrderQueryApiClient.Order> _mapname) {
 		Collections.reverse(_mapname);
 	}
 	
 	public class Recyclerview1Adapter extends RecyclerView.Adapter<Recyclerview1Adapter.ViewHolder> {
 		
-		ArrayList<HashMap<String, Object>> _data;
+		ArrayList<Business.OrderQueryApiClient.Order> _data;
 		
-		public Recyclerview1Adapter(ArrayList<HashMap<String, Object>> _arr) {
+		public Recyclerview1Adapter(ArrayList<Business.OrderQueryApiClient.Order> _arr) {
 			_data = _arr;
 		}
 		
@@ -426,81 +273,32 @@ public class OrderActivity extends AppCompatActivity {
 		@Override
 		public void onBindViewHolder(ViewHolder _holder, final int _position) {
 			View _view = _holder.itemView;
-			
-			final LinearLayout linear1 = _view.findViewById(R.id.linear1);
-			final LinearLayout linear2 = _view.findViewById(R.id.linear2);
+
 			final LinearLayout linear3 = _view.findViewById(R.id.linear3);
-			final androidx.cardview.widget.CardView cardview1 = _view.findViewById(R.id.cardview1);
-			final ImageView imageview1 = _view.findViewById(R.id.imageview1);
-			final LinearLayout linear31 = _view.findViewById(R.id.linear31);
-			final LinearLayout linear32 = _view.findViewById(R.id.linear32);
-			final LinearLayout linear5 = _view.findViewById(R.id.linear5);
-			final LinearLayout linear4 = _view.findViewById(R.id.linear4);
-			final TextView name = _view.findViewById(R.id.name);
-			final TextView Orderpending = _view.findViewById(R.id.Orderpending);
-			final ImageView imageview5 = _view.findViewById(R.id.imageview5);
-			
-			if (listmap.get((int)_position).containsKey("uid")) {
-				if (listmap.get((int)_position).get("uid").toString().equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
-					name.setText(listmap.get((int)_position).get("productname").toString());
-					Orderpending.setText(listmap.get((int)_position).get("status").toString());
-					Glide.with(getApplicationContext()).load(Uri.parse(listmap.get((int)_position).get("img").toString())).into(imageview1);
-					if (listmap.get((int)_position).containsKey("productname")) {
-						linear1.setVisibility(View.VISIBLE);
-					}
-					else {
-						linear1.setVisibility(View.GONE);
-					}
-				}
-				else {
-					linear1.setVisibility(View.GONE);
-				}
-			}
-			else {
-				linear1.setVisibility(View.GONE);
-			}
-			Orderpending.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
-			name.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			linear32.setOnClickListener(new View.OnClickListener() {
+			final TextView OrderId = _view.findViewById(R.id.OrderId);
+			final TextView OrderStatus = _view.findViewById(R.id.OrderStatus);
+			final TextView OrderDetail = _view.findViewById(R.id.OrderDetail);
+
+			Business.OrderQueryApiClient.Order order = _data.get(_position);
+
+			OrderId.setText("Order Id : (".concat(order.getOrderId()).concat(")"));
+			OrderStatus.setText(order.getOrderStatus());
+			OrderDetail.setText("Qty: ".concat(String.valueOf(order.getItemsDetail().size()))
+					.concat(", Cost: Rs.").concat(String.valueOf(order.getTotal())).concat(" ₹"));
+
+			OrderId.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+			OrderStatus.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+			OrderDetail.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+
+			linear3.setOnClickListener(new OnClickListener() {
 				@Override
-				public void onClick(View _view) {
-					final AlertDialog dialog1 = new AlertDialog.Builder(OrderActivity.this).create();
-					View inflate = getLayoutInflater().inflate(R.layout.dialog,null); 
-					dialog1.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-					dialog1.setView(inflate);
-					TextView t1 = (TextView) inflate.findViewById(R.id.t1);
-					
-					TextView t2 = (TextView) inflate.findViewById(R.id.t2);
-					
-					TextView b1 = (TextView) inflate.findViewById(R.id.b1);
-					
-					TextView b2 = (TextView) inflate.findViewById(R.id.b2);
-					
-					ImageView i1 = (ImageView) inflate.findViewById(R.id.i1);
-					
-					LinearLayout bg = (LinearLayout) inflate.findViewById(R.id.bg);
-					t1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-					t2.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-					b1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-					b2.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-					Glide.with(getApplicationContext()).load(Uri.parse(listmap.get((int)_position).get("img").toString())).into(i1);
-					t1.setText(listmap.get((int)_position).get("productname").toString());
-					t2.setText("Your Order has been not shipped\nplease wait sometimes");
-					b1.setText("Dismiss");
-					b2.setText("Track Your Order");
-					_rippleRoundStroke(bg, "#FFFFFF", "#000000", 15, 0, "#000000");
-					_rippleRoundStroke(b1, "#F5F5F5", "#E0E0E0", 15, 0, "#000000");
-					_rippleRoundStroke(b2, "#4b69ff", "#40FFFFFF", 15, 0, "#000000");
-					b1.setOnClickListener(new View.OnClickListener(){ public void onClick(View v){
-							dialog1.dismiss();
-						}
-					});
-					b2.setOnClickListener(new View.OnClickListener(){ public void onClick(View v){
-							SketchwareUtil.showMessage(getApplicationContext(), "Like And Comment now then i will added tracking system");
-						}
-					});
-					dialog1.setCancelable(true);
-					dialog1.show();
+				public void onClick(View v) {
+					Business.OrderQueryApiClient.Order order = listmap.get((int)_position);
+
+					Intent intent = new Intent();
+					intent.putExtra("order",order);
+					intent.setClass(getApplicationContext(), OrderCartViewActivity.class);
+					startActivity(intent);
 				}
 			});
 		}
@@ -517,54 +315,5 @@ public class OrderActivity extends AppCompatActivity {
 		}
 	}
 	
-	@Deprecated
-	public void showMessage(String _s) {
-		Toast.makeText(getApplicationContext(), _s, Toast.LENGTH_SHORT).show();
-	}
-	
-	@Deprecated
-	public int getLocationX(View _v) {
-		int _location[] = new int[2];
-		_v.getLocationInWindow(_location);
-		return _location[0];
-	}
-	
-	@Deprecated
-	public int getLocationY(View _v) {
-		int _location[] = new int[2];
-		_v.getLocationInWindow(_location);
-		return _location[1];
-	}
-	
-	@Deprecated
-	public int getRandom(int _min, int _max) {
-		Random random = new Random();
-		return random.nextInt(_max - _min + 1) + _min;
-	}
-	
-	@Deprecated
-	public ArrayList<Double> getCheckedItemPositionsToArray(ListView _list) {
-		ArrayList<Double> _result = new ArrayList<Double>();
-		SparseBooleanArray _arr = _list.getCheckedItemPositions();
-		for (int _iIdx = 0; _iIdx < _arr.size(); _iIdx++) {
-			if (_arr.valueAt(_iIdx))
-			_result.add((double)_arr.keyAt(_iIdx));
-		}
-		return _result;
-	}
-	
-	@Deprecated
-	public float getDip(int _input) {
-		return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, _input, getResources().getDisplayMetrics());
-	}
-	
-	@Deprecated
-	public int getDisplayWidthPixels() {
-		return getResources().getDisplayMetrics().widthPixels;
-	}
-	
-	@Deprecated
-	public int getDisplayHeightPixels() {
-		return getResources().getDisplayMetrics().heightPixels;
-	}
-}
+
+}

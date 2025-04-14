@@ -195,7 +195,7 @@
 					android:paddingRight="8dp"
 					android:paddingBottom="8dp"
 					android:gravity="center_horizontal|center_vertical"
-					android:text="There are no data\nto show"
+					android:text="There are no data to show"
 					android:textSize="12sp"
 					android:textColor="#9E9E9E" />
 			</LinearLayout>

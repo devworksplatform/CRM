@@ -42,6 +42,7 @@ public class ProductviewActivity extends AppCompatActivity {
 	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 //	DatabaseReference cart;
 	Product product;
+	boolean isViewOnly;
 	Integer currentCount = 0;
 
 	private EditText edittext1;
@@ -95,6 +96,7 @@ public class ProductviewActivity extends AppCompatActivity {
 	private void initializeLogic() {
 
 		product = (Product) getIntent().getSerializableExtra("product");
+		isViewOnly = getIntent().getBooleanExtra("isViewOnly",false);
 
 		productNameTextView.setText(product.getProductName());
 		productIdTextView.setText(String.valueOf(product.getProductId()));
@@ -115,41 +117,50 @@ public class ProductviewActivity extends AppCompatActivity {
 		productSecondaryNameTextView.setVisibility(View.GONE);
 //		productSecondaryNameTextView.setText(String.format("%s > %s", product.getCatId(), product.getProductName()));
 
-		HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
-		currentCount = 0;
-		if (map.containsKey("count")) {
-			Object value = map.get("count");
+		if(isViewOnly) {
+			currentCount = (int) getIntent().getLongExtra("productCount",0);
+		} else {
+			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
+			currentCount = 0;
+			if (map.containsKey("count")) {
+				Object value = map.get("count");
 
-			if (value instanceof Number) {
-				currentCount = ((Number) value).intValue();
-			} else if (value instanceof String) {
-				try {
-					currentCount = Integer.parseInt((String) value);
-				} catch (NumberFormatException e) {
+				if (value instanceof Number) {
+					currentCount = ((Number) value).intValue();
+				} else if (value instanceof String) {
+					try {
+						currentCount = Integer.parseInt((String) value);
+					} catch (NumberFormatException e) {
+						currentCount = 0;
+					}
+				} else {
 					currentCount = 0;
 				}
 			} else {
 				currentCount = 0;
 			}
-		} else {
-			currentCount = 0;
-		}
 
-		if(currentCount <= 0) {
-			currentCount = 0;
+			if(currentCount <= 0) {
+				currentCount = 0;
+			}
 		}
 
 		edittext1.setText(String.valueOf(currentCount));
 
-
-
-
-		if (product.getStock() < 10) {
-			hurryUpTextView.setText("Hurry up ! Last few pieces left !");
-			hurryUpTextView.setTextColor(Color.parseColor("#F44336"));
-		} else {
-			hurryUpTextView.setText("In Stock");
+		if(isViewOnly) {
+			hurryUpTextView.setText("Thanks for purchasing this product from us!");
 			hurryUpTextView.setTextColor(Color.parseColor("#4CAF50"));
+			plus.setEnabled(false);
+			minus.setEnabled(false);
+			edittext1.setEnabled(false);
+		} else {
+			if (product.getStock() < 10) {
+				hurryUpTextView.setText("Hurry up ! Last few pieces left !");
+				hurryUpTextView.setTextColor(Color.parseColor("#F44336"));
+			} else {
+				hurryUpTextView.setText("In Stock");
+				hurryUpTextView.setTextColor(Color.parseColor("#4CAF50"));
+			}
 		}
 
 		if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
@@ -227,9 +238,6 @@ public class ProductviewActivity extends AppCompatActivity {
 			}
 		});
 
-
-
-
 		gstDiscountLinear.setVisibility(View.GONE);
 		mrpRateLinear.setVisibility(View.GONE);
 		countLinear.setVisibility(View.GONE);
@@ -269,16 +277,17 @@ public class ProductviewActivity extends AppCompatActivity {
 			@Override
 			public void onDataChange(DataSnapshot _dataSnapshot) {
 				if (_dataSnapshot.exists()) {
-					// Get category image and name
-//					String img = _dataSnapshot.child("img").getValue(String.class);
 					String name = _dataSnapshot.child("name").getValue(String.class);
-
 
 					if(name == null || name.isEmpty()) {
 						name = product.getProductId();
 					}
 
 					productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
+					JHelpers.TransitionManager(rootLinear,200);
+					productSecondaryNameTextView.setVisibility(View.VISIBLE);
+				} else {
+					productSecondaryNameTextView.setText(String.format("%s", product.getProductName()));
 					JHelpers.TransitionManager(rootLinear,200);
 					productSecondaryNameTextView.setVisibility(View.VISIBLE);
 				}
@@ -288,9 +297,6 @@ public class ProductviewActivity extends AppCompatActivity {
 			public void onCancelled(DatabaseError _databaseError) {
 			}
 		});
-
-
-
 	}
 
 

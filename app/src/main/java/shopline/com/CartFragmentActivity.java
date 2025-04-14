@@ -25,7 +25,10 @@ import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.text.*;
@@ -63,11 +66,12 @@ public class CartFragmentActivity extends Fragment {
 	private ChildEventListener _cart_child_listener;
 	private Intent i = new Intent();
 
-	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView;
+	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView,textview1;
 	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel,textviewConfirmLabel;
 
 	private RelativeLayout linear2;
-	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear;
+	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear,linearNoData;
+	private LinearLayout linear10,linear11,linear15,linear16,circle,circle2;
 	private ImageView bottomDragImage;
 	DecimalFormat df = new DecimalFormat("#.###");
 
@@ -78,18 +82,29 @@ public class CartFragmentActivity extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater _inflater, @Nullable ViewGroup _container, @Nullable Bundle _savedInstanceState) {
 		View _view = _inflater.inflate(R.layout.cart_fragment, _container, false);
-		initialize(_savedInstanceState, _view);
 		FirebaseApp.initializeApp(getContext());
+		initialize(_savedInstanceState, _view);
 		return _view;
 	}
 	
 	private void initialize(Bundle _savedInstanceState, View _view) {
+		auth = FirebaseAuth.getInstance();
 		localDB = getContext().getSharedPreferences("localDB", Context.MODE_PRIVATE);
 		linear1 = _view.findViewById(R.id.linear1);
 		linear2 = _view.findViewById(R.id.linear2);
 		costLinear = _view.findViewById(R.id.costLinear);
+		linearNoData = _view.findViewById(R.id.linearNoData);
+		linearNoData.setVisibility(View.GONE);
+
 		linearDrag = _view.findViewById(R.id.linearDrag);
 		confirmOrderLinear = _view.findViewById(R.id.confirmOrderLinear);
+
+		circle = _view.findViewById(R.id.circle);
+		circle2 = _view.findViewById(R.id.circle2);
+		linear10 = _view.findViewById(R.id.linear10);
+		linear11 = _view.findViewById(R.id.linear11);
+		linear15 = _view.findViewById(R.id.linear15);
+		linear16 = _view.findViewById(R.id.linear16);
 
 		progress_overlay = _view.findViewById(R.id.progress_overlay);
 		recyclerview1 = _view.findViewById(R.id.recyclerview1);
@@ -134,8 +149,18 @@ public class CartFragmentActivity extends Fragment {
 		textviewConfirmLabel = _view.findViewById(R.id.textviewConfirmLabel);
 		textviewConfirmLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
 
+		textview1 = _view.findViewById(R.id.textview1);
+		textview1.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 
-		auth = FirebaseAuth.getInstance();
+		textview1.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+		circle.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+		circle2.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
+		linear10.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		linear11.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		linear15.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+		linear16.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
+
+
 
 //		cart = _firebase.getReference("datas/cart/".concat(userId));
 		HashMap<String,Object> map = Business.localDB_SharedPref.getHashMap(localDB);
@@ -175,6 +200,36 @@ public class CartFragmentActivity extends Fragment {
 			}
 		});
 
+		confirmOrderLinear.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent();
+				intent.setClass(getContext().getApplicationContext(), OrderreviewActivity.class);
+				startActivity(intent);
+			}
+		});
+
+
+
+
+		_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+			@Override
+			public void onDataChange(DataSnapshot _dataSnapshot) {
+				double credits = 0;
+				String creditsStr = "0";
+				if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+					creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+					try{
+						credits = Double.parseDouble(creditsStr);
+					} catch (Exception e) {}
+				}
+
+				creditTextview.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
+			}
+
+			@Override
+			public void onCancelled(DatabaseError _databaseError) { }
+		});
 
 	}
 
@@ -232,7 +287,10 @@ public class CartFragmentActivity extends Fragment {
 	private void updateCartListUI(HashMap<String,Object> cartData) {
 		Business.BulkDetailsApiClient bulkDetailsApiClient = new Business.BulkDetailsApiClient();
 
-		progress_overlay.setVisibility(View.VISIBLE);
+//		progress_overlay.setVisibility(View.VISIBLE);
+//		linearNoData.setVisibility(View.GONE);
+//		recyclerview1.setVisibility(View.GONE);
+//		costLinear.setVisibility(View.GONE);
 
 		bulkDetailsApiClient.callApi(cartData, new Callbacker.ApiResponseWaiters.BulkDetailsApiCallback() {
 			@Override
@@ -262,8 +320,11 @@ public class CartFragmentActivity extends Fragment {
 
 
 				if (listmap.isEmpty()) {
-					progressbar1.setVisibility(View.VISIBLE);
+					progressbar1.setVisibility(View.GONE);
+					progress_overlay.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.GONE);
+					costLinear.setVisibility(View.GONE);
+					linearNoData.setVisibility(View.VISIBLE);
 
 					subTotalTextview.setText("₹ 0.00");
 					gstTextview.setText("₹ 0.00");
@@ -273,7 +334,10 @@ public class CartFragmentActivity extends Fragment {
 					textviewTotal.setText("₹ 0.00");
 				} else {
 					progressbar1.setVisibility(View.GONE);
+					progress_overlay.setVisibility(View.GONE);
+					costLinear.setVisibility(View.VISIBLE);
 					recyclerview1.setVisibility(View.VISIBLE);
+					linearNoData.setVisibility(View.GONE);
 
 					Business.BulkDetailsApiClient.CostDetails costDetails = response.getCostDetails();
 
@@ -288,7 +352,6 @@ public class CartFragmentActivity extends Fragment {
 				}
 
 				recyclerview1.getAdapter().notifyDataSetChanged();
-				progress_overlay.setVisibility(View.GONE);
 			}
 		});
 

@@ -2,6 +2,8 @@ package shopline.com.JLogics;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -11,10 +13,12 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,7 +88,7 @@ public class Business {
             saveHashMap(localDB, details);
         }
 
-        public static void deleteCartProduct(SharedPreferences localDB, String productID) {
+        public static void  deleteCartProduct(SharedPreferences localDB, String productID) {
             HashMap<String,Object> details = getHashMap(localDB);
 
             if(details.containsKey("carts")) {
@@ -154,6 +158,14 @@ public class Business {
             }
 
             return carts;
+        }
+
+        public static void clearCart(SharedPreferences localDB) {
+            HashMap<String,Object> details = getHashMap(localDB);
+            if(details.containsKey("carts")) {
+                details.remove("carts");
+                saveHashMap(localDB, details);
+            }
         }
     }
 
@@ -373,7 +385,6 @@ public class Business {
     public static class OrderCheckoutApiClient {
 
         // Define ServerURL here or pass it in constructor/method if needed
-        private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
         private static final String BASE_URL = ServerURL + "/orders/checkout/"; // Note the trailing slash
         private final OkHttpClient client = new OkHttpClient();
 
@@ -431,7 +442,10 @@ public class Business {
 
                     // Post result back to the main thread
                     OrderCheckoutApiResponse finalApiResponse = apiResponse; // Need final variable for lambda
-                    callback.onReceived(finalApiResponse);
+//                    callback.onReceived(finalApiResponse);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(finalApiResponse);
+                    });
 
                 } catch (IOException e) {
                     // Handle exceptions during request execution (Network error)
@@ -439,14 +453,20 @@ public class Business {
                     e.printStackTrace();
                     // Create error response for client-side network issue
                     OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(503, "failed", "Network Error: " + e.getMessage()); // 503 Service Unavailable might fit
-                    callback.onReceived(errorResponse);
+//                    callback.onReceived(errorResponse);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(errorResponse);
+                    });
 
                 } catch (Exception e) {
                     // Handle exceptions during JSON conversion of the *request* body
                     System.err.println("Order Checkout API - Request JSON Error: " + e.getMessage());
                     e.printStackTrace();
                     OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(400, "failed", "Invalid request data format."); // 400 Bad Request
-                    callback.onReceived(errorResponse);
+//                    callback.onReceived(errorResponse);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(errorResponse);
+                    });
 
                 }
             });
@@ -519,5 +539,180 @@ public class Business {
         }
 
     }
+    public static class OrderQueryApiClient {
+        private static final String URL = ServerURL + "/orders/query";
+        private final OkHttpClient client = new OkHttpClient();
 
+        public void callApi(HashMap<String, Object> data, OrderApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    JSONObject jsonBody = new JSONObject(data);
+                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
+                    Request request = new Request.Builder()
+                            .url(URL)
+                            .addHeader("Content-Type", "application/json")
+                            .post(body)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    ArrayList<Order> orderList = parseOrders(responseBody);
+                    // Switch back to the main thread to update the UI
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new OrderQueryApiResponse(response.code(), orderList));
+                    });
+
+                } catch (IOException | JSONException e) {
+                    e.printStackTrace();
+                    // Switch back to the main thread to update the UI
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new OrderQueryApiResponse(500, new ArrayList<>()));
+                    });
+                }
+            });
+        }
+
+        private ArrayList<Order> parseOrders(String responseBody) throws JSONException {
+            ArrayList<Order> orders = new ArrayList<>();
+            JSONArray jsonArray = new JSONArray(responseBody);
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                Order order = new Order();
+                order.setOrderId(jsonObject.optString("order_id"));
+                order.setUserId(jsonObject.optString("user_id"));
+
+                JSONObject itemsJson = jsonObject.optJSONObject("items");
+                if (itemsJson != null) {
+                    Map<String, Map<String, Object>> itemsMap = new HashMap<>();
+                    java.util.Iterator<String> keys = itemsJson.keys();
+                    while (keys.hasNext()) {
+                        String productId = keys.next();
+                        JSONObject countJson = itemsJson.optJSONObject(productId);
+                        if (countJson != null) {
+                            Map<String, Object> countMap = new HashMap<>();
+                            countMap.put("count", countJson.optInt("count"));
+                            itemsMap.put(productId, countMap);
+                        }
+                    }
+                    order.setItems(itemsMap);
+                }
+
+                JSONArray itemsDetailJsonArray = jsonObject.optJSONArray("items_detail");
+                if (itemsDetailJsonArray != null) {
+                    ArrayList<Product> itemsDetailList = new ArrayList<>();
+                    for (int j = 0; j < itemsDetailJsonArray.length(); j++) {
+                        JSONObject itemDetailJson = itemsDetailJsonArray.getJSONObject(j);
+                        Product product = new Product();
+                        product.setId(itemDetailJson.optString("id"));
+                        product.setProductId(itemDetailJson.optString("product_id"));
+                        product.setProductName(itemDetailJson.optString("product_name"));
+                        product.setProductDesc(itemDetailJson.optString("product_desc"));
+
+                        String productImgString = itemDetailJson.optString("product_img");
+                        if (productImgString != null && !productImgString.isEmpty()) {
+                            try{
+                                JSONArray productImgArray = new JSONArray(productImgString);
+                                product.setProductImg(parseJsonArrayToList(productImgArray));
+                            } catch (Exception e) {
+                                product.setProductImg(null);
+                            }
+                        }
+
+                        product.setCatId(itemDetailJson.optString("cat_id"));
+                        product.setCatSub(itemDetailJson.optString("cat_sub"));
+                        product.setCostRate(itemDetailJson.optDouble("cost_rate"));
+                        product.setCostMrp(itemDetailJson.optDouble("cost_mrp"));
+                        product.setCostGst(itemDetailJson.optDouble("cost_gst"));
+                        product.setCostDis(itemDetailJson.optDouble("cost_dis"));
+                        product.setStock(itemDetailJson.optInt("stock"));
+                        itemsDetailList.add(product);
+                    }
+                    order.setItemsDetail(itemsDetailList);
+                }
+
+                order.setOrderStatus(jsonObject.optString("order_status"));
+                order.setTotalRate(jsonObject.optDouble("total_rate"));
+                order.setTotalGst(jsonObject.optDouble("total_gst"));
+                order.setTotalDiscount(jsonObject.optDouble("total_discount"));
+                order.setTotal(jsonObject.optDouble("total"));
+                order.setCreatedAt(jsonObject.optString("created_at"));
+
+                orders.add(order);
+            }
+            return orders;
+        }
+
+        public static class OrderQueryApiResponse {
+            private int statusCode;
+            private ArrayList<Order> orders;
+
+            public OrderQueryApiResponse(int statusCode, ArrayList<Order> orders) {
+                this.statusCode = statusCode;
+                this.orders = orders;
+            }
+
+            public int getStatusCode() {
+                return statusCode;
+            }
+
+            public ArrayList<Order> getOrders() {
+                return orders;
+            }
+        }
+
+        public interface OrderApiCallback {
+            void onReceived(OrderQueryApiResponse response);
+        }
+
+        public static class Order implements Serializable {
+            private String orderId;
+            private String userId;
+            private Map<String, Map<String, Object>> items;
+            private List<Product> itemsDetail; // Changed to List<Product>
+            private String orderStatus;
+            private double totalRate;
+            private double totalGst;
+            private double totalDiscount;
+            private double total;
+            private String createdAt;
+
+            public String getOrderId() { return orderId; }
+            public void setOrderId(String orderId) { this.orderId = orderId; }
+            public String getUserId() { return userId; }
+            public void setUserId(String userId) { this.userId = userId; }
+            public Map<String, Map<String, Object>> getItems() { return items; }
+            public void setItems(Map<String, Map<String, Object>> items) { this.items = items; }
+            public List<Product> getItemsDetail() { return itemsDetail; }
+            public void setItemsDetail(List<Product> itemsDetail) { this.itemsDetail = itemsDetail; }
+            public String getOrderStatus() { return orderStatus; }
+            public void setOrderStatus(String orderStatus) { this.orderStatus = orderStatus; }
+            public double getTotalRate() { return totalRate; }
+            public void setTotalRate(double totalRate) { this.totalRate = totalRate; }
+            public double getTotalGst() { return totalGst; }
+            public void setTotalGst(double totalGst) { this.totalGst = totalGst; }
+            public double getTotalDiscount() { return totalDiscount; }
+            public void setTotalDiscount(double totalDiscount) { this.totalDiscount = totalDiscount; }
+            public double getTotal() { return total; }
+            public void setTotal(double total) { this.total = total; }
+            public String getCreatedAt() { return createdAt; }
+            public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+            public BulkDetailsApiClient.CostDetails getCostDetails() {
+                return new BulkDetailsApiClient.CostDetails(this.totalRate, this.totalGst, this.total, this.totalDiscount);
+            }
+        }
+
+        private List<String> parseJsonArrayToList(JSONArray jsonArray) {
+            List<String> list = new ArrayList<>();
+            if (jsonArray != null) {
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    list.add(jsonArray.optString(i));
+                }
+            }
+            return list;
+        }
+    }
 }
