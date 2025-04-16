@@ -79,7 +79,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 
 	private CardView confirmOrderLinearCard;
-	private LinearLayout lback,confirmOrderLinear,progressBarLinear,linear2,linear33,linear5;
+	private LinearLayout lback,confirmOrderLinear,progressBarLinear,linear2,linear33,linear5,rootLinear;
 	private TextView subtotalLabelTextView,subTotalTextView;
 	private TextView gstTotalLabelTextView,gstTotalTextView;
 	private TextView totalNoDiscountLabelTextView,totalNoDiscountTextView;
@@ -93,6 +93,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 	private void initialize(Bundle _savedInstanceState) {
 		localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
 
+		rootLinear = (LinearLayout) findViewById(R.id.rootLinear);
 		lback = (LinearLayout) findViewById(R.id.linear5111);
 		confirmOrderLinear = (LinearLayout) findViewById(R.id.confirmOrderLinear);
 		confirmOrderLinearCard = (CardView) findViewById(R.id.confirmOrderLinearCard);
@@ -140,6 +141,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 	}
 
 	Double credits = 0.0;
+	boolean isCreditsLoaded = false;
 	Business.BulkDetailsApiClient.CostDetails costDetails;
 	private void initializeLogic() {
 		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
@@ -160,11 +162,11 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 		cartData = Business.localDB_SharedPref.getCart(localDB);
 
+
 		JHelpers.runAfterDelay(this, 500, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
-
-				_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
 					@Override
 					public void onDataChange(DataSnapshot _dataSnapshot) {
 						String creditsStr = "0";
@@ -175,8 +177,16 @@ public class OrderreviewActivity extends AppCompatActivity {
 							} catch (Exception e) {}
 						}
 
-						JHelpers.TransitionManager(linear5, 300);
+						String addressStr = "";
+						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("address")) {
+							addressStr = _dataSnapshot.child("address").getValue(String.class);
+							addressEditText.setText(addressStr);
+						}
+
+						isCreditsLoaded = true;
+						JHelpers.TransitionManager(rootLinear, 300);
 						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
+
 					}
 
 					@Override
@@ -191,7 +201,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 								boolean isEmpty = (response.getStatusCode() != 200);
 
 								if (isEmpty) {
-									JHelpers.TransitionManager(linear5, 300);
+									JHelpers.TransitionManager(rootLinear, 1000);
 									progressBarLinear.setVisibility(View.VISIBLE);
 									linear2.setVisibility(View.GONE);
 									linear33.setVisibility(View.GONE);
@@ -216,6 +226,13 @@ public class OrderreviewActivity extends AppCompatActivity {
 		confirmOrderLinearCard.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
+				confirmOrderLinearCard.setEnabled(false);
+				if(!isCreditsLoaded) {
+					Toast.makeText(OrderreviewActivity.this, "Loading Credits, Please Try Agin!", Toast.LENGTH_SHORT).show();
+					confirmOrderLinearCard.setEnabled(true);
+					return;
+				}
+
 				if(credits <= 0 || (credits<costDetails.getTotal())) {
 					new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Insufficient Credits ₹")
 							.setMessage("Contact our admin to recharge the credits to make orders. try again after credits added to you. current balance ₹ ".concat(String.valueOf(credits)).concat(". Required for the order is ₹ ").concat(String.valueOf(costDetails.getTotal())))
@@ -240,21 +257,44 @@ public class OrderreviewActivity extends AppCompatActivity {
 				orderCheckoutApiClient.callApi(userId, cartData, new Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback(){
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
-						progressDialog.hide();
 						if(response.getStatusCode() == 200) {
 							if(response.isSuccessful()) {
-								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-										.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-										.setCancelable(false)
-										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-											@Override
-											public void onClick(DialogInterface dialog, int which) {
-												Business.localDB_SharedPref.clearCart(localDB);
-												dialog.dismiss();
-												finish();
+								//credits decrease and save to db
+								credits -= costDetails.getTotal();
+
+								_firebase.getReference("datas/users/details/" + userId).child("credits").setValue(String.valueOf(credits))
+										.addOnCompleteListener(task -> {
+											if (task.isSuccessful()) {
+												progressDialog.hide();
+												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+														.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+														.setCancelable(false)
+														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+															@Override
+															public void onClick(DialogInterface dialog, int which) {
+																Business.localDB_SharedPref.clearCart(localDB);
+																Intent intent = new Intent();
+																intent.setClass(OrderreviewActivity.this, MainActivity.class);
+																startActivity(intent);
+																finishAffinity();
+															}
+														}).show();
+											} else {
+												progressDialog.hide();
+												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+														.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+														.setCancelable(false)
+														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+															@Override
+															public void onClick(DialogInterface dialog, int which) {
+																dialog.dismiss();
+																confirmOrderLinearCard.setEnabled(true);
+															}
+														}).show();
 											}
-										}).show();
+										});
 							} else {
+								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
 										.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
 										.setCancelable(false)
@@ -262,10 +302,12 @@ public class OrderreviewActivity extends AppCompatActivity {
 											@Override
 											public void onClick(DialogInterface dialog, int which) {
 												dialog.dismiss();
+												confirmOrderLinearCard.setEnabled(true);
 											}
 										}).show();
 							}
 						} else {
+							progressDialog.hide();
 							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
 									.setMessage("Order was failed due to server busy, Please try again or Contact our admin team about the issue.")
 									.setCancelable(false)
@@ -273,6 +315,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 										@Override
 										public void onClick(DialogInterface dialog, int which) {
 											dialog.dismiss();
+											confirmOrderLinearCard.setEnabled(true);
 										}
 									}).show();
 						}
@@ -286,15 +329,15 @@ public class OrderreviewActivity extends AppCompatActivity {
 		JHelpers.runAfterDelay(OrderreviewActivity.this, 400, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
-				JHelpers.TransitionManager(linear5, 400);
+				JHelpers.TransitionManager(rootLinear, 800);
 				progressBarLinear.setVisibility(View.GONE);
 				linear2.setVisibility(View.VISIBLE);
 				linear33.setVisibility(View.VISIBLE);
 
-				JHelpers.runAfterDelay(OrderreviewActivity.this, 400, new Callbacker.Timer() {
+				JHelpers.runAfterDelay(OrderreviewActivity.this, 800, new Callbacker.Timer() {
 					@Override
 					public void onEnd() {
-						JHelpers.TransitionManager(linear5, 400);
+						JHelpers.TransitionManager(rootLinear, 800);
 						subTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotalRate())));
 						gstTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotalGst())));
 						totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));

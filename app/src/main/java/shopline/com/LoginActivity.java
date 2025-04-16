@@ -72,9 +72,8 @@ public class LoginActivity extends AppCompatActivity {
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
 	
 	private boolean b = false;
-	private HashMap<String, Object> user = new HashMap<>();
 	private HashMap<String, Object> usernamess = new HashMap<>();
-	private boolean verified = false;
+//	private boolean verified = false;
 	private double exist = 0;
 	private double n = 0;
 	private double not = 0;
@@ -111,38 +110,17 @@ public class LoginActivity extends AppCompatActivity {
 	private TextView textview9;
 	private TextView textview10;
 	
-	private RequestNetwork requestNetwork;
-	private RequestNetwork.RequestListener _requestNetwork_request_listener;
 	private FirebaseAuth auth;
-	private OnCompleteListener<AuthResult> _auth_create_user_listener;
 	private OnCompleteListener<AuthResult> _auth_sign_in_listener;
-	private OnCompleteListener<Void> _auth_reset_password_listener;
-	private OnCompleteListener<Void> auth_updateEmailListener;
-	private OnCompleteListener<Void> auth_updatePasswordListener;
-	private OnCompleteListener<Void> auth_emailVerificationSentListener;
-	private OnCompleteListener<Void> auth_deleteUserListener;
-	private OnCompleteListener<Void> auth_updateProfileListener;
-	private OnCompleteListener<AuthResult> auth_phoneAuthListener;
-	private OnCompleteListener<AuthResult> auth_googleSignInListener;
-	
-	private DatabaseReference users = _firebase.getReference("users");
-	private ChildEventListener _users_child_listener;
-	private AlertDialog.Builder network_dialog;
 	private SharedPreferences userss;
 	private Intent intent = new Intent();
-	private AlertDialog.Builder verification;
-	private TimerTask timer;
-	private Calendar Cal = Calendar.getInstance();
 
-	private Business Bus;
-	
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
-		Bus = new Business(this);
 		setContentView(R.layout.login);
 		initialize(_savedInstanceState);
-//		FirebaseApp.initializeApp(this);
+		FirebaseApp.initializeApp(this);
 		initializeLogic();
 	}
 	
@@ -175,12 +153,9 @@ public class LoginActivity extends AppCompatActivity {
 		textview5 = findViewById(R.id.textview5);
 		textview9 = findViewById(R.id.textview9);
 		textview10 = findViewById(R.id.textview10);
-		requestNetwork = new RequestNetwork(this);
 		auth = FirebaseAuth.getInstance();
-		network_dialog = new AlertDialog.Builder(this);
-		userss = getSharedPreferences("users", Activity.MODE_PRIVATE);
-		verification = new AlertDialog.Builder(this);
-		
+		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
+
 		textview_forgot_paasword.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
@@ -213,30 +188,6 @@ public class LoginActivity extends AppCompatActivity {
 						else {
 							_Custom_Loading(true);
 							auth.signInWithEmailAndPassword(email.getText().toString(), password.getText().toString()).addOnCompleteListener(LoginActivity.this, _auth_sign_in_listener);
-//							Bus.signInWithEmailAndPassword(email.getText().toString(), password.getText().toString(), new Callbacker.Auth(){
-//								@Override
-//								public void onSuccess(SupaManager.User user) {
-//									_Custom_Loading(false);
-//									runOnUiThread(new Runnable() {
-//										@Override
-//										public void run() {
-//											SketchwareUtil.showMessage(getApplicationContext(), "success");
-//										}
-//									});
-//								}
-//
-//								@Override
-//								public void onError(String error) {
-//									_Custom_Loading(false);
-//									runOnUiThread(new Runnable() {
-//										@Override
-//										public void run() {
-//											SketchwareUtil.showMessage(getApplicationContext(), "error "+error);
-//										}
-//									});
-//
-//								}
-//							});
 						}
 					}
 				}
@@ -251,81 +202,6 @@ public class LoginActivity extends AppCompatActivity {
 			}
 		});
 
-		signup_btn.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				if (SketchwareUtil.isConnected(getApplicationContext())) {
-					if (username.getText().toString().equals("")) {
-						((EditText)username).setError("Enter name");
-					}
-					else {
-						if (username.getText().toString().length() < 4) {
-							((EditText)username).setError("Min. 4 Latters");
-						}
-						else {
-							if (email.getText().toString().equals("")) {
-								((EditText)email).setError("Enter email");
-							}
-							else {
-								if (password.getText().toString().equals("")) {
-									((EditText)password).setError("Enter password");
-								}
-								else {
-									if (!email.getText().toString().contains("gmail.com")) {
-										((EditText)email).setError("Enter valid email");
-									}
-									else {
-										if (password.getText().toString().equals("123456")) {
-											((EditText)password).setError("Secure Password");
-										}
-										else {
-											if (username.getText().toString().contains("gmail.com")) {
-												((EditText)username).setError("Enter Proper Name");
-											}
-											else {
-												if (username.getText().toString().contains("Official") || username.getText().toString().contains("official")) {
-													((EditText)username).setError("Can't Add Official In Name");
-												}
-												else {
-													auth.createUserWithEmailAndPassword(email.getText().toString(), password.getText().toString()).addOnCompleteListener(LoginActivity.this, _auth_create_user_listener);
-												}
-											}
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				else {
-					SketchwareUtil.showMessage(getApplicationContext(), "No Internet Connection");
-				}
-			}
-		});
-		
-		password_btn.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View _view) {
-				if (SketchwareUtil.isConnected(getApplicationContext())) {
-					if (email.getText().toString().equals("")) {
-						((EditText)email).setError("Enter Your Email");
-					}
-					else {
-						if (email.getText().toString().contains("gmail.com")) {
-							_Custom_Loading(true);
-							auth.sendPasswordResetEmail(email.getText().toString()).addOnCompleteListener(_auth_reset_password_listener);
-						}
-						else {
-							((EditText)email).setError("Please Enter Your Valid Email.");
-						}
-					}
-				}
-				else {
-					SketchwareUtil.showMessage(getApplicationContext(), "No Internet Connection");
-				}
-			}
-		});
-		
 		imageview1.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
@@ -375,222 +251,23 @@ public class LoginActivity extends AppCompatActivity {
 				linear11.setVisibility(View.VISIBLE);
 			}
 		});
-		
 
-		
-		_users_child_listener = new ChildEventListener() {
-			@Override
-			public void onChildAdded(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
-			}
-			
-			@Override
-			public void onChildChanged(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
-			}
-			
-			@Override
-			public void onChildMoved(DataSnapshot _param1, String _param2) {
-				
-			}
-			
-			@Override
-			public void onChildRemoved(DataSnapshot _param1) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
-			}
-			
-			@Override
-			public void onCancelled(DatabaseError _param1) {
-				final int _errorCode = _param1.getCode();
-				final String _errorMessage = _param1.getMessage();
-				
-			}
-		};
-		users.addChildEventListener(_users_child_listener);
-		
-		auth_updateEmailListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updatePasswordListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_emailVerificationSentListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_deleteUserListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_phoneAuthListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updateProfileListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_googleSignInListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_create_user_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				if (_success) {
-					user = new HashMap<>();
-					user.put("name", username.getText().toString());
-					user.put("email", FirebaseAuth.getInstance().getCurrentUser().getEmail());
-					user.put("uid", FirebaseAuth.getInstance().getCurrentUser().getUid());
-					user.put("password", password.getText().toString());
-//					user.put("icon", "https://firebasestorage.googleapis.com/v0/b/hahah-6f6f5.appspot.com/o/st2%2Fuser.png?alt=media&token=b3e4d18e-0629-4ed8-b8ab-1089dcff702e");
-					user.put("block", "false");
-					user.put("verified", "false");
-					user.put("registration_date", new SimpleDateFormat("dd-MM-yyyy").format(Cal.getTime()));
-					users.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).updateChildren(user);
-					userss.edit().putString("name", username.getText().toString()).commit();
-					userss.edit().putString("email", FirebaseAuth.getInstance().getCurrentUser().getEmail()).commit();
-					userss.edit().putString("password", password.getText().toString()).commit();
-					auth.getCurrentUser().sendEmailVerification() .addOnCompleteListener(new OnCompleteListener<Void>() {
-						@Override
-						public void onComplete(Task<Void> task) {
-							if (task.isSuccessful()) {
-								showMessage("Verification Link has been sent to your email"); } else {
-								showMessage ("Verification Link could not be sent.");}
-						} });
-					timer = new TimerTask() {
-						@Override
-						public void run() {
-							runOnUiThread(new Runnable() {
-								@Override
-								public void run() {
-									_Custom_Loading(false);
-									_TransitionManager(linear1, 200);
-									FirebaseAuth.getInstance().signOut();
-									username.setText("");
-									email.setText("");
-									password.setText("");
-									login_btn.setVisibility(View.VISIBLE);
-									signup_btn.setVisibility(View.GONE);
-									password_btn.setVisibility(View.GONE);
-									loginaccount.setVisibility(View.GONE);
-									CreateAccount.setVisibility(View.VISIBLE);
-									username.setVisibility(View.GONE);
-									email.setVisibility(View.VISIBLE);
-									LayoutPassword.setVisibility(View.VISIBLE);
-									textview_forgot_paasword.setVisibility(View.VISIBLE);
-									linear11.setVisibility(View.VISIBLE);
-								}
-							});
-						}
-					};
-					_timer.schedule(timer, (int)(2000));
-				}
-				else {
-					_Custom_Loading(false);
-					SketchwareUtil.showMessage(getApplicationContext(), _errorMessage);
-				}
-			}
-		};
-		
+
 		_auth_sign_in_listener = new OnCompleteListener<AuthResult>() {
 			@Override
 			public void onComplete(Task<AuthResult> _param1) {
 				final boolean _success = _param1.isSuccessful();
 				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
 				if (_success) {
-					verified = auth.getCurrentUser().isEmailVerified();
-					//powered by ashishtechnozone
-					//code for verification status checking
-					
-					if (verified) {
-						userss.edit().putString("email", email.getText().toString()).commit();
-						userss.edit().putString("password", password.getText().toString()).commit();
-						userss.edit().putString("uid", FirebaseAuth.getInstance().getCurrentUser().getUid()).commit();
-						user.put("password", password.getText().toString());
-						users.child(FirebaseAuth.getInstance().getCurrentUser().getUid()).updateChildren(user);
-						SketchwareUtil.showMessage(getApplicationContext(), "Login Successful.");
-						intent.setClass(getApplicationContext(), PrincipalActivity.class);
-						startActivity(intent);
-						overridePendingTransition(android.
-						R.anim.fade_in,
-						android.R.anim.fade_out);
-						finish();
-					}
-					else {
-						_Custom_Loading(false);
-						verification.setTitle("Email not Verified !");
-						verification.setMessage("Please Verify Your Email. Verification Link Has Been Sent To Your Email or Check SPAM Folder !");
-						verification.setCancelable(false);
-						verification.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface _dialog, int _which) {
-								FirebaseAuth.getInstance().signOut();
-							}
-						});
-						verification.setNegativeButton("Send Link again", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface _dialog, int _which) {
-								auth.getCurrentUser().sendEmailVerification() .addOnCompleteListener(new OnCompleteListener<Void>() {
-									@Override
-									public void onComplete(Task<Void> task) {
-										if (task.isSuccessful()) {
-											showMessage("Verification Link has been sent to your email !"); } else {
-											showMessage ("Verification Link could not be sent !");}
-									} });
-								FirebaseAuth.getInstance().signOut();
-							}
-						});
-						verification.create().show();
-					}
+					userss.edit().putString("email", email.getText().toString()).commit();
+					userss.edit().putString("uid", FirebaseAuth.getInstance().getCurrentUser().getUid()).commit();
+					SketchwareUtil.showMessage(getApplicationContext(), "Login Successful.");
+					intent.setClass(getApplicationContext(), PrincipalActivity.class);
+					startActivity(intent);
+					overridePendingTransition(android.
+									R.anim.fade_in,
+							android.R.anim.fade_out);
+					finish();
 				}
 				else {
 					_Custom_Loading(false);
@@ -599,30 +276,7 @@ public class LoginActivity extends AppCompatActivity {
 			}
 		};
 		
-		_auth_reset_password_listener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				timer = new TimerTask() {
-					@Override
-					public void run() {
-						runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								_Custom_Loading(false);
-								if (_success) {
-									SketchwareUtil.showMessage(getApplicationContext(), "Reset link Has Been Sent To Your Email.");
-								}
-								else {
-									SketchwareUtil.showMessage(getApplicationContext(), "Please Try After Sometimes.");
-								}
-							}
-						});
-					}
-				};
-				_timer.schedule(timer, (int)(3000));
-			}
-		};
+
 	}
 	
 	private void initializeLogic() {
@@ -640,7 +294,6 @@ public class LoginActivity extends AppCompatActivity {
 	
 	
 	public void _UI() {
-//		requestNetwork.startRequestNetwork(RequestNetworkController.GET, "https://www.google.com", "Sketch Store Yt", _requestNetwork_request_listener);
 		username.setSingleLine(true);
 		email.setSingleLine(true);
 		password.setSingleLine(true);

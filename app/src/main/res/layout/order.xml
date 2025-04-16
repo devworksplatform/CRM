@@ -6,6 +6,7 @@
 	android:layout_height="match_parent"
 	android:background="@drawable/background_center_crop"
 	android:orientation="vertical"
+	android:id="@+id/rootLinear"
 	android:fitsSystemWindows="true">
 
 	<androidx.cardview.widget.CardView
@@ -62,13 +63,14 @@
 
 	<LinearLayout
 		android:id="@+id/linear1"
+		android:gravity="center"
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
 		android:orientation="vertical">
 		<androidx.recyclerview.widget.RecyclerView
 			android:id="@+id/recyclerview1"
 			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
+			android:layout_height="match_parent"
 			android:paddingLeft="8dp"
 			android:paddingRight="8dp"
 			android:paddingBottom="8dp" />

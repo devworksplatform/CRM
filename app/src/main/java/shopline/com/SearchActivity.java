@@ -110,7 +110,15 @@ public class SearchActivity extends AppCompatActivity {
 		FirebaseApp.initializeApp(this);
 		initializeLogic();
 	}
-	
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if(recyclerview1 != null && recyclerview1.getAdapter() != null) {
+			recyclerview1.getAdapter().notifyDataSetChanged();
+		}
+	}
+
 	private void initialize(Bundle _savedInstanceState) {
 		localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
 

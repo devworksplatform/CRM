@@ -158,33 +158,7 @@ public class Frag1FragmentActivity extends Fragment {
 		});
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getContext().getApplicationContext(), 4, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 		recyclerview1.setLayoutManager(gridlayoutManager);
-//		product.addListenerForSingleValueEvent(new ValueEventListener() {
-//			@Override
-//			public void onDataChange(DataSnapshot _dataSnapshot) {
-//				listmap = new ArrayList<>();
-//				try {
-//					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-//					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-//						HashMap<String, Object> _map = _data.getValue(_ind);
-//						listmap.add(_map);
-//					}
-//				}
-//				catch (Exception _e) {
-//					_e.printStackTrace();
-//				}
-//				if (listmap.size() == 0) {
-//					progressbar1.setVisibility(View.VISIBLE);
-//					recyclerview1.setVisibility(View.GONE);
-//				}
-//				else {
-//					progressbar1.setVisibility(View.GONE);
-//					recyclerview1.setVisibility(View.VISIBLE);
-//				}
-//			}
-//			@Override
-//			public void onCancelled(DatabaseError _databaseError) {
-//			}
-//		});
+
 	}
 	
 	public void _reverse(final ArrayList<HashMap<String, Object>> _mapname) {
@@ -213,6 +187,7 @@ public class Frag1FragmentActivity extends Fragment {
 			View _view = _holder.itemView;
 			
 			final androidx.cardview.widget.CardView cardview1 = _view.findViewById(R.id.cardview1);
+			final androidx.cardview.widget.CardView cardview2 = _view.findViewById(R.id.cardview2);
 			final LinearLayout linear1 = _view.findViewById(R.id.linear1);
 //			final LinearLayout linear2 = _view.findViewById(R.id.linear2);
 			final ImageView imageview1 = _view.findViewById(R.id.imageview1);
@@ -227,7 +202,16 @@ public class Frag1FragmentActivity extends Fragment {
 
 
 			textview2.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 1);
-			imageview1.setOnClickListener(new View.OnClickListener() {
+			cardview1.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View _view) {
+					Intent intent = new Intent();
+					intent.putExtra("category", listmap.get((int)_position).get("key").toString());
+					intent.setClass(getContext().getApplicationContext(), SearchActivity.class);
+					startActivity(intent);
+				}
+			});
+			cardview2.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View _view) {
 					Intent intent = new Intent();

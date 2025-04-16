@@ -42,27 +42,18 @@ import java.util.TimerTask;
 import java.util.regex.*;
 import org.json.*;
 
+import shopline.com.JLogics.Callbacker;
+import shopline.com.JLogics.JHelpers;
+
 public class MainActivity extends AppCompatActivity {
 	
 	private Timer _timer = new Timer();
 	
-	private LinearLayout linear1;
-	private ImageView imageview1;
+	private LinearLayout linear1,rootLinear;
+	private ImageView imageview1,imageview2;
 	
 	private Intent tela = new Intent();
 	private TimerTask timer;
-	private FirebaseAuth auth;
-	private OnCompleteListener<AuthResult> _auth_create_user_listener;
-	private OnCompleteListener<AuthResult> _auth_sign_in_listener;
-	private OnCompleteListener<Void> _auth_reset_password_listener;
-	private OnCompleteListener<Void> auth_updateEmailListener;
-	private OnCompleteListener<Void> auth_updatePasswordListener;
-	private OnCompleteListener<Void> auth_emailVerificationSentListener;
-	private OnCompleteListener<Void> auth_deleteUserListener;
-	private OnCompleteListener<Void> auth_updateProfileListener;
-	private OnCompleteListener<AuthResult> auth_phoneAuthListener;
-	private OnCompleteListener<AuthResult> auth_googleSignInListener;
-	
 	
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
@@ -74,133 +65,62 @@ public class MainActivity extends AppCompatActivity {
 	}
 	
 	private void initialize(Bundle _savedInstanceState) {
+		rootLinear = findViewById(R.id.rootLinear);
 		linear1 = findViewById(R.id.linear1);
 		imageview1 = findViewById(R.id.imageview1);
-		auth = FirebaseAuth.getInstance();
-		
-		auth_updateEmailListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updatePasswordListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_emailVerificationSentListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_deleteUserListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_phoneAuthListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updateProfileListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_googleSignInListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_create_user_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_sign_in_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_reset_password_listener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				
-			}
-		};
+		imageview2 = findViewById(R.id.imageview2);
+
+
 	}
 	
 	private void initializeLogic() {
-		if ((FirebaseAuth.getInstance().getCurrentUser() != null)) {
-			timer = new TimerTask() {
-				@Override
-				public void run() {
-					runOnUiThread(new Runnable() {
+
+		imageview1.setVisibility(View.VISIBLE);
+		imageview2.setVisibility(View.GONE);
+
+		JHelpers.runAfterDelay(MainActivity.this,500, new Callbacker.Timer(){
+			@Override
+			public void onEnd() {
+				JHelpers.TransitionManager(rootLinear,1000);
+				imageview1.setVisibility(View.VISIBLE);
+				imageview2.setVisibility(View.VISIBLE);
+
+
+				if ((FirebaseAuth.getInstance().getCurrentUser() != null)) {
+					timer = new TimerTask() {
 						@Override
 						public void run() {
-							tela.setClass(getApplicationContext(), PrincipalActivity.class);
-							startActivity(tela);
-							finish();
+							runOnUiThread(new Runnable() {
+								@Override
+								public void run() {
+									tela.setClass(getApplicationContext(), PrincipalActivity.class);
+									startActivity(tela);
+									finish();
+								}
+							});
 						}
-					});
+					};
+					_timer.schedule(timer, (int)(1700));
 				}
-			};
-			_timer.schedule(timer, (int)(1590));
-		}
-		else {
-			timer = new TimerTask() {
-				@Override
-				public void run() {
-					runOnUiThread(new Runnable() {
+				else {
+					timer = new TimerTask() {
 						@Override
 						public void run() {
-							tela.setClass(getApplicationContext(), LoginActivity.class);
-							startActivity(tela);
-							finish();
+							runOnUiThread(new Runnable() {
+								@Override
+								public void run() {
+									tela.setClass(getApplicationContext(), LoginActivity.class);
+									startActivity(tela);
+									finish();
+								}
+							});
 						}
-					});
+					};
+					_timer.schedule(timer, (int)(2000));
 				}
-			};
-			_timer.schedule(timer, (int)(1590));
-		}
+			}
+		});
+
 	}
 	
 	
@@ -254,4 +174,4 @@ public class MainActivity extends AppCompatActivity {
 	public int getDisplayHeightPixels() {
 		return getResources().getDisplayMetrics().heightPixels;
 	}
-}
+}

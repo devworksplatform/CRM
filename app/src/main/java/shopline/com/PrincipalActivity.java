@@ -62,6 +62,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 import de.hdodenhof.circleimageview.*;
+import shopline.com.JLogics.JHelpers;
 
 import java.io.*;
 import java.text.*;
@@ -76,7 +77,8 @@ public class PrincipalActivity extends AppCompatActivity {
 	
 	private Timer _timer = new Timer();
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
-	
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
 	private Toolbar _toolbar;
 	private AppBarLayout _app_bar;
 	private CoordinatorLayout _coordinator;
@@ -99,6 +101,7 @@ public class PrincipalActivity extends AppCompatActivity {
 	private ImageView imageview2;
 	private ImageView imageview3;
 	private ViewPager viewpager1;
+	private LinearLayout rootLinear;
 	private LinearLayout _drawer_linear1;
 	private LinearLayout _drawer_linear2;
 	private LinearLayout _drawer_linear3;
@@ -114,6 +117,7 @@ public class PrincipalActivity extends AppCompatActivity {
 	private LinearLayout _drawer_linear12;
 	private CircleImageView _drawer_circleimageview1;
 	private TextView _drawer_textview1;
+	private ImageView imageLogoName;
 	private ImageView _drawer_imageview1;
 	private TextView _drawer_textview2;
 	private LinearLayout _drawer_linear4;
@@ -140,7 +144,6 @@ public class PrincipalActivity extends AppCompatActivity {
 	private SharedPreferences sp;
 	private Intent i = new Intent();
 	private AlertDialog.Builder d;
-	private DatabaseReference users = _firebase.getReference("users");
 	private ChildEventListener _users_child_listener;
 	private FirebaseAuth auth;
 	private OnCompleteListener<AuthResult> _auth_create_user_listener;
@@ -185,7 +188,8 @@ public class PrincipalActivity extends AppCompatActivity {
 		_toggle.syncState();
 		
 		LinearLayout _nav_view = findViewById(R.id._nav_view);
-		
+
+		rootLinear = findViewById(R.id.rootLinear);
 		linear1 = findViewById(R.id.linear1);
 		fragment_frame = findViewById(R.id.fragment_frame);
 		bottomnavigation1 = findViewById(R.id.bottomnavigation1);
@@ -195,9 +199,12 @@ public class PrincipalActivity extends AppCompatActivity {
 		linear8 = findViewById(R.id.linear8);
 		imageview1 = findViewById(R.id.imageview1);
 		textview1 = findViewById(R.id.textview1);
+		imageLogoName = findViewById(R.id.imageLogoName);
 		imageview2 = findViewById(R.id.imageview2);
 		imageview3 = findViewById(R.id.imageview3);
 		viewpager1 = findViewById(R.id.viewpager1);
+
+		final LinearLayout _drawer_rootLinear = _nav_view.findViewById(R.id.rootLinear);
 		_drawer_linear1 = _nav_view.findViewById(R.id.linear1);
 		_drawer_linear2 = _nav_view.findViewById(R.id.linear2);
 		_drawer_linear3 = _nav_view.findViewById(R.id.linear3);
@@ -240,19 +247,40 @@ public class PrincipalActivity extends AppCompatActivity {
 		auth = FirebaseAuth.getInstance();
 
 
+		final Typeface normalTypeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");
+		final Typeface boldTypeface = Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf");
+
+		_drawer_textview1.setTypeface(boldTypeface, 0);
+		_drawer_textview2.setTypeface(boldTypeface, 0);
+		_drawer_textview11.setTypeface(boldTypeface, 0);
+		_drawer_textview13.setTypeface(normalTypeface, 0);
+		_drawer_textview3.setTypeface(normalTypeface, 0);
+		_drawer_textview6.setTypeface(normalTypeface, 0);
+		_drawer_textview4.setTypeface(normalTypeface, 0);
+		_drawer_textview5.setTypeface(normalTypeface, 0);
+		_drawer_textview12.setTypeface(normalTypeface, 0);
+
+		textview1.setVisibility(View.GONE);
+		imageLogoName.setVisibility(View.VISIBLE);
+
 		bottomnavigation1.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
 			@Override
 			public boolean onNavigationItemSelected(MenuItem item) {
 				final int _itemId = item.getItemId();
 				viewpager1.setCurrentItem((int)_itemId);
 				if (_itemId == 0) {
-					textview1.setText("Shopline");
+					JHelpers.TransitionManager(rootLinear, 400);
+					textview1.setVisibility(View.GONE);
+					imageLogoName.setVisibility(View.VISIBLE);
 				}
 //				if (_itemId == 1) {
 //					textview1.setText("Category");
 //				}
 				if (_itemId == 1) {
-					textview1.setText("Cart");
+					JHelpers.TransitionManager(rootLinear, 400);
+					textview1.setVisibility(View.VISIBLE);
+					imageLogoName.setVisibility(View.GONE);
+					textview1.setText("Cart Products");
 				}
 				return true;
 			}
@@ -267,11 +295,23 @@ public class PrincipalActivity extends AppCompatActivity {
 				startActivity(intent);
 			}
 		});
-		
+
 		linear8.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
 				_drawer.openDrawer(Gravity.RIGHT);
+			}
+		});
+		_drawer_rootLinear.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				_drawer.closeDrawer(Gravity.RIGHT);
+			}
+		});
+		_drawer_linear1.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//Pass
 			}
 		});
 		
@@ -285,13 +325,18 @@ public class PrincipalActivity extends AppCompatActivity {
 			public void onPageSelected(int _position) {
 				bottomnavigation1.getMenu().getItem(_position).setChecked(true);
 				if (_position == 0) {
-					textview1.setText("Shopline");
+					JHelpers.TransitionManager(rootLinear, 400);
+					textview1.setVisibility(View.GONE);
+					imageLogoName.setVisibility(View.VISIBLE);
 				}
 //				if (_position == 1) {
 //					textview1.setText("Category");
 //				}
 				if (_position == 1) {
-					textview1.setText("Cart");
+					JHelpers.TransitionManager(rootLinear, 400);
+					textview1.setVisibility(View.VISIBLE);
+					imageLogoName.setVisibility(View.GONE);
+					textview1.setText("Cart Products");
 				}
 			}
 			
@@ -300,50 +345,29 @@ public class PrincipalActivity extends AppCompatActivity {
 				
 			}
 		});
-		
-		_users_child_listener = new ChildEventListener() {
+
+		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
 			@Override
-			public void onChildAdded(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				if (_childKey.equals(FirebaseAuth.getInstance().getCurrentUser().getUid())) {
-					if (_childValue.containsKey("name")) {
-						_drawer_textview1.setText(_childValue.get("name").toString());
+			public void onDataChange(DataSnapshot snapshot) {
+				if (snapshot.exists()) {
+					if (snapshot.hasChild("name")) {
+						String name = snapshot.child("name").getValue(String.class);
+						_drawer_textview1.setText(name);
+					} else {
+						_drawer_textview1.setText("Unknown User");
 					}
+				} else {
+					_drawer_textview1.setText("Unknown User");
 				}
 			}
-			
+
 			@Override
-			public void onChildChanged(DataSnapshot _param1, String _param2) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
+			public void onCancelled(DatabaseError error) {
+				// Handle error if needed
 			}
-			
-			@Override
-			public void onChildMoved(DataSnapshot _param1, String _param2) {
-				
-			}
-			
-			@Override
-			public void onChildRemoved(DataSnapshot _param1) {
-				GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-				final String _childKey = _param1.getKey();
-				final HashMap<String, Object> _childValue = _param1.getValue(_ind);
-				
-			}
-			
-			@Override
-			public void onCancelled(DatabaseError _param1) {
-				final int _errorCode = _param1.getCode();
-				final String _errorMessage = _param1.getMessage();
-				
-			}
-		};
-		users.addChildEventListener(_users_child_listener);
-		
+		});
+
+
 		_drawer_linear1.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
@@ -354,99 +378,30 @@ public class PrincipalActivity extends AppCompatActivity {
 		_drawer_linear7.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View _view) {
+				_drawer.closeDrawer(Gravity.RIGHT);
 				ii.setClass(getApplicationContext(), OrderActivity.class);
 				startActivity(ii);
 			}
 		});
-		
-		auth_updateEmailListener = new OnCompleteListener<Void>() {
+
+		_drawer_linear4.setOnClickListener(new OnClickListener() {
 			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
+			public void onClick(View v) {
+				_drawer.closeDrawer(Gravity.RIGHT);
+				if(viewpager1.getCurrentItem() != 0) {
+					viewpager1.setCurrentItem(0);
+				}
 			}
-		};
-		
-		auth_updatePasswordListener = new OnCompleteListener<Void>() {
+		});
+
+		_drawer_linear12.setOnClickListener(new OnClickListener() {
 			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
+			public void onClick(View v) {
+				_drawer.closeDrawer(Gravity.RIGHT);
+				ii.setClass(getApplicationContext(), ProfileActivity.class);
+				startActivity(ii);
 			}
-		};
-		
-		auth_emailVerificationSentListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_deleteUserListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_phoneAuthListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_updateProfileListener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		auth_googleSignInListener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> task) {
-				final boolean _success = task.isSuccessful();
-				final String _errorMessage = task.getException() != null ? task.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_create_user_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_sign_in_listener = new OnCompleteListener<AuthResult>() {
-			@Override
-			public void onComplete(Task<AuthResult> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
-				
-			}
-		};
-		
-		_auth_reset_password_listener = new OnCompleteListener<Void>() {
-			@Override
-			public void onComplete(Task<Void> _param1) {
-				final boolean _success = _param1.isSuccessful();
-				
-			}
-		};
+		});
 	}
 	
 	private void initializeLogic() {

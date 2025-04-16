@@ -27,6 +27,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.*;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -59,6 +60,7 @@ import java.util.regex.*;
 import org.json.*;
 
 import shopline.com.JLogics.Business;
+import shopline.com.JLogics.JHelpers;
 import shopline.com.JLogics.Models.Product;
 
 public class OrderActivity extends AppCompatActivity {
@@ -73,7 +75,7 @@ public class OrderActivity extends AppCompatActivity {
 	private LinearLayout linear5;
 	private LinearLayout linear4;
 	private LinearLayout linear10;
-	private LinearLayout linear11;
+	private LinearLayout linear11, rootLinear;
 	private LinearLayout circle;
 	private LinearLayout linear15;
 	private LinearLayout linear16;
@@ -95,6 +97,7 @@ public class OrderActivity extends AppCompatActivity {
 	}
 	
 	private void initialize(Bundle _savedInstanceState) {
+		rootLinear = findViewById(R.id.rootLinear);
 		linear2 = findViewById(R.id.linear2);
 		linear1 = findViewById(R.id.linear1);
 		linear5 = findViewById(R.id.linear5);
@@ -146,8 +149,10 @@ public class OrderActivity extends AppCompatActivity {
 		queryData.put("limit", 1000);
 		queryData.put("offset", 0);
 
+		linear1.setVisibility(View.VISIBLE);
 		progressbar1.setVisibility(View.VISIBLE);
 		recyclerview1.setVisibility(View.GONE);
+		noDataLinear.setVisibility(View.GONE);
 
 		orderApiClient.callApi(queryData, new Business.OrderQueryApiClient.OrderApiCallback() {
 			@Override
@@ -160,20 +165,20 @@ public class OrderActivity extends AppCompatActivity {
 				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 				recyclerview1.getAdapter().notifyDataSetChanged();
 
+				JHelpers.TransitionManager(rootLinear, 600);
 				if(listmap.isEmpty()) {
-					noDataLinear.setVisibility(View.VISIBLE);
+					linear1.setVisibility(View.GONE);
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.GONE);
+					noDataLinear.setVisibility(View.VISIBLE);
 				} else {
-					noDataLinear.setVisibility(View.GONE);
+					linear1.setVisibility(View.VISIBLE);
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.VISIBLE);
+					noDataLinear.setVisibility(View.GONE);
 				}
 			}
 		});
-
-		
-
 	}
 	
 	private void initializeLogic() {
@@ -274,6 +279,7 @@ public class OrderActivity extends AppCompatActivity {
 		public void onBindViewHolder(ViewHolder _holder, final int _position) {
 			View _view = _holder.itemView;
 
+			final CardView card1 = _view.findViewById(R.id.card1);
 			final LinearLayout linear3 = _view.findViewById(R.id.linear3);
 			final TextView OrderId = _view.findViewById(R.id.OrderId);
 			final TextView OrderStatus = _view.findViewById(R.id.OrderStatus);
@@ -281,9 +287,22 @@ public class OrderActivity extends AppCompatActivity {
 
 			Business.OrderQueryApiClient.Order order = _data.get(_position);
 
-			OrderId.setText("Order Id : (".concat(order.getOrderId()).concat(")"));
-			OrderStatus.setText(order.getOrderStatus());
-			OrderDetail.setText("Qty: ".concat(String.valueOf(order.getItemsDetail().size()))
+			OrderId.setText(order.getOrderId());
+
+			try{
+				Business.JOrderStatus status = Business.JOrderStatus.valueOf(order.getOrderStatus());
+				OrderStatus.setText(status.getVisibleText());
+				OrderStatus.setBackgroundResource(status.getDrawableRes());
+			} catch (Exception e) {
+				OrderStatus.setText("Order Status Error");
+				OrderStatus.setBackgroundColor(Color.parseColor("#ffffff"));
+			}
+
+			String dateString = order.getCreatedAt();
+			String formattedDate = java.time.LocalDateTime.parse(dateString).format(java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a"));
+
+			OrderDetail.setText("Date : ".concat(formattedDate)
+					.concat("\nItems: ".concat(String.valueOf(order.getItemsDetail().size())))
 					.concat(", Cost: Rs.").concat(String.valueOf(order.getTotal())).concat(" ₹"));
 
 			OrderId.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
@@ -314,6 +333,6 @@ public class OrderActivity extends AppCompatActivity {
 			}
 		}
 	}
-	
+
 
 }

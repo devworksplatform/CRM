@@ -20,6 +20,7 @@
 			android:paddingRight="30dp"
 			android:paddingBottom="60dp"
 			android:background="#FFFFFF"
+			android:gravity="center"
 			android:orientation="vertical">
 			<TextView
 				android:id="@+id/title"
@@ -38,7 +39,7 @@
 				android:layout_height="wrap_content"
 				android:paddingTop="2dp"
 				android:gravity="center_horizontal|center_vertical"
-				android:text="Login Or Create Account &amp; Access Shopline Application"
+				android:text="Please log in to access the\nLick &amp; Bite App"
 				android:textSize="18sp"
 				android:textColor="#A29EA7" />
 			<LinearLayout

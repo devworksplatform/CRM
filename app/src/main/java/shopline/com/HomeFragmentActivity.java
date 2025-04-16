@@ -9,15 +9,16 @@ import android.graphics.Typeface;
 import android.graphics.drawable.*;
 import android.net.Uri;
 import android.os.*;
+import android.util.TypedValue;
 import android.view.*;
 import android.view.View;
 import android.widget.*;
-import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.annotation.*;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
@@ -52,12 +53,11 @@ public class HomeFragmentActivity extends Fragment {
 	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
 	private Timer _timer = new Timer();
-	
+
 	private double postion = 0;
-	private double number = 0;
-	
-	private ArrayList<HashMap<String, Object>> listmap = new ArrayList<>();
-	
+
+	private ArrayList<HashMap<String, String>> listmap;
+
 	private LinearLayout linear1;
 	private NestedScrollView linear2;
 	private LinearLayout linear5;
@@ -71,8 +71,8 @@ public class HomeFragmentActivity extends Fragment {
 	private LinearLayout linear3;
 	private LinearLayout linear26;
 	private LinearLayout linear4;
-	private LinearLayout linear11,totalCreditsLinear;
-	private LinearLayout linear13;
+	private LinearLayout linear11,totalCreditsLinear,totalCreditsLinear2;
+
 	private LinearLayout load;
 	private LinearLayout sk;
 	private LinearLayout linear27;
@@ -97,35 +97,19 @@ public class HomeFragmentActivity extends Fragment {
 	private TextView textview2;
 	private LinearLayout linear12;
 	private TextView textview3;
-	private HorizontalScrollView hscroll1;
-	private LinearLayout linear16;
-	private LinearLayout All;
-	private LinearLayout linear17;
-	private LinearLayout Dress;
-	private LinearLayout linear19;
-	private LinearLayout accessories;
-	private LinearLayout linear21;
-	private LinearLayout cardigan;
-	private LinearLayout linear23;
-	private LinearLayout sweater;
-	private LinearLayout linear25;
-	private LinearLayout top;
-	private TextView textview4;
-	private TextView textview5;
-	private TextView textview6;
-	private TextView textview7;
-	private TextView textview8;
-	private TextView textview9;
 
-	private TextView tvBalanceLabel, tvBalanceAmount;
+	private CardView orderViewCard;
+
+
+	private TextView tvBalanceLabel, tvBalanceAmount, viewOrder;
 	private ProgressBar progressbar1;
-	
+
 	private Intent action = new Intent();
 	private TimerTask t;
 	private SharedPreferences sp;
 	private Intent i = new Intent();
 	private TimerTask u;
-	
+
 	@NonNull
 	@Override
 	public View onCreateView(@NonNull LayoutInflater _inflater, @Nullable ViewGroup _container, @Nullable Bundle _savedInstanceState) {
@@ -135,7 +119,7 @@ public class HomeFragmentActivity extends Fragment {
 		initializeLogic();
 		return _view;
 	}
-	
+
 	private void initialize(Bundle _savedInstanceState, View _view) {
 		linear1 = _view.findViewById(R.id.linear1);
 		linear2 = _view.findViewById(R.id.linear2);
@@ -152,7 +136,9 @@ public class HomeFragmentActivity extends Fragment {
 		linear4 = _view.findViewById(R.id.linear4);
 		linear11 = _view.findViewById(R.id.linear11);
 		totalCreditsLinear = _view.findViewById(R.id.totalCreditsLinear);
-		linear13 = _view.findViewById(R.id.linear13);
+		totalCreditsLinear2 = _view.findViewById(R.id.totalCreditsLinear2);
+		orderViewCard = _view.findViewById(R.id.orderViewCard);
+
 		load = _view.findViewById(R.id.load);
 		sk = _view.findViewById(R.id.sk);
 		linear27 = _view.findViewById(R.id.linear27);
@@ -178,48 +164,31 @@ public class HomeFragmentActivity extends Fragment {
 		textview2 = _view.findViewById(R.id.textview2);
 		linear12 = _view.findViewById(R.id.linear12);
 		textview3 = _view.findViewById(R.id.textview3);
-		hscroll1 = _view.findViewById(R.id.hscroll1);
-		linear16 = _view.findViewById(R.id.linear16);
-		All = _view.findViewById(R.id.All);
-		linear17 = _view.findViewById(R.id.linear17);
-		Dress = _view.findViewById(R.id.Dress);
-		linear19 = _view.findViewById(R.id.linear19);
-		accessories = _view.findViewById(R.id.accessories);
-		linear21 = _view.findViewById(R.id.linear21);
-		cardigan = _view.findViewById(R.id.cardigan);
-		linear23 = _view.findViewById(R.id.linear23);
-		sweater = _view.findViewById(R.id.sweater);
-		linear25 = _view.findViewById(R.id.linear25);
-		top = _view.findViewById(R.id.top);
-		textview4 = _view.findViewById(R.id.textview4);
-		textview5 = _view.findViewById(R.id.textview5);
-		textview6 = _view.findViewById(R.id.textview6);
-		textview7 = _view.findViewById(R.id.textview7);
-		textview8 = _view.findViewById(R.id.textview8);
-		textview9 = _view.findViewById(R.id.textview9);
+
+
 		tvBalanceLabel = _view.findViewById(R.id.tvBalanceLabel);
 		tvBalanceAmount = _view.findViewById(R.id.tvBalanceAmount);
+		viewOrder = _view.findViewById(R.id.viewOrder);
 
 		progressbar1 = _view.findViewById(R.id.progressbar1);
 		sp = getContext().getSharedPreferences("sp", Activity.MODE_PRIVATE);
-		
+
 		viewpager_slider.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
 			@Override
 			public void onPageScrolled(int _position, float _positionOffset, int _positionOffsetPixels) {
-				
+
 			}
-			
+
 			@Override
 			public void onPageSelected(int _position) {
 				postion = _position;
-				number = _position;
 				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 				recyclerview1.smoothScrollToPosition((int)_position);
 			}
-			
+
 			@Override
 			public void onPageScrollStateChanged(int _scrollState) {
-				
+
 			}
 		});
 
@@ -230,162 +199,76 @@ public class HomeFragmentActivity extends Fragment {
 				startActivity(i);
 			}
 		});
-		
-		All.setOnClickListener(new View.OnClickListener() {
+
+		orderViewCard.setOnClickListener(new View.OnClickListener() {
 			@Override
-			public void onClick(View _view) {
-				All.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)0, Color.TRANSPARENT, 0xFF616B7C));
-				All.setElevation((float)3);
-				Dress.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-				Dress.setElevation((float)3);
-				accessories.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-				accessories.setElevation((float)3);
-				cardigan.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-				cardigan.setElevation((float)3);
-				sweater.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-				sweater.setElevation((float)3);
-				top.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-				top.setElevation((float)3);
-				textview4.setTextColor(0xFFFFFFFF);
-				textview5.setTextColor(0xFF212121);
-				textview6.setTextColor(0xFF212121);
-				textview7.setTextColor(0xFF212121);
-				textview8.setTextColor(0xFF212121);
-				textview9.setTextColor(0xFF212121);
-				_loadHomeFragment();
-				t = new TimerTask() {
-					@Override
-					public void run() {
-						getActivity().runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								sk.setVisibility(View.VISIBLE);
-								load.setVisibility(View.GONE);
-								t.cancel();
-							}
-						});
-					}
-				};
-				_timer.schedule(t, (int)(500));
-				sk.setVisibility(View.GONE);
-				load.setVisibility(View.VISIBLE);
+			public void onClick(View v) {
+				i.setClass(getContext().getApplicationContext(), OrderActivity.class);
+				startActivity(i);
 			}
 		});
-
 	}
-	
+
 	private void initializeLogic() {
-		postion = 0;
-		number = 0;
-		viewpager_slider.setCurrentItem((int)number);
-		number++;
-		if (number == listmap.size()) {
-			number = 0;
-		}
-		hscroll1.setOverScrollMode(ScrollView.OVER_SCROLL_NEVER);
-		hscroll1.setHorizontalScrollBarEnabled(false);
+		listmap = new ArrayList<>();
 
-		JHelpers.runAfterDelay(getActivity(), 1000, new Callbacker.Timer(){
-			@Override
-			public void onEnd() {
-				JHelpers.TransitionManager(linear3, 400);
-				linear26.setVisibility(View.GONE);
-				linear4.setVisibility(View.VISIBLE);
+		recyclerview1.setLayoutManager(new LinearLayoutManager(getContext(),LinearLayoutManager.HORIZONTAL, false));
+		recyclerview1.setHasFixedSize(true);
+		recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 
-				JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
-					@Override
-					public void onEnd() {
-						JHelpers.TransitionManager(linear3, 400);
-						totalCreditsLinear.setVisibility(View.VISIBLE);
-
-						JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
-							@Override
-							public void onEnd() {
-								JHelpers.TransitionManager(linear3, 400);
-								linear11.setVisibility(View.VISIBLE);
-								linear13.setVisibility(View.VISIBLE);
-								sk.setVisibility(View.VISIBLE);
-								loadCredits();
-							}
-						});
-					}
-				});
-			}
-		});
-
-
+		final float scaleFactor = 0.99f; viewpager_slider.setPageMargin(-0); viewpager_slider.setOffscreenPageLimit(2); viewpager_slider.setPageTransformer(false, new ViewPager.PageTransformer() { @Override public void transformPage(@NonNull View page1, float position) { page1.setScaleY((1 - Math.abs(position) * (1 - scaleFactor))); page1.setScaleX(scaleFactor + Math.abs(position) * (1 - scaleFactor)); } });
+		viewpager_slider.setAdapter(new Viewpager_sliderAdapter(listmap));
 
 		linear26.setVisibility(View.VISIBLE);
 		linear4.setVisibility(View.GONE);
 		sk.setVisibility(View.GONE);
 		linear11.setVisibility(View.GONE);
 		totalCreditsLinear.setVisibility(View.GONE);
-		linear13.setVisibility(View.GONE);
+		totalCreditsLinear2.setVisibility(View.GONE);
 
 		tvBalanceAmount.setText("...");
 
+		JHelpers.runAfterDelay(getActivity(),100, new Callbacker.Timer(){
+			@Override
+			public void onEnd() {
+				_firebase.getReference("datas/announcement/all").addListenerForSingleValueEvent(new ValueEventListener() {
+					@Override
+					public void onDataChange(DataSnapshot _dataSnapshot) {
+						if(_dataSnapshot.exists()) {
+							for (DataSnapshot child : _dataSnapshot.getChildren()) {
+								HashMap<String, String> announcementMap = new HashMap<>();
+								String value = String.valueOf(child.getValue());
+								announcementMap.put("img", value);
+								listmap.add(announcementMap);
+							}
+							recyclerview1.getAdapter().notifyDataSetChanged();
+							viewpager_slider.getAdapter().notifyDataSetChanged();
+							viewpager_slider.setCurrentItem(0);
+						} else {
+							linear9.setVisibility(View.GONE);
+						}
 
-		All.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)0, Color.TRANSPARENT, 0xFF616B7C));
-		All.setElevation((float)3);
-		Dress.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-		Dress.setElevation((float)3);
-		accessories.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-		accessories.setElevation((float)3);
-		cardigan.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-		cardigan.setElevation((float)3);
-		sweater.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-		sweater.setElevation((float)3);
-		top.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)10, (int)2, 0xFF9E9E9E, 0xFFFFFFFF));
-		top.setElevation((float)3);
+						hideLoadingAndStartIntro();
+					}
+
+					@Override
+					public void onCancelled(DatabaseError _databaseError) { }
+				});
+			}
+		});
+
+
 		linear1.setVisibility(View.GONE);
 		load.setVisibility(View.GONE);
 		textview2.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 1);
 		textview3.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview4.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview5.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview6.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview7.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview8.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-		textview9.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+
 
 		tvBalanceLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 		tvBalanceAmount.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+		viewOrder.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 
 
-
-
-
-
-		{
-			HashMap<String, Object> _item = new HashMap<>();
-			_item.put("img", "https://i.imgur.com/rfWqkEi.png");
-			listmap.add(_item);
-		}
-		
-		{
-			HashMap<String, Object> _item = new HashMap<>();
-			_item.put("img", "https://i.imgur.com/Aqq285p.png");
-			listmap.add(_item);
-		}
-		
-		{
-			HashMap<String, Object> _item = new HashMap<>();
-			_item.put("img", "https://i.imgur.com/vsjqRhH.png");
-			listmap.add(_item);
-		}
-		
-		{
-			HashMap<String, Object> _item = new HashMap<>();
-			_item.put("img", "https://i.imgur.com/yZJ13qK.png");
-			listmap.add(_item);
-		}
-		
-		final float scaleFactor = 0.99f; viewpager_slider.setPageMargin(-0); viewpager_slider.setOffscreenPageLimit(2); viewpager_slider.setPageTransformer(false, new ViewPager.PageTransformer() { @Override public void transformPage(@NonNull View page1, float position) { page1.setScaleY((1 - Math.abs(position) * (1 - scaleFactor))); page1.setScaleX(scaleFactor + Math.abs(position) * (1 - scaleFactor)); } });
-		viewpager_slider.setAdapter(new Viewpager_sliderAdapter(listmap));
-		recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-		recyclerview1.setLayoutManager(new LinearLayoutManager(getContext(),LinearLayoutManager.HORIZONTAL, false));
-		recyclerview1.setHasFixedSize(true);
-		_loadHomeFragment();
 		linear28.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear29.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear31.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)25, 0xFFBDBDBD));
@@ -399,12 +282,63 @@ public class HomeFragmentActivity extends Fragment {
 		linear40.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear41.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 
-
-
-
+		Fragment fragment = new Frag1FragmentActivity();
+		getChildFragmentManager()
+				.beginTransaction()
+				.replace(R.id.sk, fragment)
+				.commit();
 
 	}
-	
+
+
+	public void hideLoadingAndStartIntro() {
+		JHelpers.runAfterDelay(getActivity(), 1000, new Callbacker.Timer(){
+			@Override
+			public void onEnd() {
+				JHelpers.TransitionManager(linear3, 400);
+				linear26.setVisibility(View.GONE);
+				linear4.setVisibility(View.VISIBLE);
+
+				JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
+					@Override
+					public void onEnd() {
+						float translationY = TypedValue.applyDimension(
+								TypedValue.COMPLEX_UNIT_DIP, 35, getContext().getResources().getDisplayMetrics());
+						float translationYfrom = TypedValue.applyDimension(
+								TypedValue.COMPLEX_UNIT_DIP, -6, getContext().getResources().getDisplayMetrics());
+
+						JHelpers.TransitionManager(linear3, 400);
+						totalCreditsLinear.setVisibility(View.VISIBLE);
+						totalCreditsLinear2.setVisibility(View.VISIBLE);
+
+						JHelpers.JValueAnimator.animate((int) translationYfrom, (int) translationY, 2000, new Callbacker.onAnimateUpdate(){
+							@Override
+							public void onUpdate(int _value) {
+								totalCreditsLinear2.setTranslationY(_value);
+							}
+
+							@Override
+							public void onEnd() {
+								totalCreditsLinear2.setTranslationY(translationY);
+							}
+						});
+
+						JHelpers.runAfterDelay(getActivity(), 400, new Callbacker.Timer(){
+							@Override
+							public void onEnd() {
+								JHelpers.TransitionManager(linear3, 400);
+								linear11.setVisibility(View.VISIBLE);
+								sk.setVisibility(View.VISIBLE);
+								loadCredits();
+							}
+						});
+					}
+				});
+			}
+		});
+
+	}
+
 	public void _rippleRoundStroke(final View _view, final String _focus, final String _pressed, final double _round, final double _stroke, final String _strokeclr) {
 		android.graphics.drawable.GradientDrawable GG = new android.graphics.drawable.GradientDrawable();
 		GG.setColor(Color.parseColor(_focus));
@@ -422,36 +356,11 @@ public class HomeFragmentActivity extends Fragment {
 		JHelpers.runAfterDelay(getActivity(),400,new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
-				_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
 
 					@Override
 					public void onDataChange(DataSnapshot _dataSnapshot) {
-						double credits = 0;
-						String creditsStr = "No Credits Left";
-
-						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
-							creditsStr = _dataSnapshot.child("credits").getValue(String.class);
-							try{
-								credits = Double.parseDouble(creditsStr);
-							} catch (Exception e) {}
-						}
-
-
-						if(credits > 0) {
-							double finalCredits = credits;
-							JHelpers.JValueAnimator.animate(0,(int)credits,2000, new Callbacker.onAnimateUpdate(){
-								@Override
-								public void onUpdate(int _value) {
-									tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(_value)));
-								}
-								@Override
-								public void onEnd() {
-									tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(finalCredits)));
-								}
-							});
-						} else {
-							tvBalanceAmount.setText(creditsStr);
-						}
+						updateCredits(_dataSnapshot);
 					}
 
 					@Override
@@ -463,80 +372,112 @@ public class HomeFragmentActivity extends Fragment {
 	}
 
 
-	public void _loadHomeFragment() {
-		Fragment fragment = new Frag1FragmentActivity();
-		getChildFragmentManager()
-		.beginTransaction()
-		.replace(R.id.sk, fragment)
-		.commit();
+	public void updateCredits(DataSnapshot _dataSnapshot) {
+		double credits = 0;
+		String creditsStr = "No Credits Left";
+
+		if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+			creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+			try{
+				credits = Double.parseDouble(creditsStr);
+			} catch (Exception e) {}
+		}
+
+
+		if(credits > 0) {
+			double finalCredits = credits;
+			if (credits<1) {
+				tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(finalCredits)));
+			} else {
+				int timeMs = 2000;
+
+				if(credits<30) {
+					timeMs = 500;
+				}
+
+				JHelpers.JValueAnimator.animate(0,(int)credits,timeMs, new Callbacker.onAnimateUpdate(){
+					@Override
+					public void onUpdate(int _value) {
+						tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(_value)));
+					}
+					@Override
+					public void onEnd() {
+						tvBalanceAmount.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(finalCredits)));
+					}
+				});
+			}
+		} else {
+			tvBalanceAmount.setText(creditsStr);
+		}
 	}
-	
+
+
 
 	public class Viewpager_sliderAdapter extends PagerAdapter {
-		
+
 		Context _context;
-		ArrayList<HashMap<String, Object>> _data;
-		
-		public Viewpager_sliderAdapter(Context _ctx, ArrayList<HashMap<String, Object>> _arr) {
+		ArrayList<HashMap<String, String>> _data;
+
+		public Viewpager_sliderAdapter(Context _ctx, ArrayList<HashMap<String, String>> _arr) {
 			_context = _ctx;
 			_data = _arr;
 		}
-		
-		public Viewpager_sliderAdapter(ArrayList<HashMap<String, Object>> _arr) {
+
+		public Viewpager_sliderAdapter(ArrayList<HashMap<String, String>> _arr) {
 			_context = getContext().getApplicationContext();
 			_data = _arr;
 		}
-		
+
 		@Override
 		public int getCount() {
 			return _data.size();
 		}
-		
+
 		@Override
 		public boolean isViewFromObject(View _view, Object _object) {
 			return _view == _object;
 		}
-		
+
 		@Override
 		public void destroyItem(ViewGroup _container, int _position, Object _object) {
 			_container.removeView((View) _object);
 		}
-		
+
 		@Override
 		public int getItemPosition(Object _object) {
 			return super.getItemPosition(_object);
 		}
-		
+
 		@Override
 		public CharSequence getPageTitle(int pos) {
 			// Use the Activity Event (onTabLayoutNewTabAdded) in order to use this method
 			return "page " + String.valueOf(pos);
 		}
-		
+
 		@Override
 		public Object instantiateItem(ViewGroup _container,  final int _position) {
 			View _view = LayoutInflater.from(_context).inflate(R.layout.slider, _container, false);
-			
+
 			final androidx.cardview.widget.CardView cardview1 = _view.findViewById(R.id.cardview1);
 			final ImageView imageview1 = _view.findViewById(R.id.imageview1);
-			
+
 			Glide.with(getContext().getApplicationContext()).load(Uri.parse(_data.get((int)_position).get("img").toString())).into(imageview1);
 			cardview1.setRadius((float)15);
 			cardview1.setCardElevation((float)5);
-			
+
 			_container.addView(_view);
 			return _view;
 		}
 	}
-	
+
 	public class Recyclerview1Adapter extends RecyclerView.Adapter<Recyclerview1Adapter.ViewHolder> {
-		
-		ArrayList<HashMap<String, Object>> _data;
-		
-		public Recyclerview1Adapter(ArrayList<HashMap<String, Object>> _arr) {
+
+		ArrayList<HashMap<String, String>> _data;
+
+		public Recyclerview1Adapter(ArrayList<HashMap<String, String>> _arr) {
 			_data = _arr;
 		}
-		
+
 		@Override
 		public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 			LayoutInflater _inflater = getActivity().getLayoutInflater();
@@ -545,13 +486,13 @@ public class HomeFragmentActivity extends Fragment {
 			_v.setLayoutParams(_lp);
 			return new ViewHolder(_v);
 		}
-		
+
 		@Override
 		public void onBindViewHolder(ViewHolder _holder, final int _position) {
 			View _view = _holder.itemView;
-			
+
 			final LinearLayout linear1 = _view.findViewById(R.id.linear1);
-			
+
 			RecyclerView.LayoutParams _lp = new RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.MATCH_PARENT);
 			_view.setLayoutParams(_lp);
 			_rippleRoundStroke(linear1, "#FFFFFF", "#FFFFFF", 555, 0, "#FFFFFF");
@@ -564,12 +505,12 @@ public class HomeFragmentActivity extends Fragment {
 				linear1.setAlpha((float)(0.4d));
 			}
 		}
-		
+
 		@Override
 		public int getItemCount() {
 			return _data.size();
 		}
-		
+
 		public class ViewHolder extends RecyclerView.ViewHolder {
 			public ViewHolder(View v) {
 				super(v);

@@ -1,4 +1,5 @@
 <LinearLayout
+	android:id="@+id/rootLinear"
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
@@ -15,9 +16,15 @@
 		android:orientation="vertical">
 		<ImageView
 			android:id="@+id/imageview1"
-			android:layout_width="50dp"
-			android:layout_height="50dp"
+			android:layout_width="100dp"
+			android:layout_height="100dp"
 			android:src="@drawable/logo"
+			android:scaleType="fitCenter" />
+		<ImageView
+			android:id="@+id/imageview2"
+			android:layout_width="300dp"
+			android:layout_height="50dp"
+			android:src="@drawable/lickandbite"
 			android:scaleType="fitCenter" />
 	</LinearLayout>
 </LinearLayout>

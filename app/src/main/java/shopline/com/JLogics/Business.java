@@ -28,12 +28,53 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import shopline.com.JLogics.Models.Product;
+import shopline.com.R;
 
 public class Business {
     private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
     Context context;
     public Business(Context context) {
         this.context = context;
+    }
+
+    public enum JOrderStatus {
+        ORDER_PENDING("ORDER_PENDING", "#FFFF00", "Pending", R.drawable.shape_status_background_pending),
+        ORDER_IN_PROGRESS("ORDER_IN_PROGRESS", "#0000FF", "In Progress", R.drawable.shape_status_background_progress),
+        ORDER_DELIVERED("ORDER_DELIVERED", "#008000", "Delivered", R.drawable.shape_status_background_delivered),
+        ORDER_CANCELLED("ORDER_CANCELLED", "#FF0000", "Cancelled", R.drawable.shape_status_background_canceled);
+
+        private final String status;
+        private final String colorHex;
+        private final String visibleText;
+        private final int drawableRes;
+
+        JOrderStatus(String status, String colorHex, String visibleText, int drawableRes) {
+            this.status = status;
+            this.colorHex = colorHex;
+            this.visibleText = visibleText;
+            this.drawableRes = drawableRes;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public String getColor() {
+            return colorHex;
+        }
+
+        public String getVisibleText() {
+            return visibleText;
+        }
+
+        public int getDrawableRes() {
+            return drawableRes;
+        }
+
+        @Override
+        public String toString() {
+            return status;
+        }
     }
 
 

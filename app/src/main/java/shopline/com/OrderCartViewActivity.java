@@ -71,11 +71,11 @@ public class OrderCartViewActivity extends AppCompatActivity {
 	private ChildEventListener _cart_child_listener;
 	private Intent i = new Intent();
 
-	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView,textview1;
+	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView,textview1,productSecondaryNameTextView;
 	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel,textviewConfirmLabel;
 
 	private RelativeLayout linear2;
-	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear,linearNoData;
+	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear,linearNoData,statusLinear;
 	private LinearLayout linear10,linear11,linear15,linear16,circle,circle2,linear5;
 	private ImageView bottomDragImage;
 	DecimalFormat df = new DecimalFormat("#.###");
@@ -118,6 +118,8 @@ public class OrderCartViewActivity extends AppCompatActivity {
 		progressbar1 = findViewById(R.id.progressbar1);
 		bottomDragImage = findViewById(R.id.bottomDragImage);
 
+		productSecondaryNameTextView = findViewById(R.id.productSecondaryNameTextView);
+		productSecondaryNameTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
 		subTotalTextview = findViewById(R.id.subTotalTextView);
 		subTotalTextview.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
 		subTotalTextviewLabel = findViewById(R.id.subtotalLabelTextView);
@@ -176,6 +178,31 @@ public class OrderCartViewActivity extends AppCompatActivity {
 		listmap = new ArrayList<>();
 		recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 
+		final TextView OrderId = findViewById(R.id.OrderId);
+		final TextView OrderStatus = findViewById(R.id.OrderStatus);
+		final TextView OrderDetail = findViewById(R.id.OrderDetail);
+
+		OrderId.setText(order.getOrderId());
+		try{
+			Business.JOrderStatus status = Business.JOrderStatus.valueOf(order.getOrderStatus());
+			OrderStatus.setText(status.getVisibleText());
+			OrderStatus.setBackgroundResource(status.getDrawableRes());
+		} catch (Exception e) {
+			OrderStatus.setText("Order Status Error");
+			OrderStatus.setBackgroundColor(Color.parseColor("#ffffff"));
+		}
+
+		String dateString = order.getCreatedAt();
+		String formattedDate = java.time.LocalDateTime.parse(dateString).format(java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a"));
+		OrderDetail.setText("Date : ".concat(formattedDate)
+				.concat("\nItems: ".concat(String.valueOf(order.getItemsDetail().size())))
+				.concat(", Cost: Rs.").concat(String.valueOf(order.getTotal())).concat(" ₹"));
+
+		OrderId.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+		OrderStatus.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+		OrderDetail.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+
+
 		creditTextview.setText("XXX");
 		updateCartListUI(order);
 
@@ -202,6 +229,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			}
 		});
 
+		confirmOrderLinear.setVisibility(View.GONE);
 		creditTextview.setVisibility(View.GONE);
 	}
 

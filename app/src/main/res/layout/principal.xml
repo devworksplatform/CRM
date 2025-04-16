@@ -32,6 +32,7 @@
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:orientation="vertical"
+			android:id="@+id/rootLinear"
 			app:layout_behavior="@string/appbar_scrolling_view_behavior">
 			<androidx.cardview.widget.CardView
 				android:layout_width="match_parent"
@@ -71,13 +72,19 @@
 						android:paddingRight="8dp"
 						android:paddingBottom="8dp"
 						android:gravity="left|center_vertical"
-						android:orientation="vertical"
+						android:orientation="horizontal"
 						android:layout_weight="1">
+						<ImageView
+							android:id="@+id/imageLogoName"
+							android:layout_width="100dp"
+							android:layout_height="30dp"
+							android:src="@drawable/lickandbite"
+							android:scaleType="fitCenter" />
 						<TextView
 							android:id="@+id/textview1"
 							android:layout_width="wrap_content"
 							android:layout_height="wrap_content"
-							android:text="Shopline"
+							android:text="Cart Products"
 							android:textSize="16sp"
 							android:textColor="#0A3D62" />
 					</LinearLayout>

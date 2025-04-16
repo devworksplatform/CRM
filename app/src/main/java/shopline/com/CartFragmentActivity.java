@@ -212,7 +212,7 @@ public class CartFragmentActivity extends Fragment {
 
 
 
-		_firebase.getReference("datas/users/details".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
 			@Override
 			public void onDataChange(DataSnapshot _dataSnapshot) {
 				double credits = 0;

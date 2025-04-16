@@ -40,14 +40,14 @@ public class ProductviewActivity extends AppCompatActivity {
 	
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
 	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-//	DatabaseReference cart;
 	Product product;
 	boolean isViewOnly;
 	Integer currentCount = 0;
 
 	private EditText edittext1;
 	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear;
-	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,productIdTextView,discountTextView,discountRsTextView;
+	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
+	private TextView mrpLabel,rateLabel,discountLabel,gstLabel;
 	private Button addButton;
 	private ImageView productImageView,plus,minus;
 	DecimalFormat df = new DecimalFormat("#.###");
@@ -84,12 +84,37 @@ public class ProductviewActivity extends AppCompatActivity {
 		productIdTextView = (TextView) findViewById(R.id.productIdTextView);
 		discountTextView = (TextView) findViewById(R.id.discountTextView);
 		discountRsTextView = (TextView) findViewById(R.id.discountRsTextView);
+		productDescriptionTextviewLabel = (TextView) findViewById(R.id.productDescriptionTextviewLabel);
+		mrpLabel = (TextView) findViewById(R.id.mrpLabel);
+		rateLabel = (TextView) findViewById(R.id.rateLabel);
+		gstLabel = (TextView) findViewById(R.id.gstLabel);
+		discountLabel = (TextView) findViewById(R.id.discountLabel);
 
 		rootLinear = (LinearLayout) findViewById(R.id.rootLinear);
 		mrpRateLinear = (LinearLayout) findViewById(R.id.mrpRateLinear);
 		gstDiscountLinear = (LinearLayout) findViewById(R.id.gstDiscountLinear);
 		linear5 = (LinearLayout) findViewById(R.id.linear5);
 		countLinear = (LinearLayout) findViewById(R.id.countLinear);
+
+
+		final Typeface normalTypeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");
+		final Typeface boldTypeface = Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf");
+
+		productSecondaryNameTextView.setTypeface(boldTypeface, 0);
+		productNameTextView.setTypeface(boldTypeface, 0);
+		mrpTextView.setTypeface(boldTypeface, 0);
+		rateTextView.setTypeface(boldTypeface, 0);
+		gstTextView.setTypeface(boldTypeface, 0);
+		discountTextView.setTypeface(boldTypeface, 0);
+		productDescriptionTextviewLabel.setTypeface(boldTypeface, 0);
+		productDescriptionTextView.setTypeface(normalTypeface, 0);
+		productIdTextView.setTypeface(normalTypeface, 0);
+		hurryUpTextView.setTypeface(normalTypeface, 0);
+		mrpLabel.setTypeface(normalTypeface, 0);
+		rateLabel.setTypeface(normalTypeface, 0);
+		gstLabel.setTypeface(normalTypeface, 0);
+		discountLabel.setTypeface(normalTypeface, 0);
+		edittext1.setTypeface(boldTypeface, 0);
 
 	}
 	
