@@ -1,0 +1,1081 @@
+from fastapi import FastAPI, HTTPException, Query
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+import json
+import random, string
+import aiosqlite  # Replaced sqlite3 with aiosqlite
+# Removed: from contextlib import contextmanager
+# Removed: import uvicorn (run via command line now)
+from enum import Enum
+from datetime import datetime
+from fastapi.middleware.cors import CORSMiddleware
+# Removed: from fastapi.responses import HTMLResponse
+from uuid import uuid4
+import sqlite3 # Keep standard sqlite3 for backup operation
+
+
+# Define database path
+DB_PATH = "products.db"
+# DB_PATH_SMS = "sms.db" # This was never used in the original code
+
+# Initialize FastAPI
+app = FastAPI(title="Async SQLite Products API") # Updated title
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# --- Data Models (Unchanged from original) ---
+class Product(BaseModel):
+    product_id: Optional[str] = None
+    product_name: str
+    product_desc: str
+    product_img: Optional[List[str]] = []
+    cat_id: str
+    cat_sub: str  # Comma-separated string
+    cost_rate: float
+    cost_mrp: float
+    cost_gst: float
+    cost_dis: float
+    stock: int
+
+class ProductResponse(Product):
+    id: str
+
+class OrderResponse(BaseModel):
+    order_id: str
+    user_id: str
+    items: dict  # Assuming items is stored as JSON
+    items_detail: list # Assuming items_detail is stored as JSON
+    order_status: str
+    total_rate: float
+    total_gst: float
+    total_discount: float
+    total: float
+    created_at: str
+
+class OperatorEnum(str, Enum):
+    eq = "eq"  # Equal
+    neq = "neq"  # Not equal
+    gt = "gt"  # Greater than
+    lt = "lt"  # Less than
+    gte = "gte"  # Greater than or equal
+    lte = "lte"  # Less than or equal
+    contains = "contains"  # Contains substring
+    startswith = "startswith"  # Starts with
+    endswith = "endswith"  # Ends with
+    in_list = "in"  # In a list of values
+
+class QueryParam(BaseModel):
+    field: str
+    operator: OperatorEnum
+    value: Any
+
+class QueryRequest(BaseModel):
+    filters: List[QueryParam]
+    limit: Optional[int] = None
+    offset: Optional[int] = 0
+    order_by: Optional[str] = None
+    order_direction: Optional[str] = "ASC"
+
+class ColumnOperation(BaseModel):
+    column_name: str
+    column_type: str
+    default_value: Optional[Any] = None
+
+class AddColumnRequest(BaseModel):
+    columns: List[ColumnOperation]
+
+class RemoveColumnRequest(BaseModel):
+    columns: List[str]
+
+class OrderUpdate(BaseModel):
+    order_status: Optional[str] = None
+    items: Optional[dict] = None
+    items_detail: Optional[list] = None
+    total_rate: Optional[float] = None
+    total_gst: Optional[float] = None
+    total_discount: Optional[float] = None
+    total: Optional[float] = None
+# --- End Data Models ---
+
+
+# --- Database Setup and Helpers ---
+
+# Async database connection context manager
+async def get_db_connection():
+    """Provides an asynchronous connection to the SQLite database."""
+    conn = await aiosqlite.connect(DB_PATH)
+    conn.row_factory = aiosqlite.Row  # Use Row factory for dict-like access
+    return conn
+
+# Helper functions to convert rows (No async change needed, aiosqlite.Row is dict-like)
+def dict_to_product(row: aiosqlite.Row):
+    """Convert an aiosqlite row to a dictionary, handling JSON"""
+    if not row:
+        return None
+    row_dict = dict(row)
+    # Handle the product_img list stored as JSON
+    if 'product_img' in row_dict and row_dict['product_img']:
+        try:
+            row_dict['product_img'] = json.loads(row_dict['product_img'])
+        except (json.JSONDecodeError, TypeError):
+            row_dict['product_img'] = []
+    else:
+        row_dict['product_img'] = []
+    return row_dict
+
+def dict_to_order(row: aiosqlite.Row):
+    """Convert an aiosqlite row to a dictionary, handling JSON fields"""
+    if not row:
+        return None
+    row_dict = dict(row)
+    # Handle the items and items_detail lists stored as JSON
+    if 'items' in row_dict and row_dict['items']:
+        try:
+            row_dict['items'] = json.loads(row_dict['items'])
+        except (json.JSONDecodeError, TypeError):
+            row_dict['items'] = {}
+    else:
+        row_dict['items'] = {}
+    if 'items_detail' in row_dict and row_dict['items_detail']:
+        try:
+            row_dict['items_detail'] = json.loads(row_dict['items_detail'])
+        except (json.JSONDecodeError, TypeError):
+            row_dict['items_detail'] = []
+    else:
+        row_dict['items_detail'] = []
+    return row_dict
+
+
+def build_query(filters: List[QueryParam]):
+    """Build SQL WHERE clause and parameters from filters (No async change needed)"""
+    query_parts = []
+    params = []
+    for filter_item in filters:
+        field = filter_item.field
+        operator = filter_item.operator
+        value = filter_item.value
+        if operator == OperatorEnum.eq:
+            query_parts.append(f"{field} = ?")
+            params.append(value)
+        elif operator == OperatorEnum.neq:
+            query_parts.append(f"{field} != ?")
+            params.append(value)
+        elif operator == OperatorEnum.gt:
+            query_parts.append(f"{field} > ?")
+            params.append(value)
+        elif operator == OperatorEnum.lt:
+            query_parts.append(f"{field} < ?")
+            params.append(value)
+        elif operator == OperatorEnum.gte:
+            query_parts.append(f"{field} >= ?")
+            params.append(value)
+        elif operator == OperatorEnum.lte:
+            query_parts.append(f"{field} <= ?")
+            params.append(value)
+        elif operator == OperatorEnum.contains:
+            query_parts.append(f"{field} LIKE ?")
+            params.append(f"%{value}%")
+        elif operator == OperatorEnum.startswith:
+            query_parts.append(f"{field} LIKE ?")
+            params.append(f"{value}%")
+        elif operator == OperatorEnum.endswith:
+            query_parts.append(f"{field} LIKE ?")
+            params.append(f"%{value}")
+        elif operator == OperatorEnum.in_list:
+            if isinstance(value, list) and value:
+                placeholders = ', '.join(['?'] * len(value))
+                query_parts.append(f"{field} IN ({placeholders})")
+                params.extend(value)
+            else:
+                # Handle case where value is not a list or is empty for 'in' operator
+                query_parts.append("1=0") # Ensures no results match
+    where_clause = " AND ".join(query_parts) if query_parts else "1=1"
+    return where_clause, params
+
+def generate_id():
+    """Generate a unique ID (No async change needed)"""
+    return str(uuid4())
+
+def generate_short_random_id():
+    """Generate a short semi-random ID (No async change needed)"""
+    now = datetime.now()
+    date_str = now.strftime("%y%m%d")
+    random_num = random.randint(10, 99)
+    letters = ''.join(random.choices(string.ascii_uppercase, k=2))
+    return f"{date_str}{letters}{random_num:02d}"
+
+
+# Initialize database (Run once on startup)
+async def init_db():
+    """Initializes the database tables asynchronously."""
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS products (
+                id TEXT PRIMARY KEY,
+                product_id TEXT UNIQUE,
+                product_name TEXT NOT NULL,
+                product_desc TEXT,
+                product_img TEXT, -- Stored as JSON string
+                cat_id TEXT,
+                cat_sub TEXT, -- Comma-separated string
+                cost_rate REAL,
+                cost_mrp REAL,
+                cost_gst REAL,
+                cost_dis REAL,
+                stock INTEGER,
+                created_at TIMESTAMP,
+                updated_at TIMESTAMP
+            )
+            """)
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS orders (
+                order_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                items TEXT NOT NULL,      -- Stored as JSON string
+                items_detail TEXT NOT NULL, -- Stored as JSON string
+                order_status TEXT NOT NULL,
+                total_rate REAL,
+                total_gst REAL,
+                total_discount REAL,
+                total REAL,
+                created_at TEXT
+            )
+            """)
+            await conn.commit()
+    finally:
+        await conn.close()
+
+@app.on_event("startup")
+async def startup_event():
+    """Run database initialization on startup."""
+    print("Initializing database...")
+    await init_db()
+    print("Database initialized.")
+
+# --- API Routes (Modified for Async) ---
+
+@app.get("/")
+async def read_root(): # Made async
+    return {"message": "Async SQLite Products API is running"}
+
+# Create a new product
+@app.post("/products/", response_model=ProductResponse)
+async def create_product(product: Product): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            product_dict = product.dict(exclude_unset=True)
+
+            # Use provided product_id or generate one
+            product_id = product_dict.get("product_id") or generate_id()
+            product_dict["product_id"] = product_id
+
+            # Convert list to JSON string
+            if "product_img" in product_dict:
+                product_dict["product_img"] = json.dumps(product_dict["product_img"])
+
+            # Add timestamps
+            now = datetime.now().isoformat()
+            product_dict["created_at"] = now
+            product_dict["updated_at"] = now
+
+            # Generate a unique document ID
+            doc_id = generate_id()
+
+            # Prepare for insertion
+            columns = list(product_dict.keys())
+            columns.append("id")
+            values = list(product_dict.values())
+            values.append(doc_id)
+
+            # Build the SQL query
+            placeholders = ", ".join(["?"] * len(values))
+            columns_str = ", ".join(columns)
+
+            query = f"INSERT INTO products ({columns_str}) VALUES ({placeholders})"
+
+            try:
+                await cursor.execute(query, values)
+                await conn.commit()
+            except aiosqlite.IntegrityError as e:
+                # Handle potential unique constraint violation (e.g., duplicate product_id)
+                if "UNIQUE constraint failed: products.product_id" in str(e):
+                     raise HTTPException(status_code=409, detail=f"Product ID '{product_id}' already exists.")
+                else:
+                     raise HTTPException(status_code=500, detail=f"Database integrity error: {str(e)}")
+
+            # Get the inserted product
+            await cursor.execute("SELECT * FROM products WHERE id = ?", (doc_id,))
+            result = await cursor.fetchone()
+            if not result:
+                 raise HTTPException(status_code=500, detail="Failed to retrieve created product.")
+
+            return dict_to_product(result)
+    except HTTPException:
+        raise # Re-raise HTTP exceptions
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in create_product: {e}")
+        raise HTTPException(status_code=500, detail=f"An unexpected database error occurred: {str(e)}")
+    finally:
+        await conn.close()
+
+# Advanced query endpoint
+@app.post("/products/query", response_model=List[ProductResponse])
+async def query_products(query_request: QueryRequest): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            where_clause, params = build_query(query_request.filters)
+
+            # Build the complete query
+            query = f"SELECT * FROM products WHERE {where_clause}"
+
+            # Add ordering if specified
+            if query_request.order_by:
+                direction = query_request.order_direction.upper() if query_request.order_direction else "ASC"
+                if direction not in ("ASC", "DESC"):
+                    direction = "ASC"
+                # Basic validation to prevent SQL injection in order_by
+                # Allow only alphanumeric characters and underscores
+                safe_order_by = ''.join(c for c in query_request.order_by if c.isalnum() or c == '_')
+                if safe_order_by: # Only add if the column name is potentially valid
+                    query += f" ORDER BY {safe_order_by} {direction}"
+
+            # Add limit and offset if specified
+            if query_request.limit is not None:
+                query += f" LIMIT ?"
+                params.append(query_request.limit)
+                if query_request.offset:
+                    query += f" OFFSET ?"
+                    params.append(query_request.offset)
+
+            await cursor.execute(query, params)
+            results = await cursor.fetchall()
+
+            return [dict_to_product(row) for row in results]
+    except Exception as e:
+        print(f"Error in query_products: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+    finally:
+        await conn.close()
+
+# Get all products
+@app.get("/products/", response_model=List[ProductResponse])
+async def read_products( # Made async
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT * FROM products LIMIT ? OFFSET ?", (limit, offset))
+            results = await cursor.fetchall()
+            return [dict_to_product(row) for row in results]
+    except Exception as e:
+        print(f"Error in read_products: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+# Get a specific product by ID or product_id
+@app.get("/products/{product_identifier}", response_model=ProductResponse)
+async def read_product(product_identifier: str): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # First try to find by id (primary key)
+            await cursor.execute("SELECT * FROM products WHERE id = ?", (product_identifier,))
+            result = await cursor.fetchone()
+
+            # If not found, try to find by product_id field
+            if not result:
+                await cursor.execute("SELECT * FROM products WHERE product_id = ?", (product_identifier,))
+                result = await cursor.fetchone()
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            return dict_to_product(result)
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in read_product: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+# Update a product
+@app.put("/products/{product_identifier}", response_model=ProductResponse)
+async def update_product(product_identifier: str, product_update: Product): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # Check if product exists by id or product_id
+            await cursor.execute("SELECT * FROM products WHERE id = ? OR product_id = ?", (product_identifier, product_identifier))
+            result = await cursor.fetchone()
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            existing_product = dict(result)
+            db_id = existing_product["id"] # Use the primary key 'id' for update
+
+            # Prepare update data
+            update_data = product_update.dict(exclude_unset=True)
+
+            # Convert list to JSON string
+            if "product_img" in update_data:
+                update_data["product_img"] = json.dumps(update_data["product_img"])
+
+            # Add updated timestamp
+            update_data["updated_at"] = datetime.now().isoformat()
+
+            # Cannot update the primary key 'id' or the potentially unique 'product_id' via PUT easily
+            # Ensure these keys are not in the update data if they are meant to be immutable identifiers
+            update_data.pop("id", None)
+            # update_data.pop("product_id", None) # Allow updating product_id if needed, but be careful with uniqueness
+
+            if not update_data:
+                 raise HTTPException(status_code=400, detail="No update data provided.")
+
+            # Build the SQL query
+            set_clause = ", ".join([f"{k} = ?" for k in update_data.keys()])
+            params = list(update_data.values())
+            params.append(db_id) # Use primary key in WHERE clause
+
+            query = f"UPDATE products SET {set_clause} WHERE id = ?"
+            await cursor.execute(query, params)
+            await conn.commit()
+
+            # Get the updated product
+            await cursor.execute("SELECT * FROM products WHERE id = ?", (db_id,))
+            updated_result = await cursor.fetchone()
+            if not updated_result:
+                 raise HTTPException(status_code=404, detail="Updated product not found after update.")
+
+
+            return dict_to_product(updated_result)
+    except HTTPException:
+        raise
+    except aiosqlite.IntegrityError as e:
+         # Handle potential unique constraint violation if product_id was updated
+         if "UNIQUE constraint failed: products.product_id" in str(e):
+              raise HTTPException(status_code=409, detail=f"Cannot update: Product ID '{product_update.product_id}' might already exist.")
+         else:
+              raise HTTPException(status_code=500, detail=f"Database integrity error during update: {str(e)}")
+    except Exception as e:
+        print(f"Error in update_product: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error during update: {str(e)}")
+    finally:
+        await conn.close()
+
+# Delete a product
+@app.delete("/products/{product_identifier}", response_model=Dict[str, Any])
+async def delete_product(product_identifier: str): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # Check if product exists and get its data
+            await cursor.execute("SELECT * FROM products WHERE id = ? OR product_id = ?", (product_identifier, product_identifier))
+            result = await cursor.fetchone()
+
+            if not result:
+                raise HTTPException(status_code=404, detail="Product not found")
+
+            product_data = dict_to_product(result)
+            db_id = product_data["id"] # Use primary key for deletion
+
+            # Delete the product
+            await cursor.execute("DELETE FROM products WHERE id = ?", (db_id,))
+            await conn.commit()
+
+            return {
+                "message": "Product deleted successfully",
+                "deleted_product": product_data # Return the data of the deleted product
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in delete_product: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+# --- Schema Manipulation Routes (Modified for Async) ---
+
+@app.post("/schema/add-columns", response_model=Dict[str, Any])
+async def add_columns(request: AddColumnRequest): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # Get current column information
+            await cursor.execute("PRAGMA table_info(products)")
+            existing_columns_info = await cursor.fetchall()
+            existing_columns = {row["name"] for row in existing_columns_info}
+
+            added_columns = []
+            for column in request.columns:
+                if column.column_name in existing_columns:
+                    print(f"Column '{column.column_name}' already exists, skipping.")
+                    continue  # Skip if column already exists
+
+                # Basic validation for column name and type
+                if not column.column_name.isidentifier():
+                     raise HTTPException(status_code=400, detail=f"Invalid column name: {column.column_name}")
+                # Add more type validation if needed
+
+                # Build ALTER TABLE query
+                query = f"ALTER TABLE products ADD COLUMN {column.column_name} {column.column_type}"
+
+                # Add default value if provided
+                if column.default_value is not None:
+                    # Properly quote string defaults
+                    if isinstance(column.default_value, str):
+                        # Basic sanitation for default string to prevent injection
+                        safe_default = column.default_value.replace("'", "''")
+                        query += f" DEFAULT '{safe_default}'"
+                    elif isinstance(column.default_value, (int, float, bool)):
+                         # Handle boolean specifically if needed by DB type
+                         default_val = 1 if column.default_value is True else (0 if column.default_value is False else column.default_value)
+                         query += f" DEFAULT {default_val}"
+                    else:
+                         # Consider raising error for unsupported default types
+                         print(f"Warning: Default value type {type(column.default_value)} for column {column.column_name} might not be directly supported.")
+                         # Attempt to add without quoting - may fail depending on type/DB
+                         query += f" DEFAULT {column.default_value}"
+
+
+                try:
+                    await cursor.execute(query)
+                    added_columns.append(column.column_name)
+                    print(f"Executed: {query}")
+                except Exception as alter_err:
+                     print(f"Error executing ALTER TABLE: {alter_err}")
+                     # Rollback is implicitly handled by closing connection on error typically,
+                     # but explicit rollback might be needed depending on transaction state management elsewhere
+                     raise HTTPException(status_code=500, detail=f"Failed to add column '{column.column_name}': {alter_err}")
+
+            await conn.commit()
+
+            return {
+                "message": "Columns added successfully (or skipped if existing)",
+                "added_columns": added_columns
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in add_columns: {e}")
+        raise HTTPException(status_code=500, detail=f"Database schema error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.post("/schema/remove-columns", response_model=Dict[str, Any])
+async def remove_columns(request: RemoveColumnRequest): # Made async
+    """Removes columns by recreating the table (standard SQLite practice)."""
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # SQLite doesn't support DROP COLUMN directly
+            # We need to create a new table without those columns and migrate the data
+
+            # Get current table structure
+            await cursor.execute("PRAGMA table_info(products)")
+            columns = await cursor.fetchall()
+            column_details = {col["name"]: col for col in columns}
+            column_names = [col["name"] for col in columns]
+
+            # Validate requested columns to remove
+            columns_to_remove = set(request.columns)
+            existing_columns = set(column_names)
+
+            if not columns_to_remove.issubset(existing_columns):
+                non_existent = columns_to_remove - existing_columns
+                raise HTTPException(status_code=400, detail=f"Columns don't exist: {', '.join(non_existent)}")
+
+            # Don't allow removing the id primary key column
+            if "id" in columns_to_remove:
+                raise HTTPException(status_code=400, detail="Cannot remove the primary key 'id' column")
+
+            # Create new column list and definitions without the columns to remove
+            new_columns = [col for col in column_names if col not in columns_to_remove]
+            if not new_columns:
+                 raise HTTPException(status_code=400, detail="Cannot remove all columns.")
+
+            columns_definition = []
+            for name in new_columns:
+                col = column_details[name]
+                # Recreate column definition
+                type_name = col["type"]
+                not_null = "NOT NULL" if col["notnull"] else ""
+                pk = "PRIMARY KEY" if col["pk"] else ""
+                # Correctly handle default values, including strings
+                default_val_str = ""
+                if col["dflt_value"] is not None:
+                    default_val = col["dflt_value"]
+                    # Check if the default value looks like a string literal (starts/ends with ')
+                    # or if the type suggests it should be a string
+                    if isinstance(default_val, str) and (default_val.startswith("'") and default_val.endswith("'")):
+                         default_val_str = f"DEFAULT {default_val}" # Already quoted
+                    elif isinstance(default_val, str):
+                         safe_default = default_val.replace("'", "''") # Quote if it's a string but not already quoted by PRAGMA
+                         default_val_str = f"DEFAULT '{safe_default}'"
+                    else:
+                        # Assume numeric/other types don't need quotes from PRAGMA output
+                         default_val_str = f"DEFAULT {default_val}"
+
+                col_def = f"{name} {type_name} {pk} {not_null} {default_val_str}".strip().replace("  ", " ")
+                columns_definition.append(col_def)
+
+            # Use explicit transaction control for safety
+            await conn.execute("BEGIN TRANSACTION")
+
+            try:
+                # Create new table
+                new_table_sql = f"CREATE TABLE products_new ({', '.join(columns_definition)})"
+                print(f"Executing: {new_table_sql}")
+                await cursor.execute(new_table_sql)
+
+                # Copy data
+                copy_sql = f"INSERT INTO products_new ({', '.join(new_columns)}) SELECT {', '.join(new_columns)} FROM products"
+                print(f"Executing: {copy_sql}")
+                await cursor.execute(copy_sql)
+
+                # Drop old table
+                print("Executing: DROP TABLE products")
+                await cursor.execute("DROP TABLE products")
+
+                # Rename new one
+                print("Executing: ALTER TABLE products_new RENAME TO products")
+                await cursor.execute("ALTER TABLE products_new RENAME TO products")
+
+                # Commit the transaction
+                await conn.commit()
+
+            except Exception as migration_err:
+                 print(f"Error during table migration: {migration_err}. Rolling back.")
+                 await conn.rollback() # Rollback changes on error
+                 raise HTTPException(status_code=500, detail=f"Failed to migrate table structure: {migration_err}")
+
+
+            return {
+                "message": "Columns removed successfully by recreating the table",
+                "removed_columns": list(columns_to_remove)
+            }
+    except HTTPException:
+        await conn.rollback() # Ensure rollback if HTTP error occurred before commit
+        raise
+    except Exception as e:
+        await conn.rollback() # Ensure rollback on generic error
+        print(f"Error in remove_columns: {e}")
+        raise HTTPException(status_code=500, detail=f"Database schema error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.get("/schema", response_model=Dict[str, Any])
+async def get_schema(): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # Get table information
+            await cursor.execute("PRAGMA table_info(products)")
+            columns = await cursor.fetchall()
+
+            if not columns:
+                 # Consider what to return if table doesn't exist or has no columns
+                 # This might indicate an issue post-initialization or after remove_columns
+                 raise HTTPException(status_code=404, detail="Products table schema not found or table is empty.")
+
+
+            schema_info = []
+            for col in columns:
+                schema_info.append({
+                    "name": col["name"],
+                    "type": col["type"],
+                    "not_null": bool(col["notnull"]),
+                    "default_value": col["dflt_value"],
+                    "primary_key": bool(col["pk"])
+                })
+
+            # Optionally get info for orders table too
+            await cursor.execute("PRAGMA table_info(orders)")
+            orders_columns = await cursor.fetchall()
+            orders_schema_info = []
+            for col in orders_columns:
+                 orders_schema_info.append({
+                     "name": col["name"],
+                     "type": col["type"],
+                     "not_null": bool(col["notnull"]),
+                     "default_value": col["dflt_value"],
+                     "primary_key": bool(col["pk"])
+                 })
+
+
+            return {
+                "products_table": {
+                     "table_name": "products",
+                     "columns": schema_info
+                },
+                 "orders_table": {
+                     "table_name": "orders",
+                     "columns": orders_schema_info
+                }
+            }
+    except Exception as e:
+        print(f"Error in get_schema: {e}")
+        raise HTTPException(status_code=500, detail=f"Database schema retrieval error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+# --- Backup Route (Modified for Async - uses synchronous backup within) ---
+
+@app.get("/backup", response_model=Dict[str, str])
+async def create_backup(): # Made async
+    """Creates a backup of the database file."""
+    backup_path = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
+    try:
+        # aiosqlite doesn't have async backup. Use standard sqlite3 for this.
+        # This will block the event loop briefly during backup.
+        # For large DBs, consider running this in a separate thread using asyncio.to_thread
+        source_conn = await aiosqlite.connect(DB_PATH) # Connect async to ensure current state
+        await source_conn.commit() # Ensure any pending async writes are flushed
+
+        # Use synchronous connection for the backup target and the backup call itself
+        backup_conn_sync = sqlite3.connect(backup_path)
+        source_conn_sync = sqlite3.connect(DB_PATH) # Need sync connection for backup source arg
+
+        with backup_conn_sync:
+             source_conn_sync.backup(backup_conn_sync)
+
+        source_conn_sync.close()
+        backup_conn_sync.close()
+        await source_conn.close() # Close the async connection used initially
+
+        print(f"Backup created: {backup_path}")
+        return {
+            "message": "Backup created successfully",
+            "backup_file": backup_path
+        }
+    except Exception as e:
+        # Attempt to close connections if they were opened
+        try: await source_conn.close()
+        except: pass
+        try: source_conn_sync.close()
+        except: pass
+        try: backup_conn_sync.close()
+        except: pass
+
+        print(f"Error during backup: {e}")
+        raise HTTPException(status_code=500, detail=f"Backup error: {str(e)}")
+
+
+# --- Product Bulk Details & Order Routes (Modified for Async) ---
+
+@app.post("/products/bulk-details")
+async def get_products_bulk(data: dict): # Made async
+    """Get details for multiple products and calculate totals."""
+    conn = await get_db_connection()
+    product_details = []
+    total_rate = 0.0
+    total_gst = 0.0
+    total_discount = 0.0
+    total = 0.0
+    not_found_ids = []
+
+    try:
+        async with conn.cursor() as cursor:
+            for prod_id, item_data in data.items():
+                 count = item_data.get("count", 0)
+                 if not isinstance(count, int) or count < 0:
+                     count = 0 # Ignore invalid counts
+
+                 # Try to find product by id or product_id
+                 await cursor.execute("SELECT * FROM products WHERE id = ? OR product_id = ?", (prod_id, prod_id))
+                 row = await cursor.fetchone()
+
+                 if not row:
+                     not_found_ids.append(prod_id)
+                     continue # Skip to next product if not found
+
+                 product = dict_to_product(row)
+                 product['requested_count'] = count # Add requested count to details
+                 product_details.append(product)
+
+                 # Calculation based on fetched product data
+                 rate = product.get("cost_rate", 0.0)
+                 gst_percent = product.get("cost_gst", 0.0)
+                 disc_percent = product.get("cost_dis", 0.0)
+
+                 gst_amount = (rate * gst_percent) / 100.0
+                 actual_rate_without_discount = rate + gst_amount
+                 disc_amount = (actual_rate_without_discount * disc_percent) / 100.0
+                 actual_rate = actual_rate_without_discount - disc_amount
+
+                 total_rate += rate * count
+                 total_gst += gst_amount * count
+                 total_discount += disc_amount * count
+                 total += actual_rate * count
+
+        response = {
+            "product_details": product_details,
+            "cost": {
+                "total_rate": round(total_rate, 3),
+                "total_gst": round(total_gst, 3),
+                "total_discount": round(total_discount, 3),
+                "total": round(total, 3)
+            }
+        }
+        if not_found_ids:
+             response["warnings"] = [f"Product ID '{pid}' not found." for pid in not_found_ids]
+
+        return response
+
+    except Exception as e:
+        print(f"Error in get_products_bulk: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error processing bulk details: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.post("/orders/checkout/{user_id}", response_model=Dict[str, Any])
+async def store_order(user_id: str, data: dict): # Made async
+    """Stores a new order after calculating costs based on product data."""
+    conn = await get_db_connection()
+    product_details_for_order = [] # Details stored in the order
+    total_rate = 0.0
+    total_gst = 0.0
+    total_discount = 0.0
+    total = 0.0
+    not_found_ids = []
+    order_items_payload = {} # Payload as received
+
+    # Validate input data structure
+    if not isinstance(data, dict):
+        raise HTTPException(status_code=400, detail="Invalid request body: Expected a JSON object of product IDs and counts.")
+
+    try:
+        async with conn.cursor() as cur:
+            # First pass: Validate products and calculate totals
+            for pid, item_info in data.items():
+                if not isinstance(item_info, dict) or "count" not in item_info:
+                     raise HTTPException(status_code=400, detail=f"Invalid item data for product ID '{pid}'. Expected {{'count': number}}.")
+
+                count = item_info.get("count", 0)
+                if not isinstance(count, int) or count <= 0:
+                    print(f"Warning: Invalid or zero count ({count}) for product ID '{pid}', skipping.")
+                    continue # Skip items with invalid or zero count
+
+                await cur.execute("SELECT * FROM products WHERE id=? OR product_id=?", (pid, pid))
+                row = await cur.fetchone()
+                if not row:
+                    not_found_ids.append(pid)
+                    continue # Collect not found IDs, proceed if others are valid
+
+                prod = dict(row)
+                # Store necessary details for the order record
+                product_details_for_order.append({
+                    "id": prod["id"],
+                    "product_id": prod.get("product_id"),
+                    "product_name": prod.get("product_name"),
+                    "cost_rate": prod.get("cost_rate", 0.0),
+                    "cost_gst": prod.get("cost_gst", 0.0),
+                    "cost_dis": prod.get("cost_dis", 0.0),
+                    "count": count # Store the count for this item in the order details
+                })
+                order_items_payload[pid] = {"count": count} # Rebuild payload with only valid items
+
+                # Recalculate totals based on DB data for valid items
+                rate = prod.get("cost_rate", 0.0)
+                gst_percent = prod.get("cost_gst", 0.0)
+                disc_percent = prod.get("cost_dis", 0.0)
+                gst_amt = (rate * gst_percent) / 100.0
+                base = rate + gst_amt
+                disc_amt = (base * disc_percent) / 100.0
+
+                total_rate += rate * count
+                total_gst += gst_amt * count
+                total_discount += disc_amt * count
+                total += (base - disc_amt) * count
+
+            # Check if any products were not found
+            if not_found_ids:
+                raise HTTPException(status_code=404, detail=f"Products not found: {', '.join(not_found_ids)}")
+
+            # Check if there are any valid items to create an order
+            if not order_items_payload:
+                 raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
+
+            # Insert order if all products were found and valid
+            order_id = generate_short_random_id() # Use the short ID generator
+            now = datetime.utcnow().isoformat() + "Z" # Add Z for UTC timezone indicator
+
+            insert_query = """
+                INSERT INTO orders
+                (order_id, user_id, items, items_detail, order_status, total_rate, total_gst, total_discount, total, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """
+            params = (
+                order_id, user_id,
+                json.dumps(order_items_payload), # Store the validated item counts
+                json.dumps(product_details_for_order), # Store the fetched product details for this order
+                "ORDER_PENDING",
+                round(total_rate, 3),
+                round(total_gst, 3),
+                round(total_discount, 3),
+                round(total, 3),
+                now
+            )
+            await cur.execute(insert_query, params)
+            await conn.commit()
+
+            return {
+                "message": "Order created successfully",
+                "order_id": order_id,
+                "user_id": user_id,
+                "order_status": "ORDER_PENDING",
+                "total": round(total, 3)
+                # Optionally return the full order details here if needed
+            }
+    except HTTPException:
+        await conn.rollback() # Rollback if HTTP error occurred
+        raise
+    except Exception as e:
+        await conn.rollback() # Rollback on generic error
+        print(f"Error in store_order: {e}")
+        # Consider more specific error handling (e.g., serialization errors)
+        raise HTTPException(status_code=500, detail=f"Failed to store order: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.post("/orders/query", response_model=List[OrderResponse])
+async def query_orders(query_request: QueryRequest): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            where_clause, params = build_query(query_request.filters)
+            query = f"SELECT * FROM orders WHERE {where_clause}"
+
+            # Add ordering
+            if query_request.order_by:
+                direction = query_request.order_direction.upper() if query_request.order_direction else "ASC"
+                if direction not in ("ASC", "DESC"): direction = "ASC"
+                safe_order_by = ''.join(c for c in query_request.order_by if c.isalnum() or c == '_')
+                if safe_order_by:
+                    query += f" ORDER BY {safe_order_by} {direction}"
+
+            # Add limit/offset
+            if query_request.limit is not None:
+                query += f" LIMIT ?"
+                params.append(query_request.limit)
+                if query_request.offset:
+                    query += f" OFFSET ?"
+                    params.append(query_request.offset)
+
+            await cursor.execute(query, params)
+            results = await cursor.fetchall()
+            return [dict_to_order(row) for row in results]
+    except Exception as e:
+        print(f"Error in query_orders: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.put("/orders/{order_id}", response_model=OrderResponse)
+async def update_order(order_id: str, order_update: OrderUpdate): # Made async
+    conn = await get_db_connection()
+    update_fields = []
+    params = []
+
+    # Build SET clause and params dynamically
+    if order_update.order_status is not None:
+        update_fields.append("order_status = ?")
+        params.append(order_update.order_status)
+    if order_update.items is not None:
+        # Add validation for items structure if needed
+        update_fields.append("items = ?")
+        params.append(json.dumps(order_update.items))
+    if order_update.items_detail is not None:
+        # Add validation for items_detail structure if needed
+        update_fields.append("items_detail = ?")
+        params.append(json.dumps(order_update.items_detail))
+    # Add other fields similarly
+    if order_update.total_rate is not None:
+        update_fields.append("total_rate = ?")
+        params.append(round(order_update.total_rate, 3))
+    if order_update.total_gst is not None:
+        update_fields.append("total_gst = ?")
+        params.append(round(order_update.total_gst, 3))
+    if order_update.total_discount is not None:
+        update_fields.append("total_discount = ?")
+        params.append(round(order_update.total_discount, 3))
+    if order_update.total is not None:
+        update_fields.append("total = ?")
+        params.append(round(order_update.total, 3))
+
+
+    if not update_fields:
+        # Close connection before raising HTTP exception if no updates
+        await conn.close()
+        raise HTTPException(status_code=400, detail="No valid fields provided for update.")
+
+    params.append(order_id) # Add order_id for WHERE clause
+    set_clause = ", ".join(update_fields)
+    update_query = f"UPDATE orders SET {set_clause} WHERE order_id = ?"
+
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute(update_query, params)
+            if cur.rowcount == 0:
+                 raise HTTPException(status_code=404, detail="Order not found or no changes made.")
+            await conn.commit()
+
+            # Fetch the updated order
+            await cur.execute("SELECT * FROM orders WHERE order_id = ?", (order_id,))
+            updated_order = await cur.fetchone()
+            if not updated_order: # Should not happen if update succeeded, but check anyway
+                 raise HTTPException(status_code=404, detail="Order not found after update attempt.")
+
+            return dict_to_order(updated_order)
+    except HTTPException:
+        await conn.rollback() # Rollback on explicit HTTP errors
+        raise
+    except Exception as e:
+        await conn.rollback() # Rollback on other errors
+        print(f"Error in update_order: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update order: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.delete("/orders/{order_id}", response_model=Dict[str, str])
+async def delete_order(order_id: str): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM orders WHERE order_id = ?", (order_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Order not found.")
+            await conn.commit()
+            return {"message": "Order deleted successfully"}
+    except HTTPException:
+        # No rollback needed for DELETE usually, but doesn't hurt
+        await conn.rollback()
+        raise
+    except Exception as e:
+        await conn.rollback()
+        print(f"Error in delete_order: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()

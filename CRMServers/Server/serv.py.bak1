@@ -1,0 +1,67 @@
+import sys
+import subprocess
+import os
+import signal
+
+PID_FILE = "uvicorn.pid"
+LOG_FILE = "serverLogs.txt"
+CMD = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+def start():
+    if os.path.exists(PID_FILE):
+        print("Server is already running.")
+        return
+
+    with open(LOG_FILE, "a") as log:
+        process = subprocess.Popen(CMD, stdout=log, stderr=log, stdin=subprocess.DEVNULL, preexec_fn=os.setsid)
+
+    with open(PID_FILE, "w") as f:
+        f.write(str(process.pid))
+    print("Server started in background.")
+
+def stop(onStopped=None):
+    if not os.path.exists(PID_FILE):
+        print("Server is not running.")
+        return
+
+    with open(PID_FILE, "r") as f:
+        pid = int(f.read().strip())
+
+    try:
+        os.killpg(os.getpgid(pid), signal.SIGTERM)
+    except ProcessLookupError:
+        print("Process not found.")
+
+    os.remove(PID_FILE)
+    print("Server stopped.")
+    if(onStopped is not None):
+        onStopped()
+
+def restart():
+    stop(start)
+
+def status():
+    if os.path.exists(PID_FILE):
+        with open(PID_FILE, "r") as f:
+            pid = int(f.read().strip())
+        if os.path.exists(f"/proc/{pid}"):
+            print(f"Server is running with PID {pid}.")
+            return
+    print("Server is not running.")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python serv.py <start|stop|res|status>")
+        sys.exit(1)
+
+    command = sys.argv[1].lower()
+    if command == "start":
+        start()
+    elif command == "stop":
+        stop()
+    elif command == "res":
+        restart()
+    elif command == "status":
+        status()
+    else:
+        print("Invalid command. Use start, stop, res, or status.")
