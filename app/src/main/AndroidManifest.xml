@@ -1,7 +1,7 @@
 
 <manifest
 	xmlns:android="http://schemas.android.com/apk/res/android"
-	package="shopline.com">
+	package="crmapp.petsfort">
 	<uses-permission android:name="android.permission.INTERNET" />
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<application
@@ -132,7 +132,7 @@
 			android:value="@integer/google_play_services_version" />
 		<provider
 			android:name="com.google.firebase.provider.FirebaseInitProvider"
-			android:authorities="shopline.com.firebaseinitprovider"
+			android:authorities="crmapp.petsfort.firebaseinitprovider"
 			android:exported="false"
 			android:initOrder="100" />
 		<service
