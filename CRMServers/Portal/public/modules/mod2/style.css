@@ -1,0 +1,40 @@
+/* modules/mod2/style.css */
+.mod2-container .content-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); /* Responsive columns */
+    gap: 1.5em;
+}
+
+.mod2-container .content-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5em; /* Space between cards in a column */
+}
+
+/* Smaller select for the header */
+.compact-select {
+    padding: 0.4em 0.6em !important; /* Override global form styles slightly */
+    font-size: 0.9em !important;
+    margin-left: 0.5em;
+    max-width: 200px; /* Limit width */
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+/* Ensure table images are consistent */
+#category-table img.table-img-preview,
+#subcategory-table img.table-img-preview {
+    width: 40px;
+    height: 40px;
+}
+
+/* Ensure card headers handle the select box well */
+.mod2-container .card-header {
+    align-items: center; /* Vertically align title and select */
+}
+.mod2-container .card-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    flex-wrap: wrap; /* Allow wrapping if needed */
+}

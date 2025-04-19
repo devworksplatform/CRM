@@ -54,7 +54,7 @@ def execute_remote_command():
             if(len(cmds) > 1):
                 if(cmds[1] == "send"):
                     send_file()
-                    continue
+                    continue                    
                 else:
                     command = server_cmd_prefix + " " + (" ".join(cmds[1:]))
 

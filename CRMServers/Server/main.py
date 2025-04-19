@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -13,6 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from uuid import uuid4
 import sqlite3 # Keep standard sqlite3 for backup operation
 
+
+import firebaseAuth
 
 # Define database path
 DB_PATH = "products.db"
@@ -248,6 +251,34 @@ async def init_db():
                 created_at TEXT
             )
             """)
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS category (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                image TEXT DEFAULT ''
+            )
+            """)
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS subcategory (
+                id TEXT PRIMARY KEY,
+                parentid TEXT NOT NULL,
+                name TEXT NOT NULL,
+                image TEXT DEFAULT ''
+            )
+            """)
+            await cursor.execute("""
+            CREATE TABLE IF NOT EXISTS userdata (
+                id TEXT PRIMARY KEY,
+                uid TEXT NOT NULL,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                role TEXT NOT NULL,
+                address TEXT NOT NULL,
+                credits REAL,
+                isblocked INTEGER NOT NULL DEFAULT 0
+            )
+            """)
+
             await conn.commit()
     finally:
         await conn.close()
@@ -1079,3 +1110,239 @@ async def delete_order(order_id: str): # Made async
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     finally:
         await conn.close()
+
+
+
+class Category(BaseModel):
+    id: str
+    name: str
+    image: Optional[str] = None
+
+class Subcategory(BaseModel):
+    id: str
+    parentid: str
+    name: str
+    image: Optional[str] = None
+
+# --- Category Endpoints ---
+
+@app.get("/categories", response_model=List[Category])
+async def get_category_list():
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT id, name, image FROM category")
+            rows = await cursor.fetchall()
+            categories = [Category(**row) for row in rows]
+            return categories
+    except Exception as e:
+        print(f"Error in get_category_list: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+@app.post("/categories")
+async def add_category(category: Category):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "INSERT OR REPLACE INTO category (id, name, image) VALUES (?, ?, ?)",
+                (category.id, category.name, category.image),
+            )
+            await conn.commit()
+        return {"message": "Category added successfully"}
+    except Exception as e:
+        print(f"Error in add_category: {e}")
+        await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+@app.delete("/categories/{cat_id}", response_model=Dict[str, str])
+async def delete_order(cat_id: str): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM category WHERE id = ?", (cat_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Order not found.")
+            await conn.commit()
+            return {"message": "Category deleted successfully"}
+    except HTTPException:
+        # No rollback needed for DELETE usually, but doesn't hurt
+        await conn.rollback()
+        raise
+    except Exception as e:
+        await conn.rollback()
+        print(f"Error in delete_category: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+# --- Subcategory Endpoints ---
+
+@app.get("/subcategories", response_model=List[Subcategory])
+async def get_subcategory_list():
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT id, parentid, name, image FROM subcategory")
+            rows = await cursor.fetchall()
+            categories = [Subcategory(**row) for row in rows]
+            return categories
+    except Exception as e:
+        print(f"Error in get_category_list: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+@app.post("/subcategories")
+async def add_subcategory(category: Subcategory):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "INSERT OR REPLACE INTO subcategory (id, parentid, name, image) VALUES (?, ?, ?, ?)",
+                (category.id, category.parentid, category.name, category.image),
+            )
+            await conn.commit()
+        return {"message": "Category added successfully"}
+    except Exception as e:
+        print(f"Error in add_category: {e}")
+        await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+@app.delete("/subcategories/{cat_id}", response_model=Dict[str, str])
+async def delete_subcategoty(cat_id: str): # Made async
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM subcategory WHERE id = ?", (cat_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Order not found.")
+            await conn.commit()
+            return {"message": "Category deleted successfully"}
+    except HTTPException:
+        # No rollback needed for DELETE usually, but doesn't hurt
+        await conn.rollback()
+        raise
+    except Exception as e:
+        await conn.rollback()
+        print(f"Error in delete_category: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+
+# --- UserData Endpoints ---
+class UserData(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    address: str
+    credits: float
+    isblocked: Optional[int] = 0
+
+class UserDataCreate(BaseModel):
+    id: str
+    name: str
+    email: str
+    role: str
+    address: str
+    credits: float
+    isblocked: Optional[int] = 0
+    pwd: str
+
+
+@app.get("/userdata", response_model=List[UserData])
+async def get_userdata_list():
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT uid as id, name, email, role, address, credits, isblocked FROM userdata")
+            rows = await cursor.fetchall()
+            categories = [UserData(**row) for row in rows]
+            return categories
+    except Exception as e:
+        print(f"Error in get_UserData_list: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.post("/userdata")
+async def add_userdata(data: UserDataCreate):
+    conn = await get_db_connection()
+    try:
+        uid,errStr = firebaseAuth.create_user_account(data.email, data.pwd)
+        if uid is None:
+            raise Exception("Failed to Create Account:"+str(errStr))
+
+        async with conn.cursor() as cursor:
+            await cursor.execute(
+                "INSERT OR REPLACE INTO userdata (id, uid, name, email, role, address, credits, isblocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (data.id, uid, data.name, data.email, data.role, data.address, data.credits, data.isblocked),
+            )
+            await conn.commit()
+        return {"message": "User added successfully", "uid":uid}
+    except Exception as e:
+        print(f"Error in add_UserData: {e}")
+        await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+
+@app.put("/userdata")
+async def add_userdata(data: UserDataCreate):
+    conn = await get_db_connection()
+    try:
+        if(data.pwd):
+            errStr = firebaseAuth.change_user_password(data.id, data.pwd)
+            if errStr is not None:
+                raise Exception("Failed to Update Password: "+str(errStr))        
+        
+        async with conn.cursor() as cursor:
+            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, data.id))
+            await conn.commit()
+        return {"message": "User updated successfully", "uid":"0"}
+    except Exception as e:
+        print(f"Error in add_UserData: {e}")
+        await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+@app.delete("/userdata/{user_id}", response_model=Dict[str, str])
+async def delete_userdata(user_id: str): # Made async
+    conn = await get_db_connection()
+    try:
+        errStr = firebaseAuth.remove_user_account(user_id)
+        if errStr is not None:
+            raise Exception("Failed to Delete Account:"+str(errStr))
+        
+        async with conn.cursor() as cur:
+            await cur.execute("DELETE FROM userdata WHERE uid = ?", (user_id,))
+            if cur.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Order not found.")
+            await conn.commit()
+            return {"message": "User deleted successfully"}
+    except HTTPException:
+        # No rollback needed for DELETE usually, but doesn't hurt
+        await conn.rollback()
+        raise
+    except Exception as e:
+        await conn.rollback()
+        print(f"Error in delete_UserData: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=5000)

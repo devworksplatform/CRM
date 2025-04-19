@@ -1,0 +1,87 @@
+<div class="module-container mod2-container">
+
+    <div class="content-columns"> <div class="content-column">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Categories</h3>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="category-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th class="actions-cell">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" class="no-data-message">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                     <p id="no-categories-message" class="no-data-message" style="display: none;">No categories created yet.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                 <div class="card-header"> <h3 id="category-form-title">Add New Category</h3> </div>
+                <form id="category-form">
+                    <input type="hidden" id="category-id">
+                    <div class="form-group">
+                        <label for="category-name">Category Name</label>
+                        <input type="text" id="category-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category-image">Image URL</label>
+                        <input type="url" id="category-image" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i data-feather="save"></i> Save Category</button>
+                        <button type="button" class="btn btn-outline" id="category-cancel-btn" style="display: none;"><i data-feather="x"></i> Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div> <div class="content-column">
+            <div class="card">
+                <div class="card-header">
+                     <div class="card-title-group">
+                        <h3>Subcategories for:</h3>
+                        <select id="parent-category-select" class="compact-select">
+                            <option value="">-- Select Category --</option>
+                            </select>
+                     </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="subcategory-table">
+                        <thead>
+                            <tr>
+                                <th>Image</th>
+                                <th>Name</th>
+                                <th class="actions-cell">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="3" class="no-data-message">Select a category first.</td></tr>
+                        </tbody>
+                    </table>
+                    <p id="no-subcategories-message" class="no-data-message" style="display: none;">No subcategories for this category.</p>
+                </div>
+            </div>
+
+            <div class="card" id="subcategory-form-card" style="display: none;"> <div class="card-header"> <h3 id="subcategory-form-title">Add Subcategory</h3> </div>
+                <form id="subcategory-form">
+                    <input type="hidden" id="subcategory-id">
+                    <input type="hidden" id="subcategory-parent-id"> <div class="form-group">
+                        <label for="subcategory-name">Subcategory Name</label>
+                        <input type="text" id="subcategory-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="subcategory-image">Image URL</label>
+                        <input type="url" id="subcategory-image" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i data-feather="save"></i> Save Subcategory</button>
+                        <button type="button" class="btn btn-outline" id="subcategory-cancel-btn" style="display: none;"><i data-feather="x"></i> Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div> </div> </div>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="basic/all.css">
+    <link rel="stylesheet" href="modules/mod1/style.css">
+    <link rel="stylesheet" href="modules/mod2/style.css">
+    <link rel="stylesheet" href="modules/mod3/style.css">
+    <link rel="stylesheet" href="modules/mod4/style.css">
+    <style>
+        /* Simple loading indicator */
+        /* #loading-indicator { ... style as before ... } */
+    </style>
+</head>
+<body>
+    <div class="overlay" id="overlay"></div>
+
+    <div class="app-container" id="app-container"> 
+        <aside class="sidebar" id="sidebar"> 
+            <h1 class="logo">PetsFort Admin Panel</h1>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="#mod1" data-module="mod1" class="nav-link"><i data-feather="users"></i> Users</a></li>
+                    <li><a href="#mod2" data-module="mod2" class="nav-link"><i data-feather="layers"></i> Categories</a></li>
+                    <li><a href="#mod3" data-module="mod3" class="nav-link"><i data-feather="package"></i> Products</a></li>
+                    <li><a href="#mod4" data-module="mod4" class="nav-link"><i data-feather="shopping-cart"></i> Orders</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main class="content-area">
+            <header class="content-header">
+                 <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">
+                     <i data-feather="menu"></i>
+                 </button>
+                <h2 id="module-title">Dashboard</h2>
+            </header>
+            <section id="module-content">
+                <p>Welcome! Select a module from the sidebar to get started.</p>
+            </section>
+        </main>
+    </div>
+
+     <div id="loading-indicator">Loading...</div>
+     <div id="toast-message" class="toast"></div>
+     <div id="genericModal" class="modal">
+       <div class="modal-content">
+         <span class="modal-close" id="genericModalClose">&times;</span>
+         <h3 id="genericModalTitle">Modal Title</h3>
+         <div id="genericModalBody"> <p>Modal content goes here...</p> </div>
+       </div>
+     </div>
+
+     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
+     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+     <script>
+         dayjs.extend(window.dayjs_plugin_relativeTime);
+         feather.replace();
+     </script>
+
+     <script src="basic/initHelp.js"></script>
+     <script src="modules/mod1/script.js"></script>
+     <script src="modules/mod2/script.js"></script>
+     <script src="modules/mod3/script.js"></script>
+     <script src="modules/mod4/script.js"></script>
+
+    <script>
+        // Basic SPA Routing & Module Loading Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.main-nav a.nav-link'); // Target specific class
+            const moduleContent = document.getElementById('module-content');
+            const moduleTitle = document.getElementById('module-title');
+            const loadingIndicator = document.getElementById('loading-indicator');
+            const appContainer = document.getElementById('app-container'); // Get container
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.getElementById('menu-toggle');
+            const overlay = document.getElementById('overlay');
+
+            // --- Sidebar Toggle Logic ---
+            function openSidebar() {
+                appContainer.classList.add('sidebar-open');
+            }
+            function closeSidebar() {
+                appContainer.classList.remove('sidebar-open');
+            }
+            menuToggle.addEventListener('click', () => {
+                if (appContainer.classList.contains('sidebar-open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+            overlay.addEventListener('click', closeSidebar); // Close sidebar on overlay click
+             // Close sidebar when a nav link is clicked (important for mobile SPA)
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth <= 768) { // Only close on mobile
+                         closeSidebar();
+                    }
+                });
+            });
+
+
+            // --- Modal Setup --- (as before)
+            const genericModal = document.getElementById('genericModal');
+            const genericModalClose = document.getElementById('genericModalClose');
+            if(genericModal && genericModalClose) {
+                genericModalClose.onclick = () => genericModal.style.display = 'none';
+            }
+            window.onclick = (event) => {
+                 if (event.target == genericModal) {
+                    genericModal.style.display = 'none';
+                 }
+                // Close sidebar if clicking outside it on mobile when open
+                // Be careful this doesn't interfere with other clicks
+                // if (window.innerWidth <= 768 && appContainer.classList.contains('sidebar-open')) {
+                //     if (!sidebar.contains(event.target) && !menuToggle.contains(event.target)) {
+                //          closeSidebar();
+                //     }
+                // }
+            }
+            window.openModal = (title, contentHtml) => { /* ... as before ... */
+                 document.getElementById('genericModalTitle').textContent = title;
+                 document.getElementById('genericModalBody').innerHTML = contentHtml;
+                 if(genericModal) genericModal.style.display = 'block';
+                 feather.replace();
+            };
+
+
+            // --- Module Loading Logic --- (as before, slightly adapted variable names)
+            function showLoading() { if(loadingIndicator) loadingIndicator.style.display = 'block'; }
+            function hideLoading() { if(loadingIndicator) loadingIndicator.style.display = 'none'; }
+
+            async function loadModule(moduleName, linkText) { /* ... as before ... */
+                showLoading();
+                if(moduleTitle) moduleTitle.textContent = linkText || 'Loading...';
+                if(moduleContent) moduleContent.innerHTML = '';
+
+                try {
+                    const response = await fetch(`modules/${moduleName}/run.html`);
+                    if (!response.ok) throw new Error(`Failed to load HTML for ${moduleName}`);
+                    const html = await response.text();
+                    if(moduleContent) moduleContent.innerHTML = html;
+
+                    const initFunctionName = `init${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}`;
+                    if (typeof window[initFunctionName] === 'function') {
+                        window[initFunctionName]();
+                    } else {
+                        console.warn(`Initialization function ${initFunctionName} not found for module ${moduleName}`);
+                    }
+
+                    feather.replace();
+                    if(moduleTitle) moduleTitle.textContent = linkText || moduleName;
+                     if (window.history.state?.module !== moduleName) {
+                       history.pushState({ module: moduleName }, linkText, `#${moduleName}`);
+                    }
+                } catch (error) {
+                    console.error('Error loading module:', error);
+                    if(moduleContent) moduleContent.innerHTML = `<p class="error-message">Failed to load module: ${moduleName}. Check console.</p>`;
+                    if(moduleTitle) moduleTitle.textContent = 'Error';
+                } finally {
+                    hideLoading();
+                }
+            }
+
+            // --- Navigation Handling --- (as before)
+            navLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const moduleName = link.getAttribute('data-module');
+                    const linkText = link.textContent.trim();
+                    if (moduleName) {
+                        loadModule(moduleName, linkText);
+                        navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                        link.parentElement.classList.add('active');
+                        // Ensure sidebar closes after navigation on mobile is handled above
+                    }
+                });
+            });
+
+            // --- Popstate & Initial Load --- (as before)
+             window.addEventListener('popstate', (event) => { /* ... as before ... */
+                if (event.state && event.state.module) {
+                    const moduleName = event.state.module;
+                    const link = document.querySelector(`.main-nav a[data-module="${moduleName}"]`);
+                    const linkText = link ? link.textContent.trim() : moduleName;
+                    loadModule(moduleName, linkText);
+                    navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                    if(link) link.parentElement.classList.add('active');
+                } else {
+                    if(moduleContent) moduleContent.innerHTML = '<p>Welcome! Select a module from the sidebar.</p>';
+                    if(moduleTitle) moduleTitle.textContent = 'Dashboard';
+                    navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                    history.replaceState(null, 'Dashboard', window.location.pathname + window.location.search); // Keep query params if any
+                }
+             });
+             const initialHash = window.location.hash.substring(1);
+             const initialLink = document.querySelector(`.main-nav a[data-module="${initialHash}"]`);
+             if (initialLink) {
+                 loadModule(initialLink.getAttribute('data-module'), initialLink.textContent.trim());
+                 navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                 initialLink.parentElement.classList.add('active');
+             } else {
+                  const defaultLink = document.querySelector('.main-nav a[data-module="mod1"]');
+                  if (defaultLink) {
+                      loadModule(defaultLink.getAttribute('data-module'), defaultLink.textContent.trim());
+                      navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                      defaultLink.parentElement.classList.add('active');
+                      history.replaceState({ module: 'mod1' }, 'Users', '#mod1');
+                  }
+             }
+        });
+    </script>
+</body>
+</html>
