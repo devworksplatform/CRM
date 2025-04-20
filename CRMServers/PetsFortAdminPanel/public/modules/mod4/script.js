@@ -232,7 +232,6 @@ async function initMod4() {
     clearFiltersBtn.addEventListener('click', clearFilters);
 
     // --- Initial Load ---
-    renderOrderTable();
 
     const orderData = await callApi('POST', 'orders/query', {
         filters: [],
@@ -255,6 +254,8 @@ async function initMod4() {
         created_at: o.created_at
     })) : [];
 
+    saveOrders(orderList);
+    renderOrderTable();
 
     // console.log(orderList);
 

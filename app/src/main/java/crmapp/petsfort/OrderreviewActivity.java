@@ -143,6 +143,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 						String addressStr = "";
 						if(_data.getStatusCode() == 200 && _data.getUser() != null) {
 							creditsStr = String.valueOf(_data.getUser().credits);
+							credits = _data.getUser().credits;
 							addressStr = _data.getUser().address;
 						}
 
@@ -248,7 +249,6 @@ public class OrderreviewActivity extends AppCompatActivity {
 							if(response.isSuccessful()) {
 								//credits decrease and save to db
 								credits -= costDetails.getTotal();
-
 
 								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 									@Override

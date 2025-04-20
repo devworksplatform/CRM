@@ -1381,17 +1381,16 @@ async def add_userdata(data: UserDataCreate):
         await conn.close()
 
 
-@app.put("/userdata")
-async def add_userdata(data: UserDataCreate):
+@app.put("/userdata/{user_id}")
+async def put_userdata(user_id: str,data: UserDataCreate):
     conn = await get_db_connection()
     try:
         if(data.pwd):
-            errStr = firebaseAuth.change_user_password(data.id, data.pwd)
+            errStr = firebaseAuth.change_user_password(user_id, data.pwd)
             if errStr is not None:
                 raise Exception("Failed to Update Password: "+str(errStr))        
-        
         async with conn.cursor() as cursor:
-            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, data.id, data.id))
+            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, user_id, data.id))
             await conn.commit()
         return {"message": "User updated successfully", "uid":"0"}
     except Exception as e:

@@ -73,6 +73,7 @@ public class Frag1FragmentActivity extends Fragment {
 						GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
 						for (Category _data : response.getCategories()) {
 							HashMap<String, Object> _map = new HashMap<>();
+							_map.put("key", _data.getId());
 							_map.put("name", _data.getName());
 							_map.put("img", _data.getImage());
 							listmap.add(_map);

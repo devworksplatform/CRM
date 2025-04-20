@@ -638,7 +638,7 @@ public class Business {
 
                     try {
                         JSONObject responseObject = new JSONObject(responseBody);
-                        parsedStatus = responseObject.optString("status", null); // Get the status field
+                        parsedStatus = responseObject.optString("order_status", null); // Get the status field
                         if (parsedStatus == null) {
                             // If status field is missing, treat it as an unexpected response format
                             errorMessage = "API response missing 'status' field.";
@@ -740,7 +740,7 @@ public class Business {
              */
             public boolean isSuccessful() {
                 // Check HTTP status AND the API's own status field
-                return statusCode >= 200 && statusCode < 300 && "stored".equalsIgnoreCase(status);
+                return statusCode >= 200 && statusCode < 300;
             }
 
             /**

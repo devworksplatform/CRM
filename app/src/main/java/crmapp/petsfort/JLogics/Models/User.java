@@ -1,7 +1,11 @@
 package crmapp.petsfort.JLogics.Models;
 
 public class User {
-    public final String id, name, email, role, address;
+    public String id;
+    public final String name;
+    public final String email;
+    public final String role;
+    public final String address;
     public double credits;
     public final int isBlocked;
 
