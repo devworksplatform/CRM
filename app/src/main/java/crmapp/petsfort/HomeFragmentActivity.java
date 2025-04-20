@@ -41,8 +41,10 @@ import java.util.TimerTask;
 
 import androidx.core.widget.NestedScrollView;
 
+import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.User;
 
 
 public class HomeFragmentActivity extends Fragment {
@@ -354,31 +356,37 @@ public class HomeFragmentActivity extends Fragment {
 		JHelpers.runAfterDelay(getActivity(),400,new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
-				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
 
+				Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 					@Override
-					public void onDataChange(DataSnapshot _dataSnapshot) {
-						updateCredits(_dataSnapshot);
+					public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+						updateCredits(_data.getUser());
 					}
-
-					@Override
-					public void onCancelled(DatabaseError _databaseError) { }
 				});
+
+//				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+//
+//					@Override
+//					public void onDataChange(DataSnapshot _dataSnapshot) {
+//						updateCredits(_dataSnapshot);
+//					}
+//
+//					@Override
+//					public void onCancelled(DatabaseError _databaseError) { }
+//				});
 			}
 		});
 
 	}
 
 
-	public void updateCredits(DataSnapshot _dataSnapshot) {
+	public void updateCredits(User user) {
 		double credits = 0;
 		String creditsStr = "No Credits Left";
 
-		if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
-			creditsStr = _dataSnapshot.child("credits").getValue(String.class);
-			try{
-				credits = Double.parseDouble(creditsStr);
-			} catch (Exception e) {}
+		if (user != null){
+			creditsStr = String.valueOf(user.credits);
+			credits = user.credits;
 		}
 
 

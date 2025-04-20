@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import crmapp.petsfort.JLogics.Models.Category;
+import crmapp.petsfort.JLogics.Models.User;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,7 +32,8 @@ import crmapp.petsfort.JLogics.Models.Product;
 import crmapp.petsfort.R;
 
 public class Business {
-    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
+//    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
+    private static final String ServerURL = "https://server.petsfort.in";
     Context context;
     public Business(Context context) {
         this.context = context;
@@ -210,6 +213,179 @@ public class Business {
     }
 
 
+    public static class UserDataApiClient {
+        private static final OkHttpClient client = new OkHttpClient();
+        private static final String getURL = ServerURL + "/user/";
+        private static final String URL = ServerURL + "/userdata/";
+
+        public static void putUserDataCallApi(String userId, User user, Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    HashMap<String,Object> dataMap = new HashMap<>();
+                    dataMap.put("id",user.id);
+                    dataMap.put("name",user.name);
+                    dataMap.put("email",user.email);
+                    dataMap.put("role",user.role);
+                    dataMap.put("address",user.address);
+                    dataMap.put("credits",user.credits);
+                    dataMap.put("isblocked",user.isBlocked);
+                    dataMap.put("pwd","");
+
+                    JSONObject jsonBody = new JSONObject(dataMap);
+                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
+
+                    Request request = new Request.Builder()
+                            .url(URL + userId)
+                            .addHeader("Content-Type", "application/json")
+                            .put(body)
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        if (responseBody.contains("successfully")) {
+                            callback.onReceived(new UserDataApiResponse(response.code(), user));
+                        } else {
+                            callback.onReceived(new UserDataApiResponse(500, null));
+                        }
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new UserDataApiResponse(500, null));
+                    });
+                }
+            });
+        }
+        public static void getUserDataCallApi(String userId, Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    Request request = new Request.Builder()
+                            .url(getURL + userId)
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    User user = parseUser(responseBody);
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new UserDataApiResponse(response.code(), user));
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new UserDataApiResponse(500, null));
+                    });
+                }
+            });
+        }
+
+        public static User parseUser(String responseBody) {
+            try {
+                JSONObject obj = new JSONObject(responseBody);
+                String id = obj.getString("id");
+                String name = obj.getString("name");
+                String email = obj.getString("email");
+                String role = obj.getString("role");
+                String address = obj.getString("address");
+                double credits = obj.getDouble("credits");
+                int isBlocked = obj.getInt("isblocked");
+
+                return new User(id, name, email, role, address, credits, isBlocked);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        public static class UserDataApiResponse {
+            private final int statusCode;
+            private final User user;
+
+            public UserDataApiResponse(int statusCode, User user) {
+                this.statusCode = statusCode;
+                this.user = user;
+            }
+
+            public int getStatusCode() { return statusCode; }
+            public User getUser() { return user; }
+        }
+    }
+
+    public static class CategoriesApiClient {
+        private static final String URL = ServerURL + "/categories";
+        private static final OkHttpClient client = new OkHttpClient();
+
+        public static void getCategoriesCallApi(Callbacker.ApiResponseWaiters.CategoriesApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    Request request = new Request.Builder()
+                            .url(URL)
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    ArrayList<Category> categoryList = parseCategories(responseBody);
+                    // Switch back to the main thread to update the UI
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new CategoriesApiClient.CategoriesApiResponse(response.code(), categoryList));
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    // Switch back to the main thread to update the UI
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new CategoriesApiClient.CategoriesApiResponse(500,new ArrayList<>()));
+                    });
+                }
+            });
+        }
+
+        public static ArrayList<Category> parseCategories(String responseBody) {
+            ArrayList<Category> categories = new ArrayList<>();
+            try {
+                JSONArray jsonArray = new JSONArray(responseBody);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject obj = jsonArray.getJSONObject(i);
+                    String id = obj.getString("id");
+                    String name = obj.getString("name");
+                    String image = obj.getString("image");
+
+                    Category category = new Category(id,name,image);
+                    categories.add(category);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return categories;
+        }
+
+        public static class CategoriesApiResponse {
+            private final int statusCode;
+            private final ArrayList<Category> categories;
+
+            public CategoriesApiResponse(int statusCode, ArrayList<Category> categories) {
+                this.statusCode = statusCode;
+                this.categories = categories;
+            }
+
+            public ArrayList<Category> getCategories() {return categories;}
+            public int getStatusCode() {
+                return statusCode;
+            }
+        }
+
+    }
 
     public static class QueryApiClient {
         private static final String URL = ServerURL + "/products/query";
@@ -577,6 +753,7 @@ public class Business {
                 return "failed".equalsIgnoreCase(status);
             }
         }
+
 
     }
     public static class OrderQueryApiClient {

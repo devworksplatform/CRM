@@ -28,6 +28,7 @@ import java.util.HashMap;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.User;
 
 public class OrderreviewActivity extends AppCompatActivity {
 
@@ -134,32 +135,50 @@ public class OrderreviewActivity extends AppCompatActivity {
 		JHelpers.runAfterDelay(this, 500, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
-				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
-					@Override
-					public void onDataChange(DataSnapshot _dataSnapshot) {
-						String creditsStr = "0";
-						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
-							creditsStr = _dataSnapshot.child("credits").getValue(String.class);
-							try{
-								credits = Double.parseDouble(creditsStr);
-							} catch (Exception e) {}
-						}
 
+				Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+					@Override
+					public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+						String creditsStr = "0";
 						String addressStr = "";
-						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("address")) {
-							addressStr = _dataSnapshot.child("address").getValue(String.class);
-							addressEditText.setText(addressStr);
+						if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+							creditsStr = String.valueOf(_data.getUser().credits);
+							addressStr = _data.getUser().address;
 						}
 
 						isCreditsLoaded = true;
 						JHelpers.TransitionManager(rootLinear, 300);
+						addressEditText.setText(addressStr);
 						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
-
 					}
-
-					@Override
-					public void onCancelled(DatabaseError _databaseError) { }
 				});
+
+//				_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+//					@Override
+//					public void onDataChange(DataSnapshot _dataSnapshot) {
+//						String creditsStr = "0";
+//						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+//							creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+//							try{
+//								credits = Double.parseDouble(creditsStr);
+//							} catch (Exception e) {}
+//						}
+//
+//						String addressStr = "";
+//						if (_dataSnapshot.exists() && _dataSnapshot.hasChild("address")) {
+//							addressStr = _dataSnapshot.child("address").getValue(String.class);
+//							addressEditText.setText(addressStr);
+//						}
+//
+//						isCreditsLoaded = true;
+//						JHelpers.TransitionManager(rootLinear, 300);
+//						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
+//
+//					}
+//
+//					@Override
+//					public void onCancelled(DatabaseError _databaseError) { }
+//				});
 
 				bulkDetailsApiClient.callApi(cartData,
 						new Callbacker.ApiResponseWaiters.BulkDetailsApiCallback() {
@@ -230,37 +249,96 @@ public class OrderreviewActivity extends AppCompatActivity {
 								//credits decrease and save to db
 								credits -= costDetails.getTotal();
 
-								_firebase.getReference("datas/users/details/" + userId).child("credits").setValue(String.valueOf(credits))
-										.addOnCompleteListener(task -> {
-											if (task.isSuccessful()) {
-												progressDialog.hide();
-												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-														.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-														.setCancelable(false)
-														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-															@Override
-															public void onClick(DialogInterface dialog, int which) {
-																Business.localDB_SharedPref.clearCart(localDB);
-																Intent intent = new Intent();
-																intent.setClass(OrderreviewActivity.this, MainActivity.class);
-																startActivity(intent);
-																finishAffinity();
-															}
-														}).show();
-											} else {
-												progressDialog.hide();
-												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-														.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-														.setCancelable(false)
-														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-															@Override
-															public void onClick(DialogInterface dialog, int which) {
-																dialog.dismiss();
-																confirmOrderLinearCard.setEnabled(true);
-															}
-														}).show();
-											}
-										});
+
+								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+									@Override
+									public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+										if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+											User userInfo = _data.getUser();
+											userInfo.credits = credits;
+											Business.UserDataApiClient.putUserDataCallApi(userId, userInfo,new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+												@Override
+												public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+													if(_data.getStatusCode() == 200) {
+														progressDialog.hide();
+														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+																.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+																.setCancelable(false)
+																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+																	@Override
+																	public void onClick(DialogInterface dialog, int which) {
+																		Business.localDB_SharedPref.clearCart(localDB);
+																		Intent intent = new Intent();
+																		intent.setClass(OrderreviewActivity.this, MainActivity.class);
+																		startActivity(intent);
+																		finishAffinity();
+																	}
+																}).show();
+													} else {
+														progressDialog.hide();
+														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+																.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+																.setCancelable(false)
+																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+																	@Override
+																	public void onClick(DialogInterface dialog, int which) {
+																		dialog.dismiss();
+																		confirmOrderLinearCard.setEnabled(true);
+																	}
+																}).show();
+													}
+												}
+											});
+
+										} else {
+
+											progressDialog.hide();
+											new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+													.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+													.setCancelable(false)
+													.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+														@Override
+														public void onClick(DialogInterface dialog, int which) {
+															dialog.dismiss();
+															confirmOrderLinearCard.setEnabled(true);
+														}
+													}).show();
+										}
+									}
+								});
+
+
+//								_firebase.getReference("datas/users/details/" + userId).child("credits").setValue(String.valueOf(credits))
+//										.addOnCompleteListener(task -> {
+//											if (task.isSuccessful()) {
+//												progressDialog.hide();
+//												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+//														.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+//														.setCancelable(false)
+//														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//															@Override
+//															public void onClick(DialogInterface dialog, int which) {
+//																Business.localDB_SharedPref.clearCart(localDB);
+//																Intent intent = new Intent();
+//																intent.setClass(OrderreviewActivity.this, MainActivity.class);
+//																startActivity(intent);
+//																finishAffinity();
+//															}
+//														}).show();
+//											} else {
+//												progressDialog.hide();
+//												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+//														.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+//														.setCancelable(false)
+//														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//															@Override
+//															public void onClick(DialogInterface dialog, int which) {
+//																dialog.dismiss();
+//																confirmOrderLinearCard.setEnabled(true);
+//															}
+//														}).show();
+//											}
+//										});
 							} else {
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")

@@ -28,6 +28,10 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
+import crmapp.petsfort.JLogics.Business;
+import crmapp.petsfort.JLogics.Callbacker;
+import crmapp.petsfort.JLogics.Models.Category;
+
 public class CategoryActivity extends AppCompatActivity {
 
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
@@ -38,7 +42,7 @@ public class CategoryActivity extends AppCompatActivity {
 	private RecyclerView recyclerview1;
 	private ProgressBar progressbar1;
 
-	private DatabaseReference product = _firebase.getReference("datas/category");
+//	private DatabaseReference product = _firebase.getReference("datas/category");
 	private ChildEventListener _product_child_listener;
 	private Intent i = new Intent();
 
@@ -65,30 +69,28 @@ public class CategoryActivity extends AppCompatActivity {
 		recyclerview1.setAdapter(new CategoryActivity.Recyclerview1Adapter(listmap));
 
 
-		product.addListenerForSingleValueEvent(new ValueEventListener() {
+		Business.CategoriesApiClient.getCategoriesCallApi(new Callbacker.ApiResponseWaiters.CategoriesApiCallback(){
 			@Override
-			public void onDataChange(DataSnapshot _dataSnapshot) {
-				listmap = new ArrayList<>();
-				try {
-					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-						HashMap<String, Object> _map = _data.getValue(_ind);
-						_map.put("key", _data.getKey());
-						_map.put("order", Integer.parseInt(_data.getKey().replaceAll("\\D", "")));
-						listmap.add(_map);
+			public void onReceived(Business.CategoriesApiClient.CategoriesApiResponse response) {
+				super.onReceived(response);
+
+				if(response.getStatusCode() == 200) {
+					try {
+						GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
+						for (Category _data : response.getCategories()) {
+							HashMap<String, Object> _map = new HashMap<>();
+							_map.put("name", _data.getName());
+							_map.put("img", _data.getImage());
+							listmap.add(_map);
+						}
 					}
-					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-						Collections.sort(listmap, Comparator.comparingInt(m -> Integer.parseInt(m.get("order").toString())));
+					catch (Exception _e) {
+						_e.printStackTrace();
 					}
-				}
-				catch (Exception _e) {
-					_e.printStackTrace();
 				}
 				recyclerview1.setAdapter(new CategoryActivity.Recyclerview1Adapter(listmap));
-//				System.out.println(listmap);
-//				_reverse(listmap);
 
-				if (listmap.size() == 0) {
+				if (listmap.isEmpty()) {
 					progressbar1.setVisibility(View.VISIBLE);
 					recyclerview1.setVisibility(View.GONE);
 				}
@@ -96,11 +98,45 @@ public class CategoryActivity extends AppCompatActivity {
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.VISIBLE);
 				}
-			}
-			@Override
-			public void onCancelled(DatabaseError _databaseError) {
+
 			}
 		});
+
+
+//		product.addListenerForSingleValueEvent(new ValueEventListener() {
+//			@Override
+//			public void onDataChange(DataSnapshot _dataSnapshot) {
+//				listmap = new ArrayList<>();
+//				try {
+//					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
+//					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
+//						HashMap<String, Object> _map = _data.getValue(_ind);
+//						_map.put("key", _data.getKey());
+//						_map.put("order", Integer.parseInt(_data.getKey().replaceAll("\\D", "")));
+//						listmap.add(_map);
+//					}
+//					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+//						Collections.sort(listmap, Comparator.comparingInt(m -> Integer.parseInt(m.get("order").toString())));
+//					}
+//				}
+//				catch (Exception _e) {
+//					_e.printStackTrace();
+//				}
+//				recyclerview1.setAdapter(new CategoryActivity.Recyclerview1Adapter(listmap));
+//
+//				if (listmap.size() == 0) {
+//					progressbar1.setVisibility(View.VISIBLE);
+//					recyclerview1.setVisibility(View.GONE);
+//				}
+//				else {
+//					progressbar1.setVisibility(View.GONE);
+//					recyclerview1.setVisibility(View.VISIBLE);
+//				}
+//			}
+//			@Override
+//			public void onCancelled(DatabaseError _databaseError) {
+//			}
+//		});
 
 	}
 

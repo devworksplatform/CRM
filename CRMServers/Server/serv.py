@@ -5,15 +5,18 @@ import time
 # import signal # No longer needed for os.killpg
 
 # Configuration
-LOG_FILE = "serverLogs.txt"
+LOG_FILE = "serverLogs.txt" 
 # Command to start the server
-CMD_START = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# sudo uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/server.petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/server.petsfort.in/privkey.pem
+# CMD_START = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/etc/letsencrypt/live/petsfort.in/fullchain.pem", "--ssl-keyfile", "/etc/letsencrypt/live/petsfort.in/privkey.pem"]
 
 # --- New approach using pattern matching ---
 # Pattern to find the process for status and stopping.
 # Make this AS SPECIFIC AS POSSIBLE to avoid matching other processes.
 # Including arguments like host/port makes it safer.
-PROCESS_PATTERN = "uvicorn main:app --host 0.0.0.0 --port 8000"
+# PROCESS_PATTERN = "uvicorn main:app --host 0.0.0.0 --port 8000"
+PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/petsfort.in/privkey.pem"
 
 # Command to find the process (using pgrep). -a lists PID and full command.
 CMD_PGREP = ["pgrep", "-af", PROCESS_PATTERN]
@@ -23,13 +26,6 @@ CMD_PKILL = ["pkill", "-f", PROCESS_PATTERN]
 
 
 def check_process_status():
-    """
-    Checks if a process matching PROCESS_PATTERN is running using pgrep.
-
-    Returns:
-        tuple: (bool_is_running, str_details_or_none)
-               Details contain the output of pgrep if running.
-    """
     print(f"Checking for process matching: '{PROCESS_PATTERN}'")
     try:
         # Run pgrep, capture output, don't raise error on non-zero exit
@@ -62,7 +58,6 @@ def check_process_status():
 
 
 def start():
-    """Starts the server if not already running."""
     is_running, details = check_process_status()
     if is_running:
         print("Server appears to be already running:")
@@ -95,7 +90,6 @@ def start():
 
 
 def stop(onStopped=None):
-    """Stops the server process using pkill."""
     is_running, details = check_process_status()
 
     if not is_running:
@@ -139,14 +133,12 @@ def stop(onStopped=None):
 
 
 def restart():
-    """Restarts the server."""
     print("Restarting server...")
     # Pass the start function as the callback to run after stopping completes
     stop(onStopped=start)
 
 
 def status():
-    """Checks and displays the detailed status of the server process."""
     is_running, details = check_process_status()
     if is_running:
         print("--- Server Status: Running ---")

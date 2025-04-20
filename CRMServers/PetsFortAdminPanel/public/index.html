@@ -22,10 +22,10 @@
             <h1 class="logo">PetsFort Admin Panel</h1>
             <nav class="main-nav">
                 <ul>
-                    <li><a href="#mod1" data-module="mod1" class="nav-link"><i data-feather="users"></i> Users</a></li>
-                    <li><a href="#mod2" data-module="mod2" class="nav-link"><i data-feather="layers"></i> Categories</a></li>
-                    <li><a href="#mod3" data-module="mod3" class="nav-link"><i data-feather="package"></i> Products</a></li>
-                    <li><a href="#mod4" data-module="mod4" class="nav-link"><i data-feather="shopping-cart"></i> Orders</a></li>
+                    <li><a href="#Users" data-module="Users" data-module-path="mod1" class="nav-link"><i data-feather="users"></i> Users</a></li>
+                    <li><a href="#Uategory" data-module="Category" data-module-path="mod2" class="nav-link"><i data-feather="layers"></i> Categories</a></li>
+                    <li><a href="#Products" data-module="Products" data-module-path="mod3" class="nav-link"><i data-feather="package"></i> Products</a></li>
+                    <li><a href="#Orders" data-module="Orders" data-module-path="mod4" class="nav-link"><i data-feather="shopping-cart"></i> Orders</a></li>
                 </ul>
             </nav>
         </aside>
@@ -133,18 +133,18 @@
             function showLoading() { if(loadingIndicator) loadingIndicator.style.display = 'block'; }
             function hideLoading() { if(loadingIndicator) loadingIndicator.style.display = 'none'; }
 
-            async function loadModule(moduleName, linkText) { /* ... as before ... */
+            async function loadModule(moduleName, modulePath, linkText) { /* ... as before ... */
                 showLoading();
                 if(moduleTitle) moduleTitle.textContent = linkText || 'Loading...';
                 if(moduleContent) moduleContent.innerHTML = '';
 
                 try {
-                    const response = await fetch(`modules/${moduleName}/run.html`);
+                    const response = await fetch(`modules/${modulePath}/run.html`);
                     if (!response.ok) throw new Error(`Failed to load HTML for ${moduleName}`);
                     const html = await response.text();
                     if(moduleContent) moduleContent.innerHTML = html;
 
-                    const initFunctionName = `init${moduleName.charAt(0).toUpperCase() + moduleName.slice(1)}`;
+                    const initFunctionName = `init${modulePath.charAt(0).toUpperCase() + modulePath.slice(1)}`;
                     if (typeof window[initFunctionName] === 'function') {
                         window[initFunctionName]();
                     } else {
@@ -169,10 +169,11 @@
             navLinks.forEach(link => {
                 link.addEventListener('click', (event) => {
                     event.preventDefault();
+                    const modulePath = link.getAttribute('data-module-path');
                     const moduleName = link.getAttribute('data-module');
                     const linkText = link.textContent.trim();
                     if (moduleName) {
-                        loadModule(moduleName, linkText);
+                        loadModule(moduleName, modulePath, linkText);
                         navLinks.forEach(l => l.parentElement.classList.remove('active'));
                         link.parentElement.classList.add('active');
                         // Ensure sidebar closes after navigation on mobile is handled above
@@ -181,12 +182,13 @@
             });
 
             // --- Popstate & Initial Load --- (as before)
-             window.addEventListener('popstate', (event) => { /* ... as before ... */
+             window.addEventListener('popstate', (event) => {
                 if (event.state && event.state.module) {
                     const moduleName = event.state.module;
                     const link = document.querySelector(`.main-nav a[data-module="${moduleName}"]`);
+                    const modulePath = link.getAttribute('data-module-path');
                     const linkText = link ? link.textContent.trim() : moduleName;
-                    loadModule(moduleName, linkText);
+                    loadModule(moduleName, modulePath, linkText);
                     navLinks.forEach(l => l.parentElement.classList.remove('active'));
                     if(link) link.parentElement.classList.add('active');
                 } else {
@@ -199,16 +201,16 @@
              const initialHash = window.location.hash.substring(1);
              const initialLink = document.querySelector(`.main-nav a[data-module="${initialHash}"]`);
              if (initialLink) {
-                 loadModule(initialLink.getAttribute('data-module'), initialLink.textContent.trim());
+                 loadModule(initialLink.getAttribute('data-module'), initialLink.getAttribute('data-module-path'), initialLink.textContent.trim());
                  navLinks.forEach(l => l.parentElement.classList.remove('active'));
                  initialLink.parentElement.classList.add('active');
              } else {
                   const defaultLink = document.querySelector('.main-nav a[data-module="mod1"]');
                   if (defaultLink) {
-                      loadModule(defaultLink.getAttribute('data-module'), defaultLink.textContent.trim());
+                      loadModule(defaultLink.getAttribute('data-module'), defaultLink.getAttribute('data-module-path'), defaultLink.textContent.trim());
                       navLinks.forEach(l => l.parentElement.classList.remove('active'));
                       defaultLink.parentElement.classList.add('active');
-                      history.replaceState({ module: 'mod1' }, 'Users', '#mod1');
+                      history.replaceState({ module: 'mod1' }, 'Users', '#Users');
                   }
              }
         });

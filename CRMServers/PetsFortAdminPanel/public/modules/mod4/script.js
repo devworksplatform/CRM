@@ -234,7 +234,7 @@ async function initMod4() {
     // --- Initial Load ---
     renderOrderTable();
 
-    const orderData = await callApi('POST', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/orders/query', {
+    const orderData = await callApi('POST', 'orders/query', {
         filters: [],
         limit: 10000,
         offset: 0,
@@ -256,7 +256,7 @@ async function initMod4() {
     })) : [];
 
 
-    console.log(orderList);
+    // console.log(orderList);
 
 
      // Add default data if needed

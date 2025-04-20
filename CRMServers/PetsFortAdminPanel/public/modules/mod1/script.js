@@ -188,7 +188,7 @@ async function initMod1() {
         if (isUpdating) {
             showToast(`Updating User Account... "${user.email}".`, 'success');
 
-            callApi("PUT","http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/userdata/",{
+            callApi("PUT","userdata/",{
                 id: user.id,
                 name: user.username,
                 email: user.email,
@@ -211,7 +211,7 @@ async function initMod1() {
 
             showToast(`Creating User Account... "${user.email}".`, 'success');
 
-            callApi("POST","http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/userdata/",{
+            callApi("POST","userdata/",{
                 id: user.id,
                 name: user.username,
                 email: user.email,
@@ -243,7 +243,7 @@ async function initMod1() {
         // For now, just delete the user.
         users = users.filter(u => u.id !== userId);
 
-        callApi("DELETE","http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/userdata/"+userId)
+        callApi("DELETE","userdata/"+userId)
 
         saveUsers(users);
         handleSearch(); // Re-render based on current search term
@@ -273,7 +273,7 @@ async function initMod1() {
     // --- Initial Load ---
 
 
-    const userdata = await callApi('GET', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/userdata');
+    const userdata = await callApi('GET', 'userdata');
     const userdata_list = Array.isArray(userdata) ? userdata.map(u => ({
         id: u.id,
         username: u.name,

@@ -1,5 +1,9 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import RedirectResponse
+from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse
+import httpx
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import json
@@ -13,13 +17,14 @@ from fastapi.middleware.cors import CORSMiddleware
 # Removed: from fastapi.responses import HTMLResponse
 from uuid import uuid4
 import sqlite3 # Keep standard sqlite3 for backup operation
-
+from urllib.parse import urlparse
 
 import firebaseAuth
 
 # Define database path
 DB_PATH = "products.db"
 # DB_PATH_SMS = "sms.db" # This was never used in the original code
+# sudo sysctl -w vm.drop_caches=3
 
 # Initialize FastAPI
 app = FastAPI(title="Async SQLite Products API") # Updated title
@@ -30,6 +35,66 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+ALLOWED_HOST = "petsfort.in"
+PROXY_URL = "https://pets-fort.web.app"
+
+@app.middleware("http")
+async def proxy_petsfort(request: Request, call_next):
+    host = request.headers.get("host")
+    if host == ALLOWED_HOST:
+        url = urlparse(str(request.url))
+        proxy_path = url.path
+        proxy_query = url.query
+        proxy_url = f"{PROXY_URL}{proxy_path}"
+        if proxy_query:
+            proxy_url += f"?{proxy_query}"
+        return RedirectResponse(url=proxy_url, status_code=307)
+    return await call_next(request)
+
+# async def reverse_proxy(request: Request, proxy_url: str):
+#     url = urlparse(str(request.url))
+#     target_url = f"{proxy_url}{url.path}"
+#     if url.query:
+#         target_url += f"?{url.query}"
+#     target_hostname = urlparse(proxy_url).netloc
+
+#     async with httpx.AsyncClient() as client:
+#         try:
+#             proxy_request = client.build_request(
+#                 method=request.method,
+#                 url=target_url,
+#                 headers=dict(request.headers),
+#                 content=await request.body()
+#             )
+#             # Remove original host and set the target host
+#             proxy_request.headers.pop("host", None)
+#             proxy_request.headers["Host"] = target_hostname
+#             proxy_request.headers["X-Forwarded-Host"] = request.headers.get("host", "")
+
+#             proxy_response = await client.send(proxy_request, stream=True)
+
+#             return StreamingResponse(
+#                 proxy_response.aiter_bytes(),
+#                 status_code=proxy_response.status_code,
+#             )
+#         except httpx.ConnectError as e:
+#             return JSONResponse(
+#                 content={"error": f"Could not connect to the proxy target: {e}"},
+#                 status_code=502,
+#             )
+#         except Exception as e:
+#             return JSONResponse(
+#                 content={"error": f"An error occurred during proxying: {e}"},
+#                 status_code=500,
+#             )
+    
+# @app.middleware("http")
+# async def proxy_petsfort(request: Request, call_next):
+#     host = request.headers.get("host")
+#     if host == ALLOWED_HOST:
+#         return await reverse_proxy(request, PROXY_URL)
+#     return await call_next(request)
 
 # --- Data Models (Unchanged from original) ---
 class Product(BaseModel):
@@ -1276,6 +1341,23 @@ async def get_userdata_list():
         await conn.close()
 
 
+@app.get("/user/{user_id}", response_model=UserData)
+async def get_userdata(user_id: str):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT id, name, email, role, address, credits, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
+            row = await cursor.fetchone()
+            if row:
+                return UserData(**dict(zip(("id", "name", "email", "role", "address", "credits", "isblocked"), row)))
+            else:
+                raise HTTPException(status_code=404, detail=f"User with ID '{user_id}' not found")
+    except Exception as e:
+        print(f"Error in get_userdata: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
 @app.post("/userdata")
 async def add_userdata(data: UserDataCreate):
     conn = await get_db_connection()
@@ -1309,7 +1391,7 @@ async def add_userdata(data: UserDataCreate):
                 raise Exception("Failed to Update Password: "+str(errStr))        
         
         async with conn.cursor() as cursor:
-            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, data.id))
+            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, data.id, data.id))
             await conn.commit()
         return {"message": "User updated successfully", "uid":"0"}
     except Exception as e:

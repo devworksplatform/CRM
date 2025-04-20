@@ -18,6 +18,11 @@ public class Callbacker {
 
 
     public static class ApiResponseWaiters {
+        public static class UserDataApiCallback {
+            public void onReceived(Business.UserDataApiClient.UserDataApiResponse response) {
+
+            }
+        }
         public static class QueryApiCallback {
             public void onReceived(Business.QueryApiClient.QueryApiResponse response) {
 
@@ -31,6 +36,12 @@ public class Callbacker {
 
         public static class OrderCheckoutApiCallback {
             public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
+
+            }
+        }
+
+        public static class CategoriesApiCallback {
+            public void onReceived(Business.CategoriesApiClient.CategoriesApiResponse response) {
 
             }
         }

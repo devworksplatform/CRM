@@ -38,6 +38,10 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import crmapp.petsfort.JLogics.Business;
+import crmapp.petsfort.JLogics.Callbacker;
+import crmapp.petsfort.JLogics.Models.User;
 import de.hdodenhof.circleimageview.*;
 import crmapp.petsfort.JLogics.JHelpers;
 
@@ -319,26 +323,38 @@ public class PrincipalActivity extends AppCompatActivity {
 			}
 		});
 
-		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+		Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 			@Override
-			public void onDataChange(DataSnapshot snapshot) {
-				if (snapshot.exists()) {
-					if (snapshot.hasChild("name")) {
-						String name = snapshot.child("name").getValue(String.class);
-						_drawer_textview1.setText(name);
-					} else {
-						_drawer_textview1.setText("Unknown User");
-					}
+			public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+				if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+					_drawer_textview1.setText(_data.getUser().name);
 				} else {
 					_drawer_textview1.setText("Unknown User");
 				}
 			}
-
-			@Override
-			public void onCancelled(DatabaseError error) {
-				// Handle error if needed
-			}
 		});
+
+
+//		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+//			@Override
+//			public void onDataChange(DataSnapshot snapshot) {
+//				if (snapshot.exists()) {
+//					if (snapshot.hasChild("name")) {
+//						String name = snapshot.child("name").getValue(String.class);
+//						_drawer_textview1.setText(name);
+//					} else {
+//						_drawer_textview1.setText("Unknown User");
+//					}
+//				} else {
+//					_drawer_textview1.setText("Unknown User");
+//				}
+//			}
+//
+//			@Override
+//			public void onCancelled(DatabaseError error) {
+//				// Handle error if needed
+//			}
+//		});
 
 
 		_drawer_linear1.setOnClickListener(new View.OnClickListener() {

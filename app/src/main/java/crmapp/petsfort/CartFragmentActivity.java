@@ -40,6 +40,7 @@ import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.CartProduct;
 import crmapp.petsfort.JLogics.Models.Product;
+import crmapp.petsfort.JLogics.Models.User;
 
 public class CartFragmentActivity extends Fragment {
 	
@@ -212,24 +213,35 @@ public class CartFragmentActivity extends Fragment {
 
 
 
-		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+		Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 			@Override
-			public void onDataChange(DataSnapshot _dataSnapshot) {
+			public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
 				double credits = 0;
-				String creditsStr = "0";
-				if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
-					creditsStr = _dataSnapshot.child("credits").getValue(String.class);
-					try{
-						credits = Double.parseDouble(creditsStr);
-					} catch (Exception e) {}
+				if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+					credits = _data.getUser().credits;
 				}
-
 				creditTextview.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
 			}
-
-			@Override
-			public void onCancelled(DatabaseError _databaseError) { }
 		});
+
+//		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
+//			@Override
+//			public void onDataChange(DataSnapshot _dataSnapshot) {
+//				double credits = 0;
+//				String creditsStr = "0";
+//				if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
+//					creditsStr = _dataSnapshot.child("credits").getValue(String.class);
+//					try{
+//						credits = Double.parseDouble(creditsStr);
+//					} catch (Exception e) {}
+//				}
+//
+//				creditTextview.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
+//			}
+//
+//			@Override
+//			public void onCancelled(DatabaseError _databaseError) { }
+//		});
 
 	}
 

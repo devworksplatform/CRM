@@ -100,7 +100,7 @@ async function callApi(method, url, body = null) {
     }
 
     try {
-        const response = await fetch(url, options);
+        const response = await fetch("https://server.petsfort.in/"+url, options);
 
         if (!response.ok) {
         throw new Error(`HTTP ${response.status} - ${response.statusText}`);

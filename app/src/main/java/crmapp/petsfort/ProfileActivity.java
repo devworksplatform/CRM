@@ -17,12 +17,17 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.Category;
+import crmapp.petsfort.JLogics.Models.User;
 
 public class ProfileActivity extends AppCompatActivity {
 	
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
 
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
@@ -89,40 +94,66 @@ public class ProfileActivity extends AppCompatActivity {
 				JHelpers.TransitionManager(rootLinear,600);
 				img2.setVisibility(View.VISIBLE);
 
-				_firebase.getReference("datas/users/details/".concat(FirebaseAuth.getInstance().getCurrentUser().getUid())).addListenerForSingleValueEvent(new ValueEventListener() {
+				Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 					@Override
-					public void onDataChange(DataSnapshot snapshot) {
-						if (snapshot.exists()) {
-							if (snapshot.hasChild("name") && snapshot.hasChild("email")) {
-								String name = snapshot.child("name").getValue(String.class);
-								String email = snapshot.child("email").getValue(String.class);
+					public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+						if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+							User userInfo = _data.getUser();
+							String name = userInfo.name;
+							String email = userInfo.email;
 
-								JHelpers.TransitionManager(rootLinear, 600);
-								usernameEmail.setText(name.concat("\n").concat(email));
-							} else {
-								JHelpers.TransitionManager(rootLinear, 600);
-								usernameEmail.setText("Unknown User");
-							}
+							JHelpers.TransitionManager(rootLinear, 600);
+							usernameEmail.setText(name.concat("\n").concat(email));
 
 							String addressStr = "";
-							if (snapshot.hasChild("address")) {
-								addressStr = snapshot.child("address").getValue(String.class);
-								address.setText(addressStr);
-							}
+							addressStr = userInfo.address;
+							address.setText(addressStr);
 
-							updateCredits(snapshot);
-
+							updateCredits(userInfo);
 						} else {
 							JHelpers.TransitionManager(rootLinear, 600);
 							usernameEmail.setText("Unknown User");
+							updateCredits(null);
 						}
 					}
-
-					@Override
-					public void onCancelled(DatabaseError error) {
-						// Handle error if needed
-					}
 				});
+
+
+
+//				_firebase.getReference("datas/users/details/".concat(FirebaseAuth.getInstance().getCurrentUser().getUid())).addListenerForSingleValueEvent(new ValueEventListener() {
+//					@Override
+//					public void onDataChange(DataSnapshot snapshot) {
+//						if (snapshot.exists()) {
+//							if (snapshot.hasChild("name") && snapshot.hasChild("email")) {
+//								String name = snapshot.child("name").getValue(String.class);
+//								String email = snapshot.child("email").getValue(String.class);
+//
+//								JHelpers.TransitionManager(rootLinear, 600);
+//								usernameEmail.setText(name.concat("\n").concat(email));
+//							} else {
+//								JHelpers.TransitionManager(rootLinear, 600);
+//								usernameEmail.setText("Unknown User");
+//							}
+//
+//							String addressStr = "";
+//							if (snapshot.hasChild("address")) {
+//								addressStr = snapshot.child("address").getValue(String.class);
+//								address.setText(addressStr);
+//							}
+//
+//							updateCredits(snapshot);
+//
+//						} else {
+//							JHelpers.TransitionManager(rootLinear, 600);
+//							usernameEmail.setText("Unknown User");
+//						}
+//					}
+//
+//					@Override
+//					public void onCancelled(DatabaseError error) {
+//						// Handle error if needed
+//					}
+//				});
 
 
 			}
@@ -135,15 +166,12 @@ public class ProfileActivity extends AppCompatActivity {
 
 
 
-	public void updateCredits(DataSnapshot _dataSnapshot) {
+	public void updateCredits(User user) {
 		double credits = 0;
 		String creditsStr = "No Credits Left";
 
-		if (_dataSnapshot.exists() && _dataSnapshot.hasChild("credits")) {
-			creditsStr = _dataSnapshot.child("credits").getValue(String.class);
-			try{
-				credits = Double.parseDouble(creditsStr);
-			} catch (Exception e) {}
+		if (user != null) {
+			credits = user.credits;
 		}
 
 

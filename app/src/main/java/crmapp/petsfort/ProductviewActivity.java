@@ -25,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.GenericTypeIndicator;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.*;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.Category;
 import crmapp.petsfort.JLogics.Models.Product;
 
 public class ProductviewActivity extends AppCompatActivity {
@@ -298,30 +300,69 @@ public class ProductviewActivity extends AppCompatActivity {
 		});
 
 
-		_firebase.getReference("datas/category/".concat(product.getCatId())).addListenerForSingleValueEvent(new ValueEventListener() {
+		Business.CategoriesApiClient.getCategoriesCallApi(new Callbacker.ApiResponseWaiters.CategoriesApiCallback(){
 			@Override
-			public void onDataChange(DataSnapshot _dataSnapshot) {
-				if (_dataSnapshot.exists()) {
-					String name = _dataSnapshot.child("name").getValue(String.class);
+			public void onReceived(Business.CategoriesApiClient.CategoriesApiResponse response) {
+				super.onReceived(response);
 
-					if(name == null || name.isEmpty()) {
-						name = product.getProductId();
+				if(response.getStatusCode() == 200) {
+					try {
+						String catId = product.getCatId();
+						Category cat = null;
+						for (Category _data : response.getCategories()) {
+							if(catId.equals(_data.getId())){
+								cat = _data;
+								break;
+							}
+						}
+						String name;
+						if (cat != null){
+							name = cat.getName();
+						} else {
+							name = product.getProductId();
+						}
+
+						productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
+						JHelpers.TransitionManager(rootLinear,200);
+						productSecondaryNameTextView.setVisibility(View.VISIBLE);
+
 					}
-
-					productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
-					JHelpers.TransitionManager(rootLinear,200);
-					productSecondaryNameTextView.setVisibility(View.VISIBLE);
+					catch (Exception _e) {
+						_e.printStackTrace();
+					}
 				} else {
 					productSecondaryNameTextView.setText(String.format("%s", product.getProductName()));
 					JHelpers.TransitionManager(rootLinear,200);
 					productSecondaryNameTextView.setVisibility(View.VISIBLE);
 				}
-
-			}
-			@Override
-			public void onCancelled(DatabaseError _databaseError) {
 			}
 		});
+
+
+//		_firebase.getReference("datas/category/".concat(product.getCatId())).addListenerForSingleValueEvent(new ValueEventListener() {
+//			@Override
+//			public void onDataChange(DataSnapshot _dataSnapshot) {
+//				if (_dataSnapshot.exists()) {
+//					String name = _dataSnapshot.child("name").getValue(String.class);
+//
+//					if(name == null || name.isEmpty()) {
+//						name = product.getProductId();
+//					}
+//
+//					productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
+//					JHelpers.TransitionManager(rootLinear,200);
+//					productSecondaryNameTextView.setVisibility(View.VISIBLE);
+//				} else {
+//					productSecondaryNameTextView.setText(String.format("%s", product.getProductName()));
+//					JHelpers.TransitionManager(rootLinear,200);
+//					productSecondaryNameTextView.setVisibility(View.VISIBLE);
+//				}
+//
+//			}
+//			@Override
+//			public void onCancelled(DatabaseError _databaseError) {
+//			}
+//		});
 	}
 
 

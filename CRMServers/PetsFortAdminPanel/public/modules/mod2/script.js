@@ -191,7 +191,7 @@ async function initMod2() {
             showToast(`Category "${category.name}" added.`, 'success');
         }
 
-        callApi('POST', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/categories', category);
+        callApi('POST', 'categories', category);
 
         saveCategories(categories);
         renderCategoryTable();
@@ -216,7 +216,7 @@ async function initMod2() {
         let categories = getCategories();
         categories = categories.filter(c => c.id !== catId);
 
-        callApi('DELETE', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/categories/'+catId);
+        callApi('DELETE', 'categories/'+catId);
 
         saveCategories(categories);
         renderCategoryTable();
@@ -276,7 +276,7 @@ async function initMod2() {
 
 
 
-        callApi('POST', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/subcategories', {
+        callApi('POST', 'subcategories', {
             id: subcategory.id,
             parentid: subcategory.parentId,
             name: subcategory.name,
@@ -302,7 +302,7 @@ async function initMod2() {
         const subToDelete = subcategories.find(s => s.id === subId);
         subcategories = subcategories.filter(s => s.id !== subId);
 
-        callApi('DELETE', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/categories'+subId);
+        callApi('DELETE', 'categories'+subId);
 
         saveSubcategories(subcategories);
         renderSubcategoryTable(subToDelete ? subToDelete.parentId : selectedParentCategoryId); // Re-render
@@ -334,14 +334,14 @@ async function initMod2() {
 
     // --- Initial Load ---
 
-    const category = await callApi('GET', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/categories');
+    const category = await callApi('GET', 'categories');
     const category_list = Array.isArray(category) ? category.map(c => ({
         id: c.id,
         name: c.name,
         image: c.image
     })) : [];
 
-    const sub_category = await callApi('GET', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/subcategories');
+    const sub_category = await callApi('GET', 'subcategories');
     const sub_category_list = Array.isArray(sub_category) ? sub_category.map(c => ({
         id: c.id,
         parentId: c.parentid,

@@ -269,7 +269,7 @@ async function initMod3() {
         }
 
 
-        callApi("POST","http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/products/",product)
+        callApi("POST","products/",product)
         saveProducts(products);
         handleFilterAndSearch(); // Re-render table based on current filters
         resetForm();
@@ -289,7 +289,7 @@ async function initMod3() {
         let products = getProducts();
         products = products.filter(p => p.product_id !== productId);
 
-        callApi("DELETE","http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/products/"+productId)
+        callApi("DELETE","products/"+productId)
 
         saveProducts(products);
         handleFilterAndSearch(); // Re-render table
@@ -338,7 +338,7 @@ async function initMod3() {
     populateCategoryDropdowns();
     
     
-    const productData = await callApi('POST', 'http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000/products/query', {
+    const productData = await callApi('POST', 'products/query', {
         filters: [],
         limit: 10000,
         offset: 0,
