@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -32,6 +33,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
 
+import crmapp.petsfort.JLogics.Business;
+import crmapp.petsfort.JLogics.Callbacker;
+import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.User;
 
 public class LoginActivity extends AppCompatActivity {
 	
@@ -226,15 +231,50 @@ public class LoginActivity extends AppCompatActivity {
 				final boolean _success = _param1.isSuccessful();
 				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
 				if (_success) {
-					userss.edit().putString("email", email.getText().toString()).commit();
+					userss.edit().putString("email", FirebaseAuth.getInstance().getCurrentUser().getEmail()).commit();
 					userss.edit().putString("uid", FirebaseAuth.getInstance().getCurrentUser().getUid()).commit();
-					SketchwareUtil.showMessage(getApplicationContext(), "Login Successful.");
-					intent.setClass(getApplicationContext(), PrincipalActivity.class);
-					startActivity(intent);
-					overridePendingTransition(android.
-									R.anim.fade_in,
-							android.R.anim.fade_out);
-					finish();
+
+
+					Business.UserDataApiClient.getUserDataCallApi(FirebaseAuth.getInstance().getCurrentUser().getUid(), new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+						@Override
+						public void onReceived(Business.UserDataApiClient.UserDataApiResponse response) {
+                            super.onReceived(response);
+							if (response.getStatusCode() == 200) {
+								if(response.getUser().isBlocked == 1) {
+									FirebaseAuth.getInstance().signOut();
+									SketchwareUtil.showMessage(getApplicationContext(), "Your account is blocked, Login Failed");
+								} else {
+									SketchwareUtil.showMessage(getApplicationContext(), "Please Wait a Moment!");
+									Business.JFCM.subscribeBasicTopics(FirebaseAuth.getInstance().getCurrentUser().getUid(), User.resolveRoleToString(response.getUser().role), new OnCompleteListener<Void>() {
+										@Override
+										public void onComplete(@NonNull Task<Void> task) {
+											if(task.isSuccessful()) {
+												userss.edit().putString("name", response.getUser().name).commit();
+												userss.edit().putString("role", response.getUser().role).commit();
+												SketchwareUtil.showMessage(getApplicationContext(), "Login Successful.");
+											} else {
+												try{
+													Business.JFCM.unSubscribeAll();
+												} catch (Exception ignored) {}
+												FirebaseAuth.getInstance().signOut();
+												SketchwareUtil.showMessage(getApplicationContext(), "FCM Server Issue, Login Failed.");
+											}
+										}
+									});
+								}
+							} else {
+								FirebaseAuth.getInstance().signOut();
+								SketchwareUtil.showMessage(getApplicationContext(), "Server Busy, Login Failed.");
+							}
+
+							intent.setClass(getApplicationContext(), MainActivity.class);
+							startActivity(intent);
+							overridePendingTransition(android.
+											R.anim.fade_in,
+									android.R.anim.fade_out);
+							finish();
+                        }
+					});
 				}
 				else {
 					_Custom_Loading(false);

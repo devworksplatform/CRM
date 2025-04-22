@@ -1,5 +1,6 @@
 package crmapp.petsfort;
 
+import android.app.Activity;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
@@ -32,6 +33,7 @@ public class ProfileActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
+		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 		setContentView(R.layout.profile);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);

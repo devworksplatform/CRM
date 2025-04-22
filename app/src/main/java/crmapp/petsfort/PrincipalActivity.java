@@ -65,7 +65,7 @@ public class PrincipalActivity extends AppCompatActivity {
 	private String Category = "";
 	private HashMap<String, Object> map = new HashMap<>();
 	private String st = "";
-	
+
 	private LinearLayout linear1;
 	private LinearLayout fragment_frame;
 	private BottomNavigationView bottomnavigation1;
@@ -117,7 +117,7 @@ public class PrincipalActivity extends AppCompatActivity {
 	private TextView _drawer_textview12;
 	private ImageView _drawer_imageview10;
 	private TextView _drawer_textview13;
-	
+
 	private SharedPreferences sp;
 	private Intent i = new Intent();
 	private AlertDialog.Builder d;
@@ -133,13 +133,14 @@ public class PrincipalActivity extends AppCompatActivity {
 	private OnCompleteListener<Void> auth_updateProfileListener;
 	private OnCompleteListener<AuthResult> auth_phoneAuthListener;
 	private OnCompleteListener<AuthResult> auth_googleSignInListener;
-	
+
 	private TimerTask t;
 	private Intent ii = new Intent();
 	
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
+		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 		setContentView(R.layout.principal);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
@@ -389,6 +390,25 @@ public class PrincipalActivity extends AppCompatActivity {
 				_drawer.closeDrawer(Gravity.RIGHT);
 				ii.setClass(getApplicationContext(), ProfileActivity.class);
 				startActivity(ii);
+			}
+		});
+
+		_drawer_imageview1.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+
+				if(Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), "no_proxy").equals("no_proxy")) {
+					Business.JFCM.unSubscribeAll();
+					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE));
+					FirebaseAuth.getInstance().signOut();
+
+					ii.setClass(getApplicationContext(), MainActivity.class);
+					startActivity(ii);
+					finishAffinity();
+				} else {
+					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE));
+					finish();
+				}
 			}
 		});
 	}

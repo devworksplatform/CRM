@@ -1,5 +1,6 @@
 package crmapp.petsfort;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -15,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -34,7 +36,8 @@ import crmapp.petsfort.JLogics.Models.Category;
 public class Frag1FragmentActivity extends Fragment {
 	
 //	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
-	
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
 	private ArrayList<HashMap<String, Object>> listmap = new ArrayList<>();
 	
 	private LinearLayout linear1;
@@ -49,6 +52,8 @@ public class Frag1FragmentActivity extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater _inflater, @Nullable ViewGroup _container, @Nullable Bundle _savedInstanceState) {
 		View _view = _inflater.inflate(R.layout.frag1_fragment, _container, false);
+		userId = Business.localDB_SharedPref.getProxyUID(getActivity().getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
+
 		initialize(_savedInstanceState, _view);
 		FirebaseApp.initializeApp(getContext());
 		initializeLogic();

@@ -1,6 +1,8 @@
 package crmapp.petsfort;
 
+import android.app.Activity;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.*;
 import android.util.*;
 import android.view.*;
@@ -21,9 +23,10 @@ import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 
 public class MainActivity extends AppCompatActivity {
-	
+	private SharedPreferences userss;
+
 	private Timer _timer = new Timer();
-	
+
 	private LinearLayout linear1,rootLinear;
 	private ImageView imageview1,imageview2;
 	
@@ -45,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
 		imageview1 = findViewById(R.id.imageview1);
 		imageview2 = findViewById(R.id.imageview2);
 
+		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
 
 	}
 	
@@ -68,9 +72,21 @@ public class MainActivity extends AppCompatActivity {
 							runOnUiThread(new Runnable() {
 								@Override
 								public void run() {
-									tela.setClass(getApplicationContext(), PrincipalActivity.class);
-									startActivity(tela);
-									finish();
+									String userRole = userss.getString("role", null);
+									if (userRole == null) {
+										FirebaseAuth.getInstance().signOut();
+										tela.setClass(getApplicationContext(), LoginActivity.class);
+										startActivity(tela);
+										finish();
+									} else {
+										if (userRole.equals("2") || userRole.equals("4")) {
+											tela.setClass(getApplicationContext(), ChooseUserActivity.class);
+										} else {
+											tela.setClass(getApplicationContext(), PrincipalActivity.class);
+										}
+										startActivity(tela);
+										finish();
+									}
 								}
 							});
 						}

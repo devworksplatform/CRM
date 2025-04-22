@@ -1,5 +1,6 @@
 package crmapp.petsfort;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.*;
 import android.graphics.Typeface;
@@ -56,6 +57,7 @@ public class OrderActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
+		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 		setContentView(R.layout.order);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);

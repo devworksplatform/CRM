@@ -5,6 +5,11 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
@@ -80,9 +85,111 @@ public class Business {
     }
 
 
+
+    public static class JFCM {
+        private static HashMap<String,String> fcmTopics;
+        static {
+            fcmTopics = new HashMap<>();
+        }
+
+        public static void subscribeToTopic(@NonNull final String topic, final OnCompleteListener<Void> listener) {
+            FirebaseMessaging.getInstance().subscribeToTopic(topic)
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if(task.isSuccessful()) {
+                                fcmTopics.put(topic, topic);
+                            }
+                            listener.onComplete(task);
+                        }
+                    });
+        }
+
+        public static void unSubscribeToTopic(@NonNull final String topic, final OnCompleteListener<Void> listener) {
+            FirebaseMessaging.getInstance().unsubscribeFromTopic(topic)
+                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            if (task.isSuccessful()) {
+                                fcmTopics.remove(topic);
+                            }
+                            listener.onComplete(task);
+                        }
+                    });
+        }
+
+        public static void unSubscribeAll() {
+            for(String topic : fcmTopics.keySet()) {
+                unSubscribeToTopic(topic, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+
+                    }
+                });
+            }
+            fcmTopics.clear();
+        }
+
+
+        public static void subscribeBasicTopics(@NonNull String userId, @NonNull String role, final OnCompleteListener<Void> listener) {
+            // Define basic topics based on user details. Customize topic names as needed.
+            final String userTopic = "user_" + userId;      // e.g., user_12345
+            final String roleTopic = "role_" + role.toLowerCase(); // e.g., role_admin, role_user
+            final String allUsersTopic = "all_users";       // General topic for all users
+
+            // Subscribe to each basic topic.
+            // We pass null for the listener here, meaning the caller of subscribeBasicTopics
+            // won't be directly notified of individual subscription successes/failures.
+            // The fcmTopics map will be updated asynchronously in the subscribeToTopic callbacks.
+            subscribeToTopic(allUsersTopic, new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+
+                }
+            });
+            subscribeToTopic(roleTopic, new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+
+                }
+            });
+            subscribeToTopic(userTopic, new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    listener.onComplete(task);
+                }
+            });
+        }
+
+
+
+
+    }
+
+
+
     public static class localDB_SharedPref {
 
+        public static String PROXY_KEY = "Proxy";
         public static String PREF_KEY = "localDB";
+
+        public static String setProxyUID(SharedPreferences localDB, String userId) {
+            SharedPreferences.Editor editor = localDB.edit();
+            editor.putString(PROXY_KEY, userId);
+            editor.apply();
+            return userId;
+        }
+
+        public static String getProxyUID(SharedPreferences localDB, String userId) {
+            String proxy_uid = localDB.getString(PREF_KEY, null);
+            if(proxy_uid == null) {
+                return userId;
+            } else {
+                return proxy_uid;
+            }
+        }
+
+
 
         // Method to save the HashMap
         public static void saveHashMap(SharedPreferences localDB, HashMap<String, Object> map) {
@@ -223,7 +330,6 @@ public class Business {
             executor.execute(() -> {
                 try {
                     HashMap<String,Object> dataMap = new HashMap<>();
-                    dataMap.put("id",user.id);
                     dataMap.put("name",user.name);
                     dataMap.put("email",user.email);
                     dataMap.put("role",user.role);
@@ -248,14 +354,14 @@ public class Business {
                         if (responseBody.contains("successfully")) {
                             callback.onReceived(new UserDataApiResponse(response.code(), user));
                         } else {
-                            callback.onReceived(new UserDataApiResponse(500, null));
+                            callback.onReceived(new UserDataApiResponse(500, (User) null));
                         }
                     });
 
                 } catch (IOException e) {
                     e.printStackTrace();
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(500, null));
+                        callback.onReceived(new UserDataApiResponse(500, (User) null));
                     });
                 }
             });
@@ -281,15 +387,62 @@ public class Business {
                 } catch (IOException e) {
                     e.printStackTrace();
                     new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(500, null));
+                        callback.onReceived(new UserDataApiResponse(500, (User) null));
                     });
                 }
             });
         }
 
+        public static void getAllUsersCallApi(Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    Request request = new Request.Builder()
+                            .url(URL) // already set as "/userdata/"
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    List<User> users = parseUsers(responseBody);
+
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new UserDataApiResponse(response.code(), users));
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new UserDataApiResponse(500, (List<User>) null));
+                    });
+                }
+            });
+        }
+
+        public static List<User> parseUsers(String responseBody) {
+            List<User> userList = new ArrayList<>();
+            try {
+                JSONArray jsonArray = new JSONArray(responseBody);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject userObject = jsonArray.getJSONObject(i);
+                    User user = parseUser(userObject.toString());
+                    if (user != null) {
+                        userList.add(user);
+                    }
+                }
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            return userList;
+        }
+
+
+
         public static User parseUser(String responseBody) {
             try {
                 JSONObject obj = new JSONObject(responseBody);
+                String uid = obj.getString("uid");
                 String id = obj.getString("id");
                 String name = obj.getString("name");
                 String email = obj.getString("email");
@@ -298,7 +451,7 @@ public class Business {
                 double credits = obj.getDouble("credits");
                 int isBlocked = obj.getInt("isblocked");
 
-                return new User(id, name, email, role, address, credits, isBlocked);
+                return new User(uid, id, name, email, role, address, credits, isBlocked);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -308,14 +461,23 @@ public class Business {
         public static class UserDataApiResponse {
             private final int statusCode;
             private final User user;
+            private final List<User> users;
 
             public UserDataApiResponse(int statusCode, User user) {
                 this.statusCode = statusCode;
                 this.user = user;
+                this.users = null;
+            }
+
+            public UserDataApiResponse(int statusCode, List<User> users) {
+                this.statusCode = statusCode;
+                this.user = null;
+                this.users = users;
             }
 
             public int getStatusCode() { return statusCode; }
             public User getUser() { return user; }
+            public List<User> getUsers() { return users; }
         }
     }
 

@@ -7,6 +7,7 @@ async function initMod1() {
     const userTableBody = document.querySelector('#user-table tbody');
     const searchInput = document.getElementById('user-search');
     const userIdInput = document.getElementById('user-id');
+    const userUIdInput = document.getElementById('user-uid');
     const usernameInput = document.getElementById('user-username');
     const emailInput = document.getElementById('user-email');
     const roleInput = document.getElementById('user-role');
@@ -76,6 +77,7 @@ async function initMod1() {
         if (!user) return;
 
         userIdInput.value = user.id;
+        userUIdInput.value = user.uid;
         usernameInput.value = user.username;
         emailInput.value = user.email;
         roleInput.value = user.role;
@@ -95,11 +97,13 @@ async function initMod1() {
         event.preventDefault();
         let passwordValue = passwordInput.value;
         const userId = userIdInput.value;
+        const userUid = userUIdInput.value;
         const isUpdating = Boolean(userId);
 
         
         const user = {
             id: userId || generateId(),
+            uid: userUid,
             username: usernameInput.value.trim(),
             email: emailInput.value.trim(),
             role: roleInput.value,
@@ -158,7 +162,7 @@ async function initMod1() {
 
         let users = getUsers();
         if (isUpdating) {
-            originalUser = users.find(u => u.id === userId);
+            originalUser = users.find(u => u.id === userId || u.uid === userUid);
             if (originalUser) {
                 if (usernameInput.value.trim() !== originalUser.username.trim()) {
                     showToast('Username cannot be modified during update.', 'error');return;
@@ -188,8 +192,7 @@ async function initMod1() {
         if (isUpdating) {
             showToast(`Updating User Account... "${user.email}".`, 'success');
 
-            callApi("PUT","userdata/"+user.id,{
-                id: user.id,
+            callApi("PUT","userdata/"+user.uid,{
                 name: user.username,
                 email: user.email,
                 role: user.role,
@@ -275,6 +278,7 @@ async function initMod1() {
 
     const userdata = await callApi('GET', 'userdata');
     const userdata_list = Array.isArray(userdata) ? userdata.map(u => ({
+        uid: u.uid,
         id: u.id,
         username: u.name,
         email: u.email,

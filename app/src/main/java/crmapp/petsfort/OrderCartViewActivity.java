@@ -1,6 +1,7 @@
 package crmapp.petsfort;
 
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -73,6 +74,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
 		setContentView(R.layout.order_cart_view_activity);
+		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
 	}

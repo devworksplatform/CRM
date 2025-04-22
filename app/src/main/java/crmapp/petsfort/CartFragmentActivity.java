@@ -1,6 +1,7 @@
 package crmapp.petsfort;
 
 import android.animation.*;
+import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
 import android.graphics.*;
@@ -83,6 +84,8 @@ public class CartFragmentActivity extends Fragment {
 	@Override
 	public View onCreateView(@NonNull LayoutInflater _inflater, @Nullable ViewGroup _container, @Nullable Bundle _savedInstanceState) {
 		View _view = _inflater.inflate(R.layout.cart_fragment, _container, false);
+		userId = Business.localDB_SharedPref.getProxyUID(getActivity().getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
+
 		FirebaseApp.initializeApp(getContext());
 		initialize(_savedInstanceState, _view);
 		return _view;

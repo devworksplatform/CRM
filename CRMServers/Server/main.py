@@ -1330,6 +1330,7 @@ async def delete_subcategoty(cat_id: str): # Made async
 
 # --- UserData Endpoints ---
 class UserData(BaseModel):
+    uid: str
     id: str
     name: str
     email: str
@@ -1348,13 +1349,22 @@ class UserDataCreate(BaseModel):
     isblocked: Optional[int] = 0
     pwd: str
 
+class UserDataUpdate(BaseModel):
+    name: str
+    email: str
+    role: str
+    address: str
+    credits: float
+    isblocked: Optional[int] = 0
+    pwd: str
+
 
 @app.get("/userdata", response_model=List[UserData])
 async def get_userdata_list():
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT uid as id, name, email, role, address, credits, isblocked FROM userdata")
+            await cursor.execute("SELECT uid, id, name, email, role, address, credits, isblocked FROM userdata")
             rows = await cursor.fetchall()
             categories = [UserData(**row) for row in rows]
             return categories
@@ -1370,10 +1380,10 @@ async def get_userdata(user_id: str):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT id, name, email, role, address, credits, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
+            await cursor.execute("SELECT uid, id, name, email, role, address, credits, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
             row = await cursor.fetchone()
             if row:
-                return UserData(**dict(zip(("id", "name", "email", "role", "address", "credits", "isblocked"), row)))
+                return UserData(**dict(zip(("uid", "id", "name", "email", "role", "address", "credits", "isblocked"), row)))
             else:
                 raise HTTPException(status_code=404, detail=f"User with ID '{user_id}' not found")
     except Exception as e:
@@ -1406,7 +1416,7 @@ async def add_userdata(data: UserDataCreate):
 
 
 @app.put("/userdata/{user_id}")
-async def put_userdata(user_id: str,data: UserDataCreate):
+async def put_userdata(user_id: str,data: UserDataUpdate):
     conn = await get_db_connection()
     try:
         if(data.pwd):
@@ -1433,7 +1443,7 @@ async def delete_userdata(user_id: str): # Made async
             raise Exception("Failed to Delete Account:"+str(errStr))
         
         async with conn.cursor() as cur:
-            await cur.execute("DELETE FROM userdata WHERE uid = ?", (user_id,))
+            await cur.execute("DELETE FROM userdata WHERE id=? or uid=?", (user_id,user_id))
             if cur.rowcount == 0:
                 raise HTTPException(status_code=404, detail="Order not found.")
             await conn.commit()

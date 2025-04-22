@@ -1,5 +1,6 @@
 package crmapp.petsfort;
 
+import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
 import android.graphics.*;
@@ -26,6 +27,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
@@ -43,6 +45,8 @@ import crmapp.petsfort.JLogics.Models.Product;
 public class SearchActivity extends AppCompatActivity {
 	
 	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
+	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
 	SharedPreferences localDB;
 
 	private double count1 = 0;
@@ -83,6 +87,7 @@ public class SearchActivity extends AppCompatActivity {
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
+		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 		setContentView(R.layout.search);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
