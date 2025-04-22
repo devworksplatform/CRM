@@ -1,3 +1,4 @@
+import time 
 import subprocess
 import sys
 import re
@@ -44,8 +45,35 @@ def execute_remote_command():
     print(f"SSH session started. Current directory: {current_dir}")
     print("Type 'exit' to quit the session")
     
+
+    nextCmd = ""
     while True:
-        command = input(f"[{current_dir}]> ")
+        command = ""
+
+        if (nextCmd != ""):
+            if(nextCmd == "c_send"):
+                print("[COMMIT] Sending Files...")
+                time.sleep(1)
+                command = "server send"
+                nextCmd = "c_stop"
+            elif(nextCmd == "c_stop"):
+                print("[COMMIT] Stoping Server...")
+                time.sleep(1)
+                command = "server stop"
+                nextCmd = "c_start"
+            elif(nextCmd == "c_start"):
+                print("[COMMIT] Starting Server...")
+                time.sleep(1)
+                command = "server start"
+                nextCmd = "c_status"
+            elif(nextCmd == "c_status"):
+                print("[COMMIT] Status Checking Server...")
+                time.sleep(1)
+                command = "server status"
+                nextCmd = ""
+        else:
+            command = input(f"[{current_dir}]> ")
+
         if command.lower() == "exit":
             break
 
@@ -55,6 +83,9 @@ def execute_remote_command():
                 if(cmds[1] == "send"):
                     send_file()
                     continue                    
+                if(cmds[1] == "commit"):
+                    nextCmd = "c_send"
+                    continue
                 else:
                     command = server_cmd_prefix + " " + (" ".join(cmds[1:]))
 

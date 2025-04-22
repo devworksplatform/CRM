@@ -16,8 +16,7 @@ async function initMod4() {
     const ORDER_KEY = 'orders';
     const ORDER_STATUSES = [ // Define available statuses
         { value: "ORDER_PENDING", text: "Pending" },
-        { value: "ORDER_PROCESSING", text: "Processing" },
-        { value: "ORDER_SHIPPED", text: "Shipped" },
+        { value: "ORDER_IN_PROGRESS", text: "In Progress" },
         { value: "ORDER_DELIVERED", text: "Delivered" },
         { value: "ORDER_CANCELLED", text: "Cancelled" }
     ];
@@ -143,7 +142,7 @@ async function initMod4() {
 
 
     // --- Event Handlers ---
-    function handleStatusChange(event) {
+    async function handleStatusChange(event) {
         const selectElement = event.target;
         const orderId = selectElement.dataset.orderId;
         const newStatus = selectElement.value;
@@ -162,6 +161,10 @@ async function initMod4() {
         // Optional: Add an 'updated_at' timestamp if needed
         // orders[orderIndex].updated_at = new Date().toISOString();
 
+        await callApi("PUT", "orders/"+orderId, {
+            order_status: newStatus
+        });
+
         saveOrders(orders);
         showToast(`Order ${orderId} status updated to ${ORDER_STATUSES.find(s=>s.value === newStatus)?.text}.`, 'success');
         // No need to re-render full table, just update was successful.
@@ -173,12 +176,15 @@ async function initMod4() {
         renderOrderDetailsModal(orderId);
     }
 
-    function handleDeleteOrder(orderId) {
+    async function handleDeleteOrder(orderId) {
         if (!confirm(`Are you sure you want to delete order ${orderId}? This cannot be undone.`)) {
             return;
         }
         let orders = getOrders();
         orders = orders.filter(o => o.order_id !== orderId);
+
+        await callApi("DELETE", "orders/"+orderId)
+        
         saveOrders(orders);
         handleFilterAndSearch(); // Re-render the table
         showToast(`Order ${orderId} deleted successfully.`, 'info');

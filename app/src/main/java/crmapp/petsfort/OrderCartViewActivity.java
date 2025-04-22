@@ -178,8 +178,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 		}
 
 		String dateString = order.getCreatedAt();
-		String formattedDate = java.time.LocalDateTime.parse(dateString).format(java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a"));
-		OrderDetail.setText("Date : ".concat(formattedDate)
+		OrderDetail.setText("Date : ".concat(dateString)
 				.concat("\nItems: ".concat(String.valueOf(order.getItemsDetail().size())))
 				.concat(", Cost: Rs.").concat(String.valueOf(order.getTotal())).concat(" ₹"));
 

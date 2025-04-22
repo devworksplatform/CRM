@@ -188,7 +188,7 @@ async function initMod1() {
         if (isUpdating) {
             showToast(`Updating User Account... "${user.email}".`, 'success');
 
-            callApi("PUT","userdata/",{
+            callApi("PUT","userdata/"+user.id,{
                 id: user.id,
                 name: user.username,
                 email: user.email,

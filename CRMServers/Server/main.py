@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse 
 from fastapi.responses import StreamingResponse
 from fastapi.responses import JSONResponse
 import httpx
@@ -9,12 +9,11 @@ from typing import List, Optional, Dict, Any
 import json
 import random, string
 import aiosqlite  # Replaced sqlite3 with aiosqlite
-# Removed: from contextlib import contextmanager
-# Removed: import uvicorn (run via command line now)
+
 from enum import Enum
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
-# Removed: from fastapi.responses import HTMLResponse
+
 from uuid import uuid4
 import sqlite3 # Keep standard sqlite3 for backup operation
 from urllib.parse import urlparse
@@ -357,9 +356,25 @@ async def startup_event():
 
 # --- API Routes (Modified for Async) ---
 
-@app.get("/")
+@app.get("/helo")
 async def read_root(): # Made async
     return {"message": "Async SQLite Products API is running"}
+
+from datetime import datetime, timedelta, timezone
+
+@app.get("/backup")
+async def backupAPI(): # Made async
+    IST = timezone(timedelta(hours=5, minutes=30))
+
+    # Current time in IST
+    now_ist = datetime.now(IST)
+
+    # Format it as yyyy-mm-dd--HH-MM-SS
+    formatted = now_ist.strftime("%Y-%m-%d--%H-%M-%S")
+
+    path,url,err = firebaseAuth.upload_file_to_storage(DB_PATH,"backups/sqliteDBs/"+formatted+".db")
+
+    return {"path":path,"url": url, "err": str(err)}
 
 # Create a new product
 @app.post("/products/", response_model=ProductResponse)
@@ -978,13 +993,22 @@ async def store_order(user_id: str, data: dict): # Made async
                     continue # Collect not found IDs, proceed if others are valid
 
                 prod = dict(row)
+
                 # Store necessary details for the order record
                 product_details_for_order.append({
                     "id": prod["id"],
                     "product_id": prod.get("product_id"),
                     "product_name": prod.get("product_name"),
+                    "product_desc": prod.get("product_desc"),
+                    "product_img": prod.get("product_img"),
+                    "cat_id": prod.get("cat_id"),
+                    "cat_sub": prod.get("cat_sub"),
+                    "created_at": prod.get("created_at"),
+                    "updated_at": prod.get("updated_at"),
+                    "cost_mrp": prod.get("cost_mrp", 0.0),
                     "cost_rate": prod.get("cost_rate", 0.0),
                     "cost_gst": prod.get("cost_gst", 0.0),
+                    "stock": prod.get("stock", 0.0),
                     "cost_dis": prod.get("cost_dis", 0.0),
                     "count": count # Store the count for this item in the order details
                 })
@@ -1390,7 +1414,7 @@ async def put_userdata(user_id: str,data: UserDataCreate):
             if errStr is not None:
                 raise Exception("Failed to Update Password: "+str(errStr))        
         async with conn.cursor() as cursor:
-            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, user_id, data.id))
+            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, user_id, user_id))
             await conn.commit()
         return {"message": "User updated successfully", "uid":"0"}
     except Exception as e:
@@ -1424,6 +1448,321 @@ async def delete_userdata(user_id: str): # Made async
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     finally:
         await conn.close()
+
+# //---------------------------------------------SOURCE
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+
+
+async def fetch_tables() -> List[str]:
+    """Fetches all table names asynchronously."""
+    conn = None
+    try:
+        conn = await get_db_connection()
+        async with conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%';") as cursor:
+            tables = [row[0] for row in await cursor.fetchall()]
+            return tables
+    except aiosqlite.Error as e:
+        logger.error(f"Database error fetching tables: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error fetching tables: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug("Connection closed after fetching tables.")
+
+async def fetch_table_info(table_name: str) -> List[Dict[str, Any]]:
+    """Fetches column information asynchronously."""
+    conn = None
+    # Basic table name validation (prevent obvious SQL injection patterns)
+    # A more robust validation might check against fetched table list first
+    if not table_name.isalnum() and '_' not in table_name:
+         logger.warning(f"Invalid table name format received: {table_name}")
+         raise HTTPException(status_code=400, detail="Invalid table name format.")
+    try:
+        conn = await get_db_connection()
+        # Use placeholder for table name in PRAGMA? Not directly possible.
+        # Ensure table_name is sanitized or validated before using f-string.
+        # We rely on the initial validation and potentially validating against fetch_tables() result.
+        sql = f"PRAGMA table_info(`{table_name}`)" # Use backticks for safety
+        logger.debug(f"Executing SQL: {sql}")
+        async with conn.execute(sql) as cursor:
+            columns = await cursor.fetchall()
+        if not columns:
+            raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found or has no columns.")
+        # Convert aiosqlite.Row to dict
+        return [{"cid": col[0], "name": col[1], "type": col[2], "notnull": col[3], "dflt_value": col[4], "pk": col[5]} for col in columns]
+    except aiosqlite.Error as e:
+        logger.error(f"Database error fetching table info for '{table_name}': {e}")
+        raise HTTPException(status_code=500, detail=f"Database error fetching table info: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug(f"Connection closed after fetching info for {table_name}.")
+
+async def find_primary_key_column(table_info: List[Dict[str, Any]]) -> Optional[str]:
+    """Finds the primary key column name from table info (Sync function)."""
+    for col in table_info:
+        if col.get('pk', 0) == 1: # Check if 'pk' key exists and is 1
+            return col['name']
+    return None # No single primary key found
+
+async def check_table_exists(table_name: str):
+    """Checks if the table name exists asynchronously."""
+    existing_tables = await fetch_tables() # Reuses the helper, manages its own connection
+    if table_name not in existing_tables:
+        raise HTTPException(status_code=404, detail=f"Table '{table_name}' not found.")
+
+
+# --- FastAPI Routes (Async & Manual Connection Management) ---
+
+@app.get("/", response_class=HTMLResponse)
+async def read_root(request: Request):
+    """Serves the main HTML page from the current directory."""
+    html_file_path = "index.html"
+    try:
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        # No Jinja - Initial data (like tables) must be fetched by JS on page load
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        logger.error(f"HTML file not found at {html_file_path}")
+        raise HTTPException(status_code=404, detail=f"{html_file_path} not found in the current directory.")
+    except Exception as e:
+        logger.error(f"Error reading HTML file {html_file_path}: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
+
+@app.get("/api/tables", response_model=List[str])
+async def api_get_tables():
+    """API endpoint to get list of tables."""
+    try:
+        return await fetch_tables()
+    except HTTPException as http_exc:
+        raise http_exc # Re-raise exceptions from helper
+    except Exception as e:
+        logger.error(f"Unexpected error in /api/tables: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+
+@app.get("/api/table/{table_name}/info")
+async def api_get_table_info(table_name: str):
+    """API endpoint to get table schema (columns, pk)."""
+    # Re-check existence here before proceeding
+    await check_table_exists(table_name)
+    try:
+        info = await fetch_table_info(table_name) # Manages its own connection
+        pk_column = await find_primary_key_column(info) # This helper is sync
+        return JSONResponse(content={"columns": info, "pk_column": pk_column})
+    except HTTPException as http_exc:
+        raise http_exc # Re-raise exceptions from helpers
+    except Exception as e:
+        logger.error(f"Unexpected error in /api/table/{table_name}/info: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+
+
+@app.get("/api/table/{table_name}/data")
+async def api_get_table_data(table_name: str):
+    """API endpoint to get data rows for a table."""
+    await check_table_exists(table_name)
+    conn = None
+    try:
+        conn = await get_db_connection()
+        # Use backticks for safety
+        sql = f"SELECT * FROM `{table_name}`"
+        logger.debug(f"Executing SQL: {sql}")
+        async with conn.execute(sql) as cursor:
+            rows = await cursor.fetchall()
+        # Convert aiosqlite.Row objects to dictionaries for JSON serialization
+        data = [dict(row) for row in rows]
+        return JSONResponse(content={"data": data})
+    except aiosqlite.Error as e:
+        logger.error(f"Database error fetching data for '{table_name}': {e}")
+        raise HTTPException(status_code=500, detail=f"Database error fetching data: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Unexpected error in /api/table/{table_name}/data: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug(f"Connection closed after fetching data for {table_name}.")
+
+
+@app.post("/api/table/{table_name}/row", status_code=201)
+async def api_add_row(table_name: str, request: Request):
+    """API endpoint to add a new row."""
+    await check_table_exists(table_name)
+    conn = None
+    try:
+        form_data = await request.form()
+        data_dict = dict(form_data)
+        logger.info(f"Adding row to {table_name} with data: {data_dict}")
+
+        # Basic data cleaning: Handle empty strings -> None for potential NULL columns
+        cleaned_data = {k: (v if v != '' else None) for k, v in data_dict.items()}
+
+        columns = list(cleaned_data.keys())
+        placeholders = ', '.join(['?'] * len(columns))
+        # Use backticks for safety
+        column_clause = ', '.join(f'`{col}`' for col in columns)
+        sql = f"INSERT INTO `{table_name}` ({column_clause}) VALUES ({placeholders})"
+        logger.debug(f"Executing SQL: {sql} with values: {list(cleaned_data.values())}")
+
+        conn = await get_db_connection()
+        cursor = await conn.execute(sql, list(cleaned_data.values()))
+        await conn.commit()
+        last_id = cursor.lastrowid # Get last row ID if needed
+        await cursor.close() # Close cursor explicitly
+
+        return JSONResponse(
+            content={"message": "Row added successfully", "row_id": last_id},
+            status_code=201
+        )
+    except aiosqlite.IntegrityError as e:
+         logger.warning(f"Integrity error adding row to {table_name}: {e}")
+         if conn: await conn.rollback() # Rollback on integrity error
+         raise HTTPException(status_code=400, detail=f"Failed to add row (Integrity Error): {e}. Check unique constraints or non-null fields.")
+    except aiosqlite.Error as e:
+        logger.error(f"Database error adding row to {table_name}: {e}")
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error adding row: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as http_exc:
+        if conn: await conn.rollback()
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Unexpected error adding row to {table_name}: {e}", exc_info=True)
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug(f"Connection closed after adding row to {table_name}.")
+
+
+@app.put("/api/table/{table_name}/row/{pk_value}", status_code=200)
+async def api_update_row(table_name: str, pk_value: str, request: Request):
+    """API endpoint to update an existing row."""
+    await check_table_exists(table_name)
+    conn = None
+    try:
+        form_data = await request.form()
+        data_dict = dict(form_data)
+        logger.info(f"Updating row in {table_name} where PK={pk_value} with data: {data_dict}")
+
+        # Basic data cleaning
+        cleaned_data = {k: (v if v != '' else None) for k, v in data_dict.items()}
+
+        # Fetch table info to find PK (manages its own connection)
+        table_info = await fetch_table_info(table_name)
+        pk_column = await find_primary_key_column(table_info)
+
+        if not pk_column:
+            raise HTTPException(status_code=400, detail=f"Cannot update: Table '{table_name}' does not have a single primary key defined.")
+
+        # Ensure PK column itself is not in the SET clause if it exists in form data
+        # (Generally bad practice to update PK, but handle if submitted)
+        update_data = {k: v for k, v in cleaned_data.items() if k != pk_column}
+
+        if not update_data:
+             raise HTTPException(status_code=400, detail="No columns provided to update.")
+
+        # Use backticks for safety
+        set_clauses = ', '.join([f"`{col}` = ?" for col in update_data.keys()])
+        sql = f"UPDATE `{table_name}` SET {set_clauses} WHERE `{pk_column}` = ?"
+        values = list(update_data.values()) + [pk_value]
+        logger.debug(f"Executing SQL: {sql} with values: {values}")
+
+        conn = await get_db_connection()
+        cursor = await conn.execute(sql, values)
+
+        if cursor.rowcount == 0:
+             await conn.rollback() # Rollback if no rows were affected
+             raise HTTPException(status_code=404, detail=f"Row with {pk_column}='{pk_value}' not found in table '{table_name}'.")
+
+        await conn.commit()
+        await cursor.close()
+        return JSONResponse(content={"message": f"Row with {pk_column}='{pk_value}' updated successfully."})
+
+    except aiosqlite.IntegrityError as e:
+         logger.warning(f"Integrity error updating row in {table_name}: {e}")
+         if conn: await conn.rollback()
+         raise HTTPException(status_code=400, detail=f"Failed to update row (Integrity Error): {e}. Check unique constraints or non-null fields.")
+    except aiosqlite.Error as e:
+        logger.error(f"Database error updating row in {table_name}: {e}")
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error updating row: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as http_exc:
+        if conn: await conn.rollback() # Ensure rollback on HTTP exceptions too if conn exists
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Unexpected error updating row in {table_name}: {e}", exc_info=True)
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug(f"Connection closed after updating row in {table_name}.")
+
+
+@app.delete("/api/table/{table_name}/row/{pk_value}", status_code=200)
+async def api_delete_row(table_name: str, pk_value: str):
+    """API endpoint to delete a row."""
+    await check_table_exists(table_name)
+    conn = None
+    try:
+        logger.info(f"Deleting row from {table_name} where PK={pk_value}")
+        # Fetch table info to find PK (manages its own connection)
+        table_info = await fetch_table_info(table_name)
+        pk_column = await find_primary_key_column(table_info)
+
+        if not pk_column:
+            raise HTTPException(status_code=400, detail=f"Cannot delete: Table '{table_name}' does not have a single primary key defined.")
+
+        # Use backticks for safety
+        sql = f"DELETE FROM `{table_name}` WHERE `{pk_column}` = ?"
+        logger.debug(f"Executing SQL: {sql} with value: {pk_value}")
+
+        conn = await get_db_connection()
+        cursor = await conn.execute(sql, (pk_value,))
+
+        if cursor.rowcount == 0:
+             await conn.rollback() # Rollback if no rows were affected
+             raise HTTPException(status_code=404, detail=f"Row with {pk_column}='{pk_value}' not found in table '{table_name}'.")
+
+        await conn.commit()
+        await cursor.close()
+        return JSONResponse(content={"message": f"Row with {pk_column}='{pk_value}' deleted successfully."})
+    except aiosqlite.Error as e:
+        logger.error(f"Database error deleting row from {table_name}: {e}")
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail=f"Database error deleting row: {e}")
+    except ConnectionError as e:
+         raise HTTPException(status_code=500, detail=str(e))
+    except HTTPException as http_exc:
+        if conn: await conn.rollback()
+        raise http_exc
+    except Exception as e:
+        logger.error(f"Unexpected error deleting row from {table_name}: {e}", exc_info=True)
+        if conn: await conn.rollback()
+        raise HTTPException(status_code=500, detail="An unexpected server error occurred.")
+    finally:
+        if conn:
+            await conn.close()
+            logger.debug(f"Connection closed after deleting row from {table_name}.")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)

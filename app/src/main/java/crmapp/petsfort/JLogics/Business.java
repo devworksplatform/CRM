@@ -914,7 +914,9 @@ public class Business {
             public void setTotalDiscount(double totalDiscount) { this.totalDiscount = totalDiscount; }
             public double getTotal() { return total; }
             public void setTotal(double total) { this.total = total; }
-            public String getCreatedAt() { return createdAt; }
+            public String getCreatedAt() {
+                return JHelpers.convertUtcToIstAndFormat(createdAt);
+            }
             public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
             public BulkDetailsApiClient.CostDetails getCostDetails() {

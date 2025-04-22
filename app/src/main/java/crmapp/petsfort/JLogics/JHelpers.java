@@ -11,6 +11,28 @@ import java.util.Locale;
 public class JHelpers {
 
 
+    public static String convertUtcToIstAndFormat(String utcDateTimeString) {
+        try {
+            // Parse the UTC date-time string into an Instant
+            java.time.Instant instant = java.time.Instant.parse(utcDateTimeString);
+
+            // Define the Indian Standard Time (IST) timezone
+            java.time.ZoneId istZone = java.time.ZoneId.of("Asia/Kolkata");
+
+            // Convert the Instant to LocalDateTime in IST
+            java.time.LocalDateTime istDateTime = java.time.LocalDateTime.ofInstant(instant, istZone);
+
+            // Define the desired format
+            java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd-MMM-yyyy hh:mm a", java.util.Locale.ENGLISH);
+
+            // Format the IST LocalDateTime and return the string
+            return istDateTime.format(formatter);
+
+        } catch (Exception e) {
+            return "UTC: "+utcDateTimeString;
+        }
+    }
+
     public static String formatDoubleToRupeesString(double value) {
         // Use Locale for India to get the correct grouping separators
         Locale indiaLocale = new Locale("en", "IN");
