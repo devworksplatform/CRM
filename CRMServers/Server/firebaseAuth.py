@@ -2,13 +2,15 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import auth
 from firebase_admin import storage
+from firebase_admin import db
 
 def initialize_firebase(credential_path="pets-fort-service-acc.json"):
     try:
         cred = credentials.Certificate(credential_path)
         if not firebase_admin._apps:
             firebase_admin.initialize_app(cred, {
-                'storageBucket': 'pets-fort.firebasestorage.app'
+                'storageBucket': 'pets-fort.firebasestorage.app',
+                'databaseURL': 'https://pets-fort-default-rtdb.asia-southeast1.firebasedatabase.app'
             })
             print("Firebase Admin SDK initialized successfully.")
         else:

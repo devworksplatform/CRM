@@ -80,6 +80,11 @@ function isValidHttpUrl(string) {
   return url.protocol === "http:" || url.protocol === "https:";
 }
 
+function parseDDMMYYYY(dateStr) {
+    const [dd, mm, yyyy] = dateStr.split('-');
+    return new Date(yyyy, mm - 1, dd);
+}
+
 
 // --- Initialization ---
 console.log("initHelp.js loaded. Storage and UI helpers ready.");

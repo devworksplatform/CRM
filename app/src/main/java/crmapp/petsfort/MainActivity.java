@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 	private Timer _timer = new Timer();
 
 	private LinearLayout linear1,rootLinear;
-	private ImageView imageview1,imageview2;
+	private ImageView imageview13,imageview2;
 	
 	private Intent tela = new Intent();
 	private TimerTask timer;
@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 	private void initialize(Bundle _savedInstanceState) {
 		rootLinear = findViewById(R.id.rootLinear);
 		linear1 = findViewById(R.id.linear1);
-		imageview1 = findViewById(R.id.imageview1);
+//		imageview1 = findViewById(R.id.imageview1);
 		imageview2 = findViewById(R.id.imageview2);
 
 		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
@@ -54,14 +54,14 @@ public class MainActivity extends AppCompatActivity {
 	
 	private void initializeLogic() {
 
-		imageview1.setVisibility(View.VISIBLE);
+//		imageview1.setVisibility(View.VISIBLE);
 		imageview2.setVisibility(View.GONE);
 
 		JHelpers.runAfterDelay(MainActivity.this,500, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
 				JHelpers.TransitionManager(rootLinear,1000);
-				imageview1.setVisibility(View.VISIBLE);
+//				imageview1.setVisibility(View.VISIBLE);
 				imageview2.setVisibility(View.VISIBLE);
 
 

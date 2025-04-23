@@ -69,11 +69,11 @@ public class PrincipalActivity extends AppCompatActivity {
 	private LinearLayout linear1;
 	private LinearLayout fragment_frame;
 	private BottomNavigationView bottomnavigation1;
-	private LinearLayout linear5;
+//	private LinearLayout linear5;
 	private LinearLayout linear6;
 	private LinearLayout linear7i;
 	private LinearLayout linear8;
-	private ImageView imageview1;
+//	private ImageView imageview1;
 	private TextView textview1;
 	private ImageView imageview2;
 	private ImageView imageview3;
@@ -92,7 +92,7 @@ public class PrincipalActivity extends AppCompatActivity {
 	private TextView _drawer_textview11;
 	private LinearLayout _drawer_linear11;
 	private LinearLayout _drawer_linear12;
-	private CircleImageView _drawer_circleimageview1;
+	private ImageView _drawer_circleimageview1;
 	private TextView _drawer_textview1;
 	private ImageView imageLogoName;
 	private ImageView _drawer_imageview1;
@@ -171,11 +171,11 @@ public class PrincipalActivity extends AppCompatActivity {
 		linear1 = findViewById(R.id.linear1);
 		fragment_frame = findViewById(R.id.fragment_frame);
 		bottomnavigation1 = findViewById(R.id.bottomnavigation1);
-		linear5 = findViewById(R.id.linear5);
+//		linear5 = findViewById(R.id.linear5);
 		linear6 = findViewById(R.id.linear6);
 		linear7i = findViewById(R.id.linear7i);
 		linear8 = findViewById(R.id.linear8);
-		imageview1 = findViewById(R.id.imageview1);
+//		imageview1 = findViewById(R.id.imageview1);
 		textview1 = findViewById(R.id.textview1);
 		imageLogoName = findViewById(R.id.imageLogoName);
 		imageview2 = findViewById(R.id.imageview2);

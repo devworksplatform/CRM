@@ -23,6 +23,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 
 import crmapp.petsfort.JLogics.Business;
@@ -111,6 +114,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 	}
 
 	Double credits = 0.0;
+	String creditse = "";
 	boolean isCreditsLoaded = false;
 	Business.BulkDetailsApiClient.CostDetails costDetails;
 	private void initializeLogic() {
@@ -145,8 +149,10 @@ public class OrderreviewActivity extends AppCompatActivity {
 						if(_data.getStatusCode() == 200 && _data.getUser() != null) {
 							creditsStr = String.valueOf(_data.getUser().credits);
 							credits = _data.getUser().credits;
+							creditse = _data.getUser().creditse;
 							addressStr = _data.getUser().address;
 						}
+
 
 						isCreditsLoaded = true;
 						JHelpers.TransitionManager(rootLinear, 300);
@@ -235,6 +241,34 @@ public class OrderreviewActivity extends AppCompatActivity {
 							}).show();
 					Toast.makeText(OrderreviewActivity.this, "Insufficient Credits", Toast.LENGTH_SHORT).show();
 					return;
+				}
+
+				try {
+					String dateStr = creditse;
+					DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+					LocalDate expiryDate = LocalDate.parse(dateStr, formatter);
+
+					LocalDate today = LocalDate.now();
+
+					long daysToExpire = ChronoUnit.DAYS.between(today, expiryDate);
+
+					if (daysToExpire < 0) {
+						dateStr = "Expired " + Math.abs(daysToExpire) + " days ago.";
+						new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Credits " + credits + "₹ "+ dateStr)
+								.setMessage("Contact our admin to increase the expiry date to use the credits to make orders. try again after credits expiry date is increased to you. current balance ₹ ".concat(String.valueOf(credits)))
+								.setCancelable(false)
+								.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										dialog.dismiss();
+										finish();
+									}
+								}).show();
+						Toast.makeText(OrderreviewActivity.this, "Insufficient Credits", Toast.LENGTH_SHORT).show();
+						return;
+					}
+				} catch(Exception e) {
+					//			tvBalanceLabel.setText("No Credits Left");
 				}
 
 				ProgressDialog progressDialog = new ProgressDialog(OrderreviewActivity.this);

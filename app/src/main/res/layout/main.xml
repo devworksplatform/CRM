@@ -6,25 +6,29 @@
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
 	android:orientation="vertical">
-	<LinearLayout
-		android:id="@+id/linear1"
+
+	<crmapp.petsfort.layouts.LinearBg
 		android:layout_width="match_parent"
-		android:layout_height="match_parent"
-		android:padding="8dp"
-		android:background="#FFFFFF"
-		android:gravity="center_horizontal|center_vertical"
-		android:orientation="vertical">
-		<ImageView
-			android:id="@+id/imageview1"
-			android:layout_width="100dp"
-			android:layout_height="100dp"
-			android:src="@drawable/logo"
-			android:scaleType="fitCenter" />
-		<ImageView
-			android:id="@+id/imageview2"
-			android:layout_width="300dp"
-			android:layout_height="50dp"
-			android:src="@drawable/lickandbite"
-			android:scaleType="fitCenter" />
-	</LinearLayout>
+		android:layout_height="match_parent">
+		<LinearLayout
+			android:id="@+id/linear1"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:padding="8dp"
+			android:gravity="center_horizontal|center_vertical"
+			android:orientation="vertical">
+<!--			<ImageView-->
+<!--				android:id="@+id/imageview1"-->
+<!--				android:layout_width="100dp"-->
+<!--				android:layout_height="100dp"-->
+<!--				android:src="@drawable/logo"-->
+<!--				android:scaleType="fitCenter" />-->
+			<ImageView
+				android:id="@+id/imageview2"
+				android:layout_width="match_parent"
+				android:layout_height="100dp"
+				android:src="@drawable/lickandbite"
+				android:scaleType="fitCenter" />
+		</LinearLayout>
+	</crmapp.petsfort.layouts.LinearBg>
 </LinearLayout>

@@ -34,6 +34,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
@@ -382,6 +385,27 @@ public class HomeFragmentActivity extends Fragment {
 
 
 	public void updateCredits(User user) {
+		try {
+			String dateStr = user.creditse;
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+			LocalDate expiryDate = LocalDate.parse(dateStr, formatter);
+
+			LocalDate today = LocalDate.now();
+
+			long daysToExpire = ChronoUnit.DAYS.between(today, expiryDate);
+
+			if (daysToExpire > 0) {
+				tvBalanceLabel.setText(tvBalanceLabel.getText().toString() + " Expire : " + daysToExpire + " days (" + dateStr + ")");
+			} else if (daysToExpire == 0) {
+				tvBalanceLabel.setText(tvBalanceLabel.getText().toString() + " Expiring Today (" + dateStr + ")");
+			} else {
+				tvBalanceLabel.setText(tvBalanceLabel.getText().toString() + " Expired " + Math.abs(daysToExpire) + " days ago.");
+			}
+		} catch(Exception e) {
+//			tvBalanceLabel.setText("No Credits Left");
+		}
+
+
 		double credits = 0;
 		String creditsStr = "No Credits Left";
 

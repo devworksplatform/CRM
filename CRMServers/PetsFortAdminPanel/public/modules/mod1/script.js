@@ -19,6 +19,19 @@ async function initMod1() {
     const saveButton = document.getElementById('user-save-btn');
     const cancelButton = document.getElementById('user-cancel-btn');
     const noUsersMessage = document.getElementById('no-users-message'); // Reference paragraph element
+    const expiryInput = document.getElementById('user-credits-expiry');
+
+    // const today = new Date().toISOString().split('T')[0];
+    // expiryInput.value = today;
+    // expiryInput.min = today;
+
+    const expiryPicker = flatpickr("#user-credits-expiry", {
+        dateFormat: "d-m-Y", // dd-mm-yyyy
+        minDate: new Date().fp_incr(1), // Tomorrow
+        defaultDate: new Date().fp_incr(1), // Default value: tomorrow
+    });
+
+    // console.log(expiryInput.min)
 
     const STORAGE_KEY = 'users';
 
@@ -83,6 +96,8 @@ async function initMod1() {
         roleInput.value = user.role;
         addressInput.value = user.address;
         creditsInput.value = user.credits;
+        // expiryInput.value = user.creditse;        
+        expiryPicker.setDate(parseDDMMYYYY(user.creditse), true); 
         isBlockedCheckbox.checked = user.isblocked;
 
         formTitle.textContent = 'Edit User';
@@ -109,6 +124,7 @@ async function initMod1() {
             role: roleInput.value,
             address: addressInput.value.trim(),
             credits: parseInt(creditsInput.value, 10) || 0,
+            creditse: expiryInput.value,
             isblocked: isBlockedCheckbox.checked,
         };
 
@@ -198,6 +214,7 @@ async function initMod1() {
                 role: user.role,
                 address: user.address,
                 credits: user.credits,
+                creditse: user.creditse,
                 isblocked: user.isblocked ? 1 : 0,
                 pwd: passwordValue
             }).then(v => {
@@ -221,6 +238,7 @@ async function initMod1() {
                 role: user.role,
                 address: user.address,
                 credits: user.credits,
+                creditse: user.creditse,
                 isblocked: user.isblocked ? 1 : 0,
                 pwd: passwordValue
             }).then(v => {
@@ -285,6 +303,7 @@ async function initMod1() {
         role: u.role,
         address: u.address,
         credits: u.credits,
+        creditse: u.creditse,
         isblocked: u.isblocked === 1
     })) : [];
 

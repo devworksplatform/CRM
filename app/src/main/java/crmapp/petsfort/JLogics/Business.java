@@ -333,6 +333,7 @@ public class Business {
                     dataMap.put("email",user.email);
                     dataMap.put("role",user.role);
                     dataMap.put("address",user.address);
+                    dataMap.put("creditse",user.creditse);
                     dataMap.put("credits",user.credits);
                     dataMap.put("isblocked",user.isBlocked);
                     dataMap.put("pwd","");
@@ -447,10 +448,11 @@ public class Business {
                 String email = obj.getString("email");
                 String role = obj.getString("role");
                 String address = obj.getString("address");
+                String creditse = obj.getString("creditse");
                 double credits = obj.getDouble("credits");
                 int isBlocked = obj.getInt("isblocked");
 
-                return new User(uid, id, name, email, role, address, credits, isBlocked);
+                return new User(uid, id, name, email, role, address, credits, creditse, isBlocked);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;

@@ -326,7 +326,7 @@ public class LoginActivity extends AppCompatActivity {
 		_round_corner_and_ripple(signup_btn, 20, 10, "#4b69ff", true);
 		_round_corner_and_ripple(password_btn, 20, 10, "#4b69ff", true);
 		imageview1.setColorFilter(0xFF3B3E3E, PorterDuff.Mode.MULTIPLY);
-		title.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+		title.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
 		message.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 		username.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 		email.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);

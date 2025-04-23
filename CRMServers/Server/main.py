@@ -25,6 +25,72 @@ DB_PATH = "products.db"
 # DB_PATH_SMS = "sms.db" # This was never used in the original code
 # sudo sysctl -w vm.drop_caches=3
 
+# --- SQLite Schema (as provided by the user) ---
+# Used during the restoration process to recreate tables
+TABLE_SCHEMAS = {
+    "products": """
+        CREATE TABLE IF NOT EXISTS products (
+            id TEXT PRIMARY KEY,
+            product_id TEXT UNIQUE,
+            product_name TEXT NOT NULL,
+            product_desc TEXT,
+            product_img TEXT, -- Stored as JSON string
+            cat_id TEXT,
+            cat_sub TEXT, -- Comma-separated string
+            cost_rate REAL,
+            cost_mrp REAL,
+            cost_gst REAL,
+            cost_dis REAL,
+            stock INTEGER,
+            created_at TIMESTAMP,
+            updated_at TIMESTAMP
+        )
+        """,
+    "orders": """
+        CREATE TABLE IF NOT EXISTS orders (
+            order_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            items TEXT NOT NULL,       -- Stored as JSON string
+            items_detail TEXT NOT NULL, -- Stored as JSON string
+            order_status TEXT NOT NULL,
+            total_rate REAL,
+            total_gst REAL,
+            total_discount REAL,
+            total REAL,
+            created_at TEXT
+        )
+        """,
+    "category": """
+        CREATE TABLE IF NOT EXISTS category (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            image TEXT DEFAULT ''
+        )
+        """,
+    "subcategory": """
+        CREATE TABLE IF NOT EXISTS subcategory (
+            id TEXT PRIMARY KEY,
+            parentid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            image TEXT DEFAULT ''
+        )
+        """,
+    "userdata": """
+        CREATE TABLE IF NOT EXISTS userdata (
+            id TEXT PRIMARY KEY,
+            uid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL,
+            role TEXT NOT NULL,
+            address TEXT NOT NULL,
+            credits REAL,
+            creditse TEXT NOT NULL,
+            isblocked INTEGER NOT NULL DEFAULT 0
+        )
+        """
+}
+
+
 # Initialize FastAPI
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
@@ -283,65 +349,71 @@ async def init_db():
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("""
-            CREATE TABLE IF NOT EXISTS products (
-                id TEXT PRIMARY KEY,
-                product_id TEXT UNIQUE,
-                product_name TEXT NOT NULL,
-                product_desc TEXT,
-                product_img TEXT, -- Stored as JSON string
-                cat_id TEXT,
-                cat_sub TEXT, -- Comma-separated string
-                cost_rate REAL,
-                cost_mrp REAL,
-                cost_gst REAL,
-                cost_dis REAL,
-                stock INTEGER,
-                created_at TIMESTAMP,
-                updated_at TIMESTAMP
-            )
-            """)
-            await cursor.execute("""
-            CREATE TABLE IF NOT EXISTS orders (
-                order_id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                items TEXT NOT NULL,      -- Stored as JSON string
-                items_detail TEXT NOT NULL, -- Stored as JSON string
-                order_status TEXT NOT NULL,
-                total_rate REAL,
-                total_gst REAL,
-                total_discount REAL,
-                total REAL,
-                created_at TEXT
-            )
-            """)
-            await cursor.execute("""
-            CREATE TABLE IF NOT EXISTS category (
-                id TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                image TEXT DEFAULT ''
-            )
-            """)
-            await cursor.execute("""
-            CREATE TABLE IF NOT EXISTS subcategory (
-                id TEXT PRIMARY KEY,
-                parentid TEXT NOT NULL,
-                name TEXT NOT NULL,
-                image TEXT DEFAULT ''
-            )
-            """)
-            await cursor.execute("""
-            CREATE TABLE IF NOT EXISTS userdata (
-                id TEXT PRIMARY KEY,
-                uid TEXT NOT NULL,
-                name TEXT NOT NULL,
-                email TEXT NOT NULL,
-                role TEXT NOT NULL,
-                address TEXT NOT NULL,
-                credits REAL,
-                isblocked INTEGER NOT NULL DEFAULT 0
-            )
-            """)
+            await cursor.execute(TABLE_SCHEMAS["products"])
+            await cursor.execute(TABLE_SCHEMAS["orders"])
+            await cursor.execute(TABLE_SCHEMAS["category"])
+            await cursor.execute(TABLE_SCHEMAS["subcategory"])
+            await cursor.execute(TABLE_SCHEMAS["userdata"])
+            # await cursor.execute("""
+            # CREATE TABLE IF NOT EXISTS products (
+            #     id TEXT PRIMARY KEY,
+            #     product_id TEXT UNIQUE,
+            #     product_name TEXT NOT NULL,
+            #     product_desc TEXT,
+            #     product_img TEXT, -- Stored as JSON string
+            #     cat_id TEXT,
+            #     cat_sub TEXT, -- Comma-separated string
+            #     cost_rate REAL,
+            #     cost_mrp REAL,
+            #     cost_gst REAL,
+            #     cost_dis REAL,
+            #     stock INTEGER,
+            #     created_at TIMESTAMP,
+            #     updated_at TIMESTAMP
+            # )
+            # """)
+            # await cursor.execute("""
+            # CREATE TABLE IF NOT EXISTS orders (
+            #     order_id TEXT PRIMARY KEY,
+            #     user_id TEXT NOT NULL,
+            #     items TEXT NOT NULL,      -- Stored as JSON string
+            #     items_detail TEXT NOT NULL, -- Stored as JSON string
+            #     order_status TEXT NOT NULL,
+            #     total_rate REAL,
+            #     total_gst REAL,
+            #     total_discount REAL,
+            #     total REAL,
+            #     created_at TEXT
+            # )
+            # """)
+            # await cursor.execute("""
+            # CREATE TABLE IF NOT EXISTS category (
+            #     id TEXT PRIMARY KEY,
+            #     name TEXT NOT NULL,
+            #     image TEXT DEFAULT ''
+            # )
+            # """)
+            # await cursor.execute("""
+            # CREATE TABLE IF NOT EXISTS subcategory (
+            #     id TEXT PRIMARY KEY,
+            #     parentid TEXT NOT NULL,
+            #     name TEXT NOT NULL,
+            #     image TEXT DEFAULT ''
+            # )
+            # """)
+            # await cursor.execute("""
+            # CREATE TABLE IF NOT EXISTS userdata (
+            #     id TEXT PRIMARY KEY,
+            #     uid TEXT NOT NULL,
+            #     name TEXT NOT NULL,
+            #     email TEXT NOT NULL,
+            #     role TEXT NOT NULL,
+            #     address TEXT NOT NULL,
+            #     credits REAL,
+            #     creditse TEXT NOT NULL,
+            #     isblocked INTEGER NOT NULL DEFAULT 0
+            # )
+            # """)
 
             await conn.commit()
     finally:
@@ -361,6 +433,21 @@ async def read_root(): # Made async
     return {"message": "Async SQLite Products API is running"}
 
 from datetime import datetime, timedelta, timezone
+import dbbackup
+
+@app.get("/restore/{restore_path}")
+async def restoreAPI(restore_path: str): # Made async
+    errRdb = None
+    try:
+        root_ref = firebaseAuth.db.reference()
+        dbbackup.restore_firebase_to_sqlite(DB_PATH, root_ref, restore_path)
+    except NameError:
+        errRdb = ("\nRestore skipped because Firebase Admin SDK is not initialized (check credentials).")
+    except Exception as e:
+        errRdb = (f"\nError during restore call: {e}")
+
+
+    return {"path":"tables/"+restore_path,"err": str(errRdb)}
 
 @app.get("/backup")
 async def backupAPI(): # Made async
@@ -374,7 +461,21 @@ async def backupAPI(): # Made async
 
     path,url,err = firebaseAuth.upload_file_to_storage(DB_PATH,"backups/sqliteDBs/"+formatted+".db")
 
-    return {"path":path,"url": url, "err": str(err)}
+    errRdb = None
+    try:
+        root_ref = firebaseAuth.db.reference()
+        dbbackup.backup_sqlite_to_firebase(DB_PATH, root_ref, formatted)
+    except NameError:
+        errRdb = ("\nBackup skipped because Firebase Admin SDK is not initialized (check credentials).")
+    except Exception as e:
+        errRdb = (f"\nError during backup call: {e}")
+
+    return {"realtimeDb":{
+        "path":"tables/"+formatted,
+        "err":str(errRdb)
+    },"storage":{"path":path,"url": url, "err": str(err)}}
+
+
 
 # Create a new product
 @app.post("/products/", response_model=ProductResponse)
@@ -1337,6 +1438,7 @@ class UserData(BaseModel):
     role: str
     address: str
     credits: float
+    creditse: str
     isblocked: Optional[int] = 0
 
 class UserDataCreate(BaseModel):
@@ -1346,6 +1448,7 @@ class UserDataCreate(BaseModel):
     role: str
     address: str
     credits: float
+    creditse: str
     isblocked: Optional[int] = 0
     pwd: str
 
@@ -1355,6 +1458,7 @@ class UserDataUpdate(BaseModel):
     role: str
     address: str
     credits: float
+    creditse: str
     isblocked: Optional[int] = 0
     pwd: str
 
@@ -1364,7 +1468,7 @@ async def get_userdata_list():
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT uid, id, name, email, role, address, credits, isblocked FROM userdata")
+            await cursor.execute("SELECT uid, id, name, email, role, address, credits, creditse, isblocked FROM userdata")
             rows = await cursor.fetchall()
             categories = [UserData(**row) for row in rows]
             return categories
@@ -1380,10 +1484,10 @@ async def get_userdata(user_id: str):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT uid, id, name, email, role, address, credits, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
+            await cursor.execute("SELECT uid, id, name, email, role, address, credits, creditse, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
             row = await cursor.fetchone()
             if row:
-                return UserData(**dict(zip(("uid", "id", "name", "email", "role", "address", "credits", "isblocked"), row)))
+                return UserData(**dict(zip(("uid", "id", "name", "email", "role", "address", "credits", "creditse", "isblocked"), row)))
             else:
                 raise HTTPException(status_code=404, detail=f"User with ID '{user_id}' not found")
     except Exception as e:
@@ -1402,8 +1506,8 @@ async def add_userdata(data: UserDataCreate):
 
         async with conn.cursor() as cursor:
             await cursor.execute(
-                "INSERT OR REPLACE INTO userdata (id, uid, name, email, role, address, credits, isblocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (data.id, uid, data.name, data.email, data.role, data.address, data.credits, data.isblocked),
+                "INSERT OR REPLACE INTO userdata (id, uid, name, email, role, address, credits, creditse, isblocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (data.id, uid, data.name, data.email, data.role, data.address, data.credits, data.creditse, data.isblocked),
             )
             await conn.commit()
         return {"message": "User added successfully", "uid":uid}
@@ -1424,7 +1528,7 @@ async def put_userdata(user_id: str,data: UserDataUpdate):
             if errStr is not None:
                 raise Exception("Failed to Update Password: "+str(errStr))        
         async with conn.cursor() as cursor:
-            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.isblocked, user_id, user_id))
+            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, creditse=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.creditse, data.isblocked, user_id, user_id))
             await conn.commit()
         return {"message": "User updated successfully", "uid":"0"}
     except Exception as e:

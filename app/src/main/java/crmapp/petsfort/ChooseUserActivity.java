@@ -76,6 +76,12 @@ public class ChooseUserActivity extends AppCompatActivity {
     }
 
     private void initialize(Bundle _savedInstanceState) {
+//        getWindow().getDecorView().setSystemUiVisibility(
+//                View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//        );
+//        getWindow().setStatusBarColor(Color.TRANSPARENT);
+
+
         rootLinear = findViewById(R.id.rootLinear);
         linear2 = findViewById(R.id.linear2);
         linear1 = findViewById(R.id.linear1);

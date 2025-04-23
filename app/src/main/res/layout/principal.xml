@@ -23,129 +23,132 @@
 				android:background="?attr/colorPrimary"
 				app:popupTheme="@style/AppTheme.PopupOverlay" />
 		</com.google.android.material.appbar.AppBarLayout>
-		<LinearLayout
-			xmlns:android="http://schemas.android.com/apk/res/android"
-			xmlns:app="http://schemas.android.com/apk/res-auto"
-			xmlns:tools="http://schemas.android.com/tools"
-			android:fitsSystemWindows="true"
-			android:background="@drawable/background_center_crop"
+		<crmapp.petsfort.layouts.LinearBg
 			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:orientation="vertical"
-			android:id="@+id/rootLinear"
-			app:layout_behavior="@string/appbar_scrolling_view_behavior">
-			<androidx.cardview.widget.CardView
+			android:layout_height="match_parent">
+			<LinearLayout
+				xmlns:android="http://schemas.android.com/apk/res/android"
+				xmlns:app="http://schemas.android.com/apk/res-auto"
+				xmlns:tools="http://schemas.android.com/tools"
+				android:fitsSystemWindows="true"
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:padding="1dp"
-				android:layout_margin="5dp"
-				app:cardCornerRadius="40dp"
-				android:elevation="20dp"
-				>
-				<LinearLayout
-					android:id="@+id/linear1"
-					android:background="#ffffff"
-					android:elevation="100dp"
+				android:layout_height="match_parent"
+				android:orientation="vertical"
+				android:id="@+id/rootLinear"
+				app:layout_behavior="@string/appbar_scrolling_view_behavior">
+				<androidx.cardview.widget.CardView
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
-					android:gravity="center_horizontal|center_vertical"
-					android:orientation="horizontal">
+					android:padding="1dp"
+					android:layout_margin="5dp"
+					app:cardCornerRadius="40dp"
+					android:elevation="20dp"
+					>
 					<LinearLayout
-						android:id="@+id/linear5"
-						android:layout_width="wrap_content"
-						android:layout_height="match_parent"
-						android:padding="8dp"
+						android:id="@+id/linear1"
+						android:background="#ffffff"
+						android:elevation="100dp"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
 						android:gravity="center_horizontal|center_vertical"
-						android:orientation="vertical">
-						<ImageView
-							android:id="@+id/imageview1"
-							android:layout_width="25dp"
-							android:layout_height="25dp"
-							android:src="@drawable/logo"
-							android:scaleType="fitCenter" />
-					</LinearLayout>
-					<LinearLayout
-						android:id="@+id/linear6"
-						android:layout_width="wrap_content"
-						android:layout_height="match_parent"
-						android:paddingTop="8dp"
-						android:paddingRight="8dp"
-						android:paddingBottom="8dp"
-						android:gravity="left|center_vertical"
-						android:orientation="horizontal"
-						android:layout_weight="1">
-						<ImageView
-							android:id="@+id/imageLogoName"
-							android:layout_width="100dp"
-							android:layout_height="30dp"
-							android:src="@drawable/lickandbite"
-							android:scaleType="fitCenter" />
-						<TextView
-							android:id="@+id/textview1"
+						android:orientation="horizontal">
+						<!--					<LinearLayout-->
+						<!--						android:id="@+id/linear5"-->
+						<!--						android:layout_width="wrap_content"-->
+						<!--						android:layout_height="match_parent"-->
+						<!--						android:padding="8dp"-->
+						<!--						android:gravity="center_horizontal|center_vertical"-->
+						<!--						android:orientation="vertical">-->
+						<!--						<ImageView-->
+						<!--							android:id="@+id/imageview1"-->
+						<!--							android:layout_width="25dp"-->
+						<!--							android:layout_height="25dp"-->
+						<!--							android:src="@drawable/logo"-->
+						<!--							android:scaleType="fitCenter" />-->
+						<!--					</LinearLayout>-->
+						<LinearLayout
+							android:id="@+id/linear6"
 							android:layout_width="wrap_content"
-							android:layout_height="wrap_content"
-							android:text="Cart Products"
-							android:textSize="16sp"
-							android:textColor="#0A3D62" />
+							android:layout_height="match_parent"
+							android:paddingTop="8dp"
+							android:paddingRight="8dp"
+							android:paddingBottom="8dp"
+							android:gravity="center"
+							android:orientation="horizontal"
+							android:layout_weight="1">
+							<ImageView
+								android:id="@+id/imageLogoName"
+								android:layout_width="100dp"
+								android:layout_height="30dp"
+								android:src="@drawable/lickandbite"
+								android:scaleType="fitCenter" />
+							<TextView
+								android:id="@+id/textview1"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:text="Cart Products"
+								android:textSize="16sp"
+								android:textColor="#0A3D62" />
+						</LinearLayout>
+						<LinearLayout
+							android:id="@+id/linear7i"
+							android:layout_width="wrap_content"
+							android:layout_height="match_parent"
+							android:padding="8dp"
+							android:gravity="center_horizontal|center_vertical"
+							android:orientation="vertical">
+							<ImageView
+								android:id="@+id/imageview2"
+								android:layout_width="18dp"
+								android:layout_height="20dp"
+								android:src="@drawable/search"
+								android:scaleType="fitCenter" />
+						</LinearLayout>
+						<LinearLayout
+							android:id="@+id/linear8"
+							android:layout_width="wrap_content"
+							android:layout_height="match_parent"
+							android:padding="8dp"
+							android:gravity="center_horizontal|center_vertical"
+							android:orientation="vertical">
+							<ImageView
+								android:id="@+id/imageview3"
+								android:layout_width="29dp"
+								android:layout_height="29dp"
+								android:src="@drawable/menu"
+								android:scaleType="fitCenter" />
+						</LinearLayout>
 					</LinearLayout>
-					<LinearLayout
-						android:id="@+id/linear7i"
-						android:layout_width="wrap_content"
-						android:layout_height="match_parent"
-						android:padding="8dp"
-						android:gravity="center_horizontal|center_vertical"
-						android:orientation="vertical">
-						<ImageView
-							android:id="@+id/imageview2"
-							android:layout_width="18dp"
-							android:layout_height="20dp"
-							android:src="@drawable/search"
-							android:scaleType="fitCenter" />
-					</LinearLayout>
-					<LinearLayout
-						android:id="@+id/linear8"
-						android:layout_width="wrap_content"
-						android:layout_height="match_parent"
-						android:padding="8dp"
-						android:gravity="center_horizontal|center_vertical"
-						android:orientation="vertical">
-						<ImageView
-							android:id="@+id/imageview3"
-							android:layout_width="29dp"
-							android:layout_height="29dp"
-							android:src="@drawable/menu"
-							android:scaleType="fitCenter" />
-					</LinearLayout>
-				</LinearLayout>
 
-			</androidx.cardview.widget.CardView>
-			<LinearLayout
-				android:id="@+id/fragment_frame"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:orientation="horizontal"
-				android:layout_weight="1">
-				<androidx.viewpager.widget.ViewPager
-					android:id="@+id/viewpager1"
+				</androidx.cardview.widget.CardView>
+				<LinearLayout
+					android:id="@+id/fragment_frame"
 					android:layout_width="match_parent"
-					android:layout_height="match_parent" />
+					android:layout_height="wrap_content"
+					android:orientation="horizontal"
+					android:layout_weight="1">
+					<androidx.viewpager.widget.ViewPager
+						android:id="@+id/viewpager1"
+						android:layout_width="match_parent"
+						android:layout_height="match_parent" />
+				</LinearLayout>
+				<androidx.cardview.widget.CardView
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:padding="1dp"
+					android:layout_margin="8dp"
+					app:cardCornerRadius="40dp">
+					<com.google.android.material.bottomnavigation.BottomNavigationView
+						android:id="@+id/bottomnavigation1"
+						android:layout_width="match_parent"
+						android:background="#ffffff"
+						app:itemRippleColor="#0A3D62"
+						app:itemTextColor="@color/nav_item_colors"
+						app:itemIconTint="@color/nav_icon_colors"
+						android:layout_height="wrap_content" />
+				</androidx.cardview.widget.CardView>
 			</LinearLayout>
-			<androidx.cardview.widget.CardView
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:padding="1dp"
-				android:layout_margin="8dp"
-				app:cardCornerRadius="40dp">
-				<com.google.android.material.bottomnavigation.BottomNavigationView
-					android:id="@+id/bottomnavigation1"
-					android:layout_width="match_parent"
-					android:background="#ffffff"
-					app:itemRippleColor="#0A3D62"
-					app:itemTextColor="@color/nav_item_colors"
-					app:itemIconTint="@color/nav_icon_colors"
-					android:layout_height="wrap_content" />
-			</androidx.cardview.widget.CardView>
-		</LinearLayout>
+		</crmapp.petsfort.layouts.LinearBg>
 	</androidx.coordinatorlayout.widget.CoordinatorLayout>
 	<LinearLayout
 		android:id="@+id/_nav_view"

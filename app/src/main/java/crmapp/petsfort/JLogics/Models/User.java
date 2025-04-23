@@ -6,10 +6,11 @@ public class User {
     public final String email;
     public final String role;
     public final String address;
+    public final String creditse;
     public double credits;
     public final int isBlocked;
 
-    public User(String uid, String id, String name, String email, String role, String address, double credits, int isBlocked) {
+    public User(String uid, String id, String name, String email, String role, String address, double credits,String creditse, int isBlocked) {
         this.uid = uid;
         this.id = id;
         this.name = name;
@@ -17,6 +18,7 @@ public class User {
         this.role = role;
         this.address = address;
         this.credits = credits;
+        this.creditse = creditse;
         this.isBlocked = isBlocked;
     }
 

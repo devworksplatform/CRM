@@ -1,10 +1,9 @@
-<LinearLayout
+<crmapp.petsfort.layouts.LinearBg
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
 	xmlns:tools="http://schemas.android.com/tools"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"
-	android:background="@drawable/background_center_crop"
 	android:orientation="vertical"
 	android:id="@+id/rootLinear"
 	android:fitsSystemWindows="true">
@@ -190,4 +189,4 @@
 				android:textColor="#9E9E9E" />
 		</LinearLayout>
 	</LinearLayout>
-</LinearLayout>
+</crmapp.petsfort.layouts.LinearBg>
