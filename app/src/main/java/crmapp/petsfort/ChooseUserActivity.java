@@ -354,8 +354,8 @@ public class ChooseUserActivity extends AppCompatActivity {
             linear3.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Business.localDB_SharedPref.setProxyUID(userss, user.uid);
                     Business.localDB_SharedPref.clearCart(localDB);
+                    Business.localDB_SharedPref.setProxyUID(userss, user.uid);
                     Intent intent = new Intent();
 
                     intent.putExtra("proxy_id", user.id);

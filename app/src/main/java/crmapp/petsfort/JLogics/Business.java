@@ -173,15 +173,14 @@ public class Business {
         public static String PROXY_KEY = "Proxy";
         public static String PREF_KEY = "localDB";
 
-        public static String setProxyUID(SharedPreferences localDB, String userId) {
+        public static void setProxyUID(SharedPreferences localDB, String userId) {
             SharedPreferences.Editor editor = localDB.edit();
             editor.putString(PROXY_KEY, userId);
             editor.apply();
-            return userId;
         }
 
         public static String getProxyUID(SharedPreferences localDB, String userId) {
-            String proxy_uid = localDB.getString(PREF_KEY, null);
+            String proxy_uid = localDB.getString(PROXY_KEY, null);
             if(proxy_uid == null) {
                 return userId;
             } else {

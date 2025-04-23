@@ -243,6 +243,13 @@ public class LoginActivity extends AppCompatActivity {
 								if(response.getUser().isBlocked == 1) {
 									FirebaseAuth.getInstance().signOut();
 									SketchwareUtil.showMessage(getApplicationContext(), "Your account is blocked, Login Failed");
+
+									intent.setClass(getApplicationContext(), MainActivity.class);
+									startActivity(intent);
+									overridePendingTransition(android.
+													R.anim.fade_in,
+											android.R.anim.fade_out);
+									finish();
 								} else {
 									SketchwareUtil.showMessage(getApplicationContext(), "Please Wait a Moment!");
 									Business.JFCM.subscribeBasicTopics(FirebaseAuth.getInstance().getCurrentUser().getUid(), User.resolveRoleToString(response.getUser().role), new OnCompleteListener<Void>() {
@@ -259,20 +266,29 @@ public class LoginActivity extends AppCompatActivity {
 												FirebaseAuth.getInstance().signOut();
 												SketchwareUtil.showMessage(getApplicationContext(), "FCM Server Issue, Login Failed.");
 											}
+
+
+											intent.setClass(getApplicationContext(), MainActivity.class);
+											startActivity(intent);
+											overridePendingTransition(android.
+															R.anim.fade_in,
+													android.R.anim.fade_out);
+											finish();
 										}
 									});
 								}
 							} else {
 								FirebaseAuth.getInstance().signOut();
 								SketchwareUtil.showMessage(getApplicationContext(), "Server Busy, Login Failed.");
+
+								intent.setClass(getApplicationContext(), MainActivity.class);
+								startActivity(intent);
+								overridePendingTransition(android.
+												R.anim.fade_in,
+										android.R.anim.fade_out);
+								finish();
 							}
 
-							intent.setClass(getApplicationContext(), MainActivity.class);
-							startActivity(intent);
-							overridePendingTransition(android.
-											R.anim.fade_in,
-									android.R.anim.fade_out);
-							finish();
                         }
 					});
 				}

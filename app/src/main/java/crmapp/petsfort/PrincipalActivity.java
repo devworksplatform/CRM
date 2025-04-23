@@ -404,7 +404,7 @@ public class PrincipalActivity extends AppCompatActivity {
 
 					ii.setClass(getApplicationContext(), MainActivity.class);
 					startActivity(ii);
-					finishAffinity();
+					finish();
 				} else {
 					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE));
 					finish();

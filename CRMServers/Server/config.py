@@ -2,10 +2,21 @@ import time
 import subprocess
 import sys
 import re
+import os
+
+
+def is_ubuntu():
+    if os.name == 'nt':
+        return False
+    else:
+        return True
 
 key_path = "C:\\Users\\Jay\\Downloads\\AllowAll.pem"
 remote_host = "ec2-13-235-78-112.ap-south-1.compute.amazonaws.com"
 remote_user = "ubuntu"
+
+
+# sudo sysctl -w vm.drop_caches=3
 
 def send_file():
     # """Sends the main.py file to the remote server using scp.
@@ -134,6 +145,7 @@ def execute_remote_command():
         if command == "":
             continue
         
+
         ssh_command = [
             "ssh",
             "-i",
