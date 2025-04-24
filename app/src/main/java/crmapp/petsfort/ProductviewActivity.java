@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
 import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
@@ -37,6 +38,7 @@ import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.Category;
 import crmapp.petsfort.JLogics.Models.Product;
+import crmapp.petsfort.layouts.CartDialogFragment;
 
 public class ProductviewActivity extends AppCompatActivity {
 	
@@ -52,6 +54,7 @@ public class ProductviewActivity extends AppCompatActivity {
 	private TextView mrpLabel,rateLabel,discountLabel,gstLabel;
 	private Button addButton;
 	private ImageView productImageView,plus,minus;
+	private CardView cardview1;
 	DecimalFormat df = new DecimalFormat("#.###");
 	SharedPreferences localDB;
 
@@ -99,6 +102,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		gstDiscountLinear = (LinearLayout) findViewById(R.id.gstDiscountLinear);
 		linear5 = (LinearLayout) findViewById(R.id.linear5);
 		countLinear = (LinearLayout) findViewById(R.id.countLinear);
+		cardview1 = (CardView) findViewById(R.id.cartview1);
 
 
 		final Typeface normalTypeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");
@@ -340,6 +344,14 @@ public class ProductviewActivity extends AppCompatActivity {
 			}
 		});
 
+
+		cardview1.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				CartDialogFragment dialogFragment = new CartDialogFragment();
+				dialogFragment.show(getSupportFragmentManager(), "CartDialog");
+			}
+		});
 
 //		_firebase.getReference("datas/category/".concat(product.getCatId())).addListenerForSingleValueEvent(new ValueEventListener() {
 //			@Override

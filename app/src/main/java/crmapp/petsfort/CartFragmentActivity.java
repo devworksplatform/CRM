@@ -25,11 +25,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.gson.internal.LinkedTreeMap;
 
 import java.text.*;
@@ -41,33 +36,16 @@ import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.CartProduct;
 import crmapp.petsfort.JLogics.Models.Product;
-import crmapp.petsfort.JLogics.Models.User;
 
 public class CartFragmentActivity extends Fragment {
-	
-	private FirebaseDatabase _firebase = FirebaseDatabase.getInstance();
 	String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 	SharedPreferences localDB;
 
-	private double n = 0;
-	private String st = "";
-	private double pos = 0;
-	private double count1 = 0;
-	private double length = 0;
-	private String charq = "";
-	
+
 	private ArrayList<CartProduct> listmap = new ArrayList<>();
 	
-	private LinearLayout linear1;
 	private RecyclerView recyclerview1;
 	private ProgressBar progressbar1;
-	
-	private FirebaseAuth auth;
-	
-//	private DatabaseReference cart;
-	private ChildEventListener _cart_child_listener;
-	private Intent i = new Intent();
-
 	private TextView subTotalTextviewLabel,gstTextviewLabel,grandTotalTextviewLabel,creditTextviewLabel,discountTotalTextviewLabel,totalNoDiscountLabelTextView,textview1;
 	private TextView subTotalTextview,gstTextview,grandTotalTextview,creditTextview,discountTotalTextview,totalNoDiscountTextView,textviewTotal,textviewTotalLabel,textviewConfirmLabel;
 
@@ -92,9 +70,7 @@ public class CartFragmentActivity extends Fragment {
 	}
 	
 	private void initialize(Bundle _savedInstanceState, View _view) {
-		auth = FirebaseAuth.getInstance();
 		localDB = getContext().getSharedPreferences("localDB", Context.MODE_PRIVATE);
-		linear1 = _view.findViewById(R.id.linear1);
 		linear2 = _view.findViewById(R.id.linear2);
 		costLinear = _view.findViewById(R.id.costLinear);
 		linearNoData = _view.findViewById(R.id.linearNoData);
@@ -116,45 +92,45 @@ public class CartFragmentActivity extends Fragment {
 		bottomDragImage = _view.findViewById(R.id.bottomDragImage);
 
 		subTotalTextview = _view.findViewById(R.id.subTotalTextView);
-		subTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		subTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		subTotalTextviewLabel = _view.findViewById(R.id.subtotalLabelTextView);
-		subTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		subTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		gstTextview = _view.findViewById(R.id.gstTotalTextView);
-		gstTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		gstTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		gstTextviewLabel = _view.findViewById(R.id.gstTotalLabelTextView);
-		gstTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		gstTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		grandTotalTextview = _view.findViewById(R.id.grandTotalTextView);
-		grandTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		grandTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		grandTotalTextviewLabel = _view.findViewById(R.id.grandTotalLabelTextView);
-		grandTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		grandTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		creditTextview = _view.findViewById(R.id.creditTextView);
-		creditTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		creditTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		creditTextviewLabel = _view.findViewById(R.id.creditLabelTextView);
-		creditTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		creditTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		discountTotalTextview = _view.findViewById(R.id.discountTotalTextView);
-		discountTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		discountTotalTextview.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		discountTotalTextviewLabel = _view.findViewById(R.id.discountTotalLabelTextView);
-		discountTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		discountTotalTextviewLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		totalNoDiscountTextView = _view.findViewById(R.id.totalNoDiscountTextView);
-		totalNoDiscountTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		totalNoDiscountTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		totalNoDiscountLabelTextView = _view.findViewById(R.id.totalNoDiscountLabelTextView);
-		totalNoDiscountLabelTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		totalNoDiscountLabelTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		textviewTotal = _view.findViewById(R.id.textviewTotal);
-		textviewTotal.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		textviewTotal.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 		textviewTotalLabel = _view.findViewById(R.id.textviewTotalLabel);
-		textviewTotalLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		textviewTotalLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		textviewConfirmLabel = _view.findViewById(R.id.textviewConfirmLabel);
-		textviewConfirmLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
+		textviewConfirmLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 
 		textview1 = _view.findViewById(R.id.textview1);
-		textview1.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+		textview1.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
 
 		textview1.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
 		circle.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
@@ -405,7 +381,8 @@ public class CartFragmentActivity extends Fragment {
 		}
 		
 		@Override
-		public void onBindViewHolder(ViewHolder _holder, final int _position) {
+		public void onBindViewHolder(ViewHolder _holder, final int _position1) {
+			final int _position = _position1;
 			View _view = _holder.itemView;
 
 //			final ViewGroup rootView = _view.findViewById(R.id.rootView);
@@ -497,16 +474,16 @@ public class CartFragmentActivity extends Fragment {
 			//------------------------------------design
 			_rippleRoundStroke(textview8, "#4b69ff", "#40FFFFFF", 16, 0, "#000000");
 			textview8.setElevation((float)2);
-			name.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
-			discountShow.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), 0);
-			textview8.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			textview11.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			totalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			rateTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			gstTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			gstTotalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			discountTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
-			discountTotalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+			name.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
+			discountShow.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
+			textview8.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			textview11.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			totalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			rateTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			gstTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			gstTotalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			discountTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
+			discountTotalTextView.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
 
 
 			if (product.getCostDis() <= 0) {

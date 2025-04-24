@@ -98,7 +98,7 @@ public class HomeFragmentActivity extends Fragment {
 	private LinearLayout linear10;
 	private RecyclerView recyclerview1;
 	private TextView textview2;
-	private LinearLayout linear12;
+	private LinearLayout linear12,totalLinear3;
 	private TextView textview3;
 
 	private CardView orderViewCard;
@@ -167,7 +167,17 @@ public class HomeFragmentActivity extends Fragment {
 		recyclerview1 = _view.findViewById(R.id.recyclerview1);
 		textview2 = _view.findViewById(R.id.textview2);
 		linear12 = _view.findViewById(R.id.linear12);
+		totalLinear3 = _view.findViewById(R.id.totalLinear3);
 		textview3 = _view.findViewById(R.id.textview3);
+
+
+		totalLinear3.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				i.setClass(getContext().getApplicationContext(), ProfileActivity.class);
+				startActivity(i);
+			}
+		});
 
 
 		tvBalanceLabel = _view.findViewById(R.id.tvBalanceLabel);

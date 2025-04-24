@@ -41,7 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
 	}
 
 
-	ImageView img1,img2;
+	ImageView img2;
 	LinearLayout rootLinear,totalCreditsLinear,usernameEmailLinear,addressLinear,linear5;
 	TextView tvBalanceAmount, tvBalanceLabel;
 	TextView usernameEmail, usernameEmailLabel;
@@ -49,7 +49,6 @@ public class ProfileActivity extends AppCompatActivity {
 	TextView heading;
 
 	private void initialize(Bundle _savedInstanceState) {
-		img1 = findViewById(R.id.img1);
 		img2 = findViewById(R.id.img2);
 		rootLinear = findViewById(R.id.rootLinear);
 		totalCreditsLinear = findViewById(R.id.totalCreditsLinear);
@@ -90,78 +89,30 @@ public class ProfileActivity extends AppCompatActivity {
 		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 		getWindow().setStatusBarColor(0xFFFFFFFF);
 
-		JHelpers.runAfterDelay(ProfileActivity.this, 300, new Callbacker.Timer(){
+
+		Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 			@Override
-			public void onEnd() {
-				JHelpers.TransitionManager(rootLinear,600);
-				img2.setVisibility(View.VISIBLE);
+			public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+				if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+					User userInfo = _data.getUser();
+					String name = userInfo.name;
+					String email = userInfo.email;
 
-				Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
-					@Override
-					public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
-						if(_data.getStatusCode() == 200 && _data.getUser() != null) {
-							User userInfo = _data.getUser();
-							String name = userInfo.name;
-							String email = userInfo.email;
+					JHelpers.TransitionManager(rootLinear, 600);
+					usernameEmail.setText(name.concat("\n").concat(email));
 
-							JHelpers.TransitionManager(rootLinear, 600);
-							usernameEmail.setText(name.concat("\n").concat(email));
+					String addressStr = "";
+					addressStr = userInfo.address;
+					address.setText(addressStr);
 
-							String addressStr = "";
-							addressStr = userInfo.address;
-							address.setText(addressStr);
-
-							updateCredits(userInfo);
-						} else {
-							JHelpers.TransitionManager(rootLinear, 600);
-							usernameEmail.setText("Unknown User");
-							updateCredits(null);
-						}
-					}
-				});
-
-
-
-//				_firebase.getReference("datas/users/details/".concat(FirebaseAuth.getInstance().getCurrentUser().getUid())).addListenerForSingleValueEvent(new ValueEventListener() {
-//					@Override
-//					public void onDataChange(DataSnapshot snapshot) {
-//						if (snapshot.exists()) {
-//							if (snapshot.hasChild("name") && snapshot.hasChild("email")) {
-//								String name = snapshot.child("name").getValue(String.class);
-//								String email = snapshot.child("email").getValue(String.class);
-//
-//								JHelpers.TransitionManager(rootLinear, 600);
-//								usernameEmail.setText(name.concat("\n").concat(email));
-//							} else {
-//								JHelpers.TransitionManager(rootLinear, 600);
-//								usernameEmail.setText("Unknown User");
-//							}
-//
-//							String addressStr = "";
-//							if (snapshot.hasChild("address")) {
-//								addressStr = snapshot.child("address").getValue(String.class);
-//								address.setText(addressStr);
-//							}
-//
-//							updateCredits(snapshot);
-//
-//						} else {
-//							JHelpers.TransitionManager(rootLinear, 600);
-//							usernameEmail.setText("Unknown User");
-//						}
-//					}
-//
-//					@Override
-//					public void onCancelled(DatabaseError error) {
-//						// Handle error if needed
-//					}
-//				});
-
-
+					updateCredits(userInfo);
+				} else {
+					JHelpers.TransitionManager(rootLinear, 600);
+					usernameEmail.setText("Unknown User");
+					updateCredits(null);
+				}
 			}
 		});
-
-
 	}
 
 
