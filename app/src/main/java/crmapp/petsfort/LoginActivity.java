@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
 
+import crmapp.petsfort.JLogics.AppVersionManager;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
@@ -231,6 +232,7 @@ public class LoginActivity extends AppCompatActivity {
 				final boolean _success = _param1.isSuccessful();
 				final String _errorMessage = _param1.getException() != null ? _param1.getException().getMessage() : "";
 				if (_success) {
+					AppVersionManager.setLoginToCurrentVersion(getApplicationContext());
 					userss.edit().putString("email", FirebaseAuth.getInstance().getCurrentUser().getEmail()).commit();
 					userss.edit().putString("uid", FirebaseAuth.getInstance().getCurrentUser().getUid()).commit();
 

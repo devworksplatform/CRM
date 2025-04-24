@@ -1,6 +1,7 @@
 package crmapp.petsfort;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.*;
@@ -19,6 +20,8 @@ import java.util.*;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import crmapp.petsfort.JLogics.AppVersionManager;
+import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 
@@ -53,10 +56,33 @@ public class MainActivity extends AppCompatActivity {
 	}
 	
 	private void initializeLogic() {
-
-//		imageview1.setVisibility(View.VISIBLE);
+		//		imageview1.setVisibility(View.VISIBLE);
 		imageview2.setVisibility(View.GONE);
 
+
+		if(!AppVersionManager.isLoggedIn(getApplicationContext())) {
+			if(FirebaseAuth.getInstance().getCurrentUser() != null) {
+				Toast.makeText(this, "Sign In Again To Use New Features", Toast.LENGTH_SHORT).show();
+				SharedPreferences localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
+				Business.localDB_SharedPref.clearCart(localDB);
+				try{
+					Business.JFCM.unSubscribeAll();
+				} catch (Exception ignored) {}
+				FirebaseAuth.getInstance().signOut();
+
+				startInit();
+			} else {
+				startInit();
+			}
+		} else {
+			startInit();
+		}
+
+
+	}
+
+
+	void startInit() {
 		JHelpers.runAfterDelay(MainActivity.this,500, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {

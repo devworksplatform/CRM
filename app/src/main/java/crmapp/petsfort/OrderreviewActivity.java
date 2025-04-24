@@ -22,6 +22,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -121,6 +123,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 		getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
 		getWindow().setStatusBarColor(0xFFFFFFFF);
 
+
 		lback.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -157,6 +160,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 						isCreditsLoaded = true;
 						JHelpers.TransitionManager(rootLinear, 300);
 						addressEditText.setText(addressStr);
+						addressEditText.setEnabled(false);
 						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
 					}
 				});
@@ -277,13 +281,22 @@ public class OrderreviewActivity extends AppCompatActivity {
 				progressDialog.setCancelable(false); // Make it non-cancelable
 				progressDialog.show();
 
+
+				HashMap<String,String> otherData = new HashMap<String,String>();
+				otherData.put("address",addressEditText.getText().toString());
+				otherData.put("notes",notesEditText.getText().toString());
+				cartData.put("otherData",otherData);
+
 				orderCheckoutApiClient.callApi(userId, cartData, new Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback(){
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
 						if(response.getStatusCode() == 200) {
 							if(response.isSuccessful()) {
 								//credits decrease and save to db
-								credits -= costDetails.getTotal();
+//								credits -= costDetails.getTotal();
+								credits = BigDecimal.valueOf(credits - costDetails.getTotal())
+										.setScale(2, RoundingMode.HALF_UP)
+										.doubleValue();
 
 								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
 									@Override

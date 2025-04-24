@@ -21,6 +21,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -76,6 +77,8 @@ public class SearchActivity extends AppCompatActivity {
 	private LinearLayout linear10;
 	private LinearLayout linear11;
 	private TextView textview1;
+
+	private CardView cardview1;
 	
 	private Intent i = new Intent();
 	private DatabaseReference product = _firebase.getReference("product");
@@ -128,6 +131,18 @@ public class SearchActivity extends AppCompatActivity {
 		linear11 = findViewById(R.id.linear11);
 		textview1 = findViewById(R.id.textview1);
 
+		cardview1 = findViewById(R.id.cartview1);
+
+
+		cardview1.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent();
+				i.setClass(getApplicationContext(), FragmentWrapper.class);
+				i.putExtra("fragment", "cart");
+				startActivity(i);
+			}
+		});
 
 
 		linearSearchImage.setOnClickListener(new OnClickListener() {

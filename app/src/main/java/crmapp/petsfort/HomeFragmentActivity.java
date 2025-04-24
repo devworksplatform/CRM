@@ -206,13 +206,13 @@ public class HomeFragmentActivity extends Fragment {
 			}
 		});
 
-		textview3.setOnClickListener(new View.OnClickListener(){
-			@Override
-			public void onClick(View _view){
-				i.setClass(getContext().getApplicationContext(), CategoryActivity.class);
-				startActivity(i);
-			}
-		});
+//		textview3.setOnClickListener(new View.OnClickListener(){
+//			@Override
+//			public void onClick(View _view){
+//				i.setClass(getContext().getApplicationContext(), CategoryActivity.class);
+//				startActivity(i);
+//			}
+//		});
 
 		orderViewCard.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -275,7 +275,7 @@ public class HomeFragmentActivity extends Fragment {
 		linear1.setVisibility(View.GONE);
 		load.setVisibility(View.GONE);
 		textview2.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 1);
-		textview3.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
+//		textview3.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);
 
 
 		tvBalanceLabel.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), 0);

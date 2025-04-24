@@ -1,5 +1,5 @@
 import uvicorn
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse, HTMLResponse 
 from fastapi.responses import StreamingResponse
 from fastapi.responses import JSONResponse
@@ -57,7 +57,9 @@ TABLE_SCHEMAS = {
             total_gst REAL,
             total_discount REAL,
             total REAL,
-            created_at TEXT
+            created_at TEXT,
+            address TEXT,
+            notes TEXT
         )
         """,
     "category": """
@@ -95,11 +97,12 @@ TABLE_SCHEMAS = {
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in"],  # Or specify: ["http://127.0.0.1:5500"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 ALLOWED_HOST = "petsfort.in"
 PROXY_URL = "https://pets-fort.web.app"
@@ -137,23 +140,40 @@ async def proxy_petsfort(request: Request, call_next):
 #             proxy_request.headers["Host"] = target_hostname
 #             proxy_request.headers["X-Forwarded-Host"] = request.headers.get("host", "")
 
-#             proxy_response = await client.send(proxy_request, stream=True)
+#             proxy_response = await client.send(proxy_request)
+#             proxy_response.raise_for_status()  # Raise HTTPError for bad responses
 
-#             return StreamingResponse(
-#                 proxy_response.aiter_bytes(),
+#             # Forward relevant headers, explicitly EXCLUDING content-encoding
+#             response_headers = {
+#                 key: value
+#                 for key, value in proxy_response.headers.items()
+#                 if key.lower() not in ("transfer-encoding", "content-encoding", "content-length")
+#             }
+
+#             return Response(
+#                 content=proxy_response.content,
 #                 status_code=proxy_response.status_code,
+#                 headers=response_headers,
+#                 media_type=proxy_response.headers.get("Content-Type")
 #             )
 #         except httpx.ConnectError as e:
 #             return JSONResponse(
 #                 content={"error": f"Could not connect to the proxy target: {e}"},
 #                 status_code=502,
 #             )
+#         except httpx.HTTPStatusError as e:
+#             return Response(
+#                 content=e.response.content,
+#                 status_code=e.response.status_code,
+#                 headers=e.response.headers,
+#                 media_type=e.response.headers.get("Content-Type")
+#             )
 #         except Exception as e:
 #             return JSONResponse(
 #                 content={"error": f"An error occurred during proxying: {e}"},
 #                 status_code=500,
 #             )
-    
+
 # @app.middleware("http")
 # async def proxy_petsfort(request: Request, call_next):
 #     host = request.headers.get("host")
@@ -189,6 +209,8 @@ class OrderResponse(BaseModel):
     total_discount: float
     total: float
     created_at: str
+    address: str
+    notes: str
 
 class OperatorEnum(str, Enum):
     eq = "eq"  # Equal
@@ -1071,6 +1093,8 @@ async def store_order(user_id: str, data: dict): # Made async
     not_found_ids = []
     order_items_payload = {} # Payload as received
 
+    value = data.pop('otherData')
+
     # Validate input data structure
     if not isinstance(data, dict):
         raise HTTPException(status_code=400, detail="Invalid request body: Expected a JSON object of product IDs and counts.")
@@ -1142,8 +1166,8 @@ async def store_order(user_id: str, data: dict): # Made async
 
             insert_query = """
                 INSERT INTO orders
-                (order_id, user_id, items, items_detail, order_status, total_rate, total_gst, total_discount, total, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (order_id, user_id, items, items_detail, order_status, total_rate, total_gst, total_discount, total, created_at, address, notes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
             params = (
                 order_id, user_id,
@@ -1154,7 +1178,9 @@ async def store_order(user_id: str, data: dict): # Made async
                 round(total_gst, 3),
                 round(total_discount, 3),
                 round(total, 3),
-                now
+                now,
+                value["address"],
+                value["notes"]
             )
             await cur.execute(insert_query, params)
             await conn.commit()
@@ -1165,7 +1191,6 @@ async def store_order(user_id: str, data: dict): # Made async
                 "user_id": user_id,
                 "order_status": "ORDER_PENDING",
                 "total": round(total, 3)
-                # Optionally return the full order details here if needed
             }
     except HTTPException:
         await conn.rollback() # Rollback if HTTP error occurred

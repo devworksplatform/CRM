@@ -1,12 +1,9 @@
 package crmapp.petsfort;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.*;
 import android.graphics.Typeface;
-import android.os.*;
 import android.util.*;
 import android.view.*;
 import android.view.View;
@@ -17,7 +14,9 @@ import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.coordinatorlayout.widget.CoordinatorLayout;
@@ -28,27 +27,34 @@ import androidx.fragment.app.FragmentManager;
 import androidx.viewpager.widget.ViewPager;
 
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.appbar.AppBarLayout;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 
+import crmapp.petsfort.JLogics.AppVersionManager;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
-import crmapp.petsfort.JLogics.Models.User;
-import de.hdodenhof.circleimageview.*;
 import crmapp.petsfort.JLogics.JHelpers;
 
 import java.util.*;
 import java.util.HashMap;
 import java.util.Timer;
-import java.util.TimerTask;
+import android.os.Bundle;
+import android.widget.Toast;
+
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+
 
 public class PrincipalActivity extends AppCompatActivity {
 	
@@ -118,23 +124,6 @@ public class PrincipalActivity extends AppCompatActivity {
 	private ImageView _drawer_imageview10;
 	private TextView _drawer_textview13;
 
-	private SharedPreferences sp;
-	private Intent i = new Intent();
-	private AlertDialog.Builder d;
-	private ChildEventListener _users_child_listener;
-	private FirebaseAuth auth;
-	private OnCompleteListener<AuthResult> _auth_create_user_listener;
-	private OnCompleteListener<AuthResult> _auth_sign_in_listener;
-	private OnCompleteListener<Void> _auth_reset_password_listener;
-	private OnCompleteListener<Void> auth_updateEmailListener;
-	private OnCompleteListener<Void> auth_updatePasswordListener;
-	private OnCompleteListener<Void> auth_emailVerificationSentListener;
-	private OnCompleteListener<Void> auth_deleteUserListener;
-	private OnCompleteListener<Void> auth_updateProfileListener;
-	private OnCompleteListener<AuthResult> auth_phoneAuthListener;
-	private OnCompleteListener<AuthResult> auth_googleSignInListener;
-
-	private TimerTask t;
 	private Intent ii = new Intent();
 	
 	@Override
@@ -145,8 +134,69 @@ public class PrincipalActivity extends AppCompatActivity {
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
 		initializeLogic();
+
+		checkForAppUpdate();
 	}
-	
+
+	private ActivityResultLauncher<IntentSenderRequest> activityResultLauncher;
+
+
+	void checkForAppUpdate() {
+		activityResultLauncher = registerForActivityResult(
+				new ActivityResultContracts.StartIntentSenderForResult(),
+				result -> {
+					if (result.getResultCode() == RESULT_OK) {
+						Log.d("AppUpdate", "Update flow completed successfully.");
+					} else {
+						Log.d("AppUpdate", "Update flow canceled or failed.");
+					}
+				}
+		);
+
+
+		if(AppVersionManager.getAlertFreezeEnableToCurrentVersion(getApplicationContext())) {
+			showAlertFreeze();
+		}
+
+
+		AppUpdateManager appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+
+		// Returns an intent object that you use to check for an update.
+		Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+
+
+		// Checks that the platform will allow the specified type of update.
+		appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
+			if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+
+				AppVersionManager.setAlertFreezeEnableToCurrentVersion(getApplicationContext());
+				showAlertFreeze();
+
+				appUpdateManager.startUpdateFlowForResult(
+						// Pass the intent that is returned by 'getAppUpdateInfo()'.
+						appUpdateInfo,
+						// an activity result launcher registered via registerForActivityResult
+						activityResultLauncher,
+						// Or pass 'AppUpdateType.FLEXIBLE' to newBuilder() for
+						// flexible updates.
+						AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
+			}
+		});
+	}
+
+
+	void showAlertFreeze(){
+		AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+		builder.setTitle("Please Update the PetsFort App");
+		builder.setMessage("Please Update The PetsFort App in PlayStore to Use");
+
+		// Optional: disable all buttons or don't add them at all
+		builder.setCancelable(false);
+
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
 	private void initialize(Bundle _savedInstanceState) {
 		_app_bar = findViewById(R.id._app_bar);
 		_coordinator = findViewById(R.id._coordinator);
@@ -220,9 +270,6 @@ public class PrincipalActivity extends AppCompatActivity {
 		_drawer_textview12 = _nav_view.findViewById(R.id.textview12);
 		_drawer_imageview10 = _nav_view.findViewById(R.id.imageview10);
 		_drawer_textview13 = _nav_view.findViewById(R.id.textview13);
-		sp = getSharedPreferences("sp", Activity.MODE_PRIVATE);
-		d = new AlertDialog.Builder(this);
-		auth = FirebaseAuth.getInstance();
 
 
 		final Typeface normalTypeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");

@@ -56,6 +56,13 @@
 			android:screenOrientation="portrait"
 			android:windowSoftInputMode="stateHidden" />
 		<activity
+			android:name=".FragmentWrapper"
+			android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+			android:hardwareAccelerated="true"
+			android:supportsPictureInPicture="true"
+			android:screenOrientation="portrait"
+			android:windowSoftInputMode="stateHidden" />
+		<activity
 			android:name=".OrderCartViewActivity"
 			android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
 			android:hardwareAccelerated="true"
@@ -90,9 +97,9 @@
 			android:supportsPictureInPicture="true"
 			android:screenOrientation="portrait"
 			android:windowSoftInputMode="stateHidden" />
-		<activity
-			android:name=".DebugActivity"
-			android:screenOrientation="portrait" />
+<!--		<activity-->
+<!--			android:name=".DebugActivity"-->
+<!--			android:screenOrientation="portrait" />-->
 		<meta-data
 			android:name="com.google.android.gms.version"
 			android:value="@integer/google_play_services_version" />

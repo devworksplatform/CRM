@@ -23,11 +23,7 @@ import androidx.cardview.widget.CardView;
 import com.bumptech.glide.Glide;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.GenericTypeIndicator;
-import com.google.firebase.database.ValueEventListener;
 
 import java.text.*;
 import java.util.*;
@@ -38,7 +34,6 @@ import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.Category;
 import crmapp.petsfort.JLogics.Models.Product;
-import crmapp.petsfort.layouts.CartDialogFragment;
 
 public class ProductviewActivity extends AppCompatActivity {
 	
@@ -186,6 +181,7 @@ public class ProductviewActivity extends AppCompatActivity {
 			plus.setEnabled(false);
 			minus.setEnabled(false);
 			edittext1.setEnabled(false);
+			cardview1.setVisibility(View.GONE);
 		} else {
 			if (product.getStock() < 10) {
 				hurryUpTextView.setText("Hurry up ! Last few pieces left !");
@@ -348,8 +344,10 @@ public class ProductviewActivity extends AppCompatActivity {
 		cardview1.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				CartDialogFragment dialogFragment = new CartDialogFragment();
-				dialogFragment.show(getSupportFragmentManager(), "CartDialog");
+				Intent i = new Intent();
+				i.setClass(getApplicationContext(), FragmentWrapper.class);
+				i.putExtra("fragment","cart");
+				startActivity(i);
 			}
 		});
 
