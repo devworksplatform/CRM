@@ -1185,6 +1185,8 @@ async def store_order(user_id: str, data: dict): # Made async
             await cur.execute(insert_query, params)
             await conn.commit()
 
+            FCM_notify_order_checkout(user_id, round(total_rate, 3))
+
             return {
                 "message": "Order created successfully",
                 "order_id": order_id,
@@ -1918,6 +1920,17 @@ async def api_delete_row(table_name: str, pk_value: str):
             await conn.close()
             logger.debug(f"Connection closed after deleting row from {table_name}.")
 
+
+def FCM_notify_order_checkout(user_id, total_rate):
+    name = "A User"
+    try:
+        user = get_userdata(user_id)
+        name = user.name
+    except Exception as e:
+        logger.error(f"Unexpected error retriving user data when order checkout in FCM: {e}", exc_info=True)
+    
+    firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Made","Thank you for making order, your order is in pending, we will update you!", {})
+    firebaseAuth.send_topic_notification("order_checkout","New Order",str(name)+" is made a new order of Rs."+str(total_rate), {})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)

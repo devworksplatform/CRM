@@ -332,7 +332,14 @@ public class LoginActivity extends AppCompatActivity {
 									finish();
 								} else {
 									SketchwareUtil.showMessage(getApplicationContext(), "Please Wait a Moment!");
-									Business.JFCM.subscribeBasicTopics(FirebaseAuth.getInstance().getCurrentUser().getUid(), User.resolveRoleToString(response.getUser().role), new OnCompleteListener<Void>() {
+
+
+									boolean on_orderFCM = false;
+									if(response.getUser().role.equals("2") || response.getUser().role.equals("4")) {
+										on_orderFCM = true;
+									}
+
+									Business.JFCM.subscribeBasicTopics(FirebaseAuth.getInstance().getCurrentUser().getUid(), User.resolveRoleToString(response.getUser().role), on_orderFCM, new OnCompleteListener<Void>() {
 										@Override
 										public void onComplete(@NonNull Task<Void> task) {
 											if(task.isSuccessful()) {

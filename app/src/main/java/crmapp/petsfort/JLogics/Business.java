@@ -131,16 +131,25 @@ public class Business {
         }
 
 
-        public static void subscribeBasicTopics(@NonNull String userId, @NonNull String role, final OnCompleteListener<Void> listener) {
+        public static void subscribeBasicTopics(@NonNull String userId, @NonNull String role, boolean on_order, final OnCompleteListener<Void> listener) {
             // Define basic topics based on user details. Customize topic names as needed.
             final String userTopic = "user_" + userId;      // e.g., user_12345
             final String roleTopic = "role_" + role.toLowerCase(); // e.g., role_admin, role_user
+            final String onOrderTopic = "order_checkout"; // e.g., role_admin, role_user
             final String allUsersTopic = "all_users";       // General topic for all users
 
             // Subscribe to each basic topic.
             // We pass null for the listener here, meaning the caller of subscribeBasicTopics
             // won't be directly notified of individual subscription successes/failures.
             // The fcmTopics map will be updated asynchronously in the subscribeToTopic callbacks.
+            if(on_order) {
+                subscribeToTopic(onOrderTopic, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+
+                    }
+                });
+            }
             subscribeToTopic(allUsersTopic, new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
