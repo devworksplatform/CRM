@@ -208,6 +208,7 @@ async function initMod1() {
         if (isUpdating) {
             showToast(`Updating User Account... "${user.email}".`, 'success');
 
+            console.log("userdata/"+user.uid)
             callApi("PUT","userdata/"+user.uid,{
                 name: user.username,
                 email: user.email,
@@ -262,9 +263,11 @@ async function initMod1() {
         let users = getUsers();
         // TODO: Add check here if user has associated orders in Module 4 before deleting?
         // For now, just delete the user.
+
+        const user = users.find(u => u.id === userId);
         users = users.filter(u => u.id !== userId);
 
-        callApi("DELETE","userdata/"+userId)
+        callApi("DELETE","userdata/"+user.uid)
 
         saveUsers(users);
         handleSearch(); // Re-render based on current search term

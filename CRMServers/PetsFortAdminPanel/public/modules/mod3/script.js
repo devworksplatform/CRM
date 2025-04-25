@@ -365,21 +365,5 @@ async function initMod3() {
     renderProductTable(); // Load and display products
     // Ensure subcategory checkboxes are initially empty/prompted
     populateSubcategoryCheckboxes(null);
-
-    // Add default data if needed
-    if (getProducts().length === 0 && getCategories().length > 0) {
-        //  console.log("Adding default product data for testing...");
-        //   const defaultCatId = getCategories()[0].id; // Use first available category
-        //   const defaultSubcats = getSubcategories().filter(s => s.parentId === defaultCatId);
-        //   const defaultSubId = defaultSubcats.length > 0 ? defaultSubcats[0].id : '';
-
-        //  saveProducts([{
-        //     product_id: `ProductID${Date.now()}`, product_name: "Sample Laptop",
-        //     product_desc: "A good sample laptop.", product_img: ["https://via.placeholder.com/150/0000FF/808080?text=Laptop"],
-        //     cat_id: defaultCatId, cat_sub: defaultSubId, cost_rate: 45000.00, cost_mrp: 55000.00,
-        //     cost_gst: 18.0, cost_dis: 5.0, stock: 15, id: generateId()
-        //  }]);
-        //  renderProductTable();
-     }
 }
 window.initMod3 = initMod3;

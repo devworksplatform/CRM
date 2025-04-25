@@ -3,6 +3,7 @@ from firebase_admin import credentials
 from firebase_admin import auth
 from firebase_admin import storage
 from firebase_admin import db
+from firebase_admin import messaging
 
 def initialize_firebase(credential_path="pets-fort-service-acc.json"):
     try:
@@ -89,3 +90,32 @@ def upload_file_to_storage(local_file_path, storage_path):
 
 service_account_key_path = "pets-fort-service-acc.json"
 initialize_firebase(service_account_key_path)
+
+
+
+def send_topic_notification(topic: str, title: str, body: str, data: dict = None):
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=title,
+            body=body,
+        ),
+        data=data if data else {},
+        topic=topic,
+    )
+
+    try:
+        response = messaging.send(message)
+        print(f'Successfully sent message: {response}')
+    except Exception as e:
+        print(f'Error sending message: {e}')
+
+
+# target_topic = 'all_users'
+# notification_title = 'New Announcement!'
+# notification_body = 'Check out the latest news and updates.'
+# custom_data = {
+#     'news_id': '12345',
+#     'category': 'important'
+# }
+
+# send_topic_notification(target_topic, notification_title, notification_body, custom_data)

@@ -4,9 +4,11 @@ import android.app.*;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.*;
 import android.graphics.Typeface;
 import android.graphics.drawable.*;
+import android.net.Uri;
 import android.os.*;
 import android.util.*;
 import android.view.*;
@@ -18,8 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -88,6 +94,9 @@ public class LoginActivity extends AppCompatActivity {
 	private SharedPreferences userss;
 	private Intent intent = new Intent();
 
+
+
+
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
@@ -95,7 +104,67 @@ public class LoginActivity extends AppCompatActivity {
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
 		initializeLogic();
+
+		// Call this method to check/request permission
+		acquireNotificationPermission();
 	}
+
+	private static final int REQUEST_NOTIFICATION_PERMISSION = 101;
+
+	private void acquireNotificationPermission() {
+		if (Build.VERSION.SDK_INT >= 33) { // Android 13+
+			String permission = getNotificationPermission();
+			if (permission != null) {
+				if (ContextCompat.checkSelfPermission(this, permission)
+						!= PackageManager.PERMISSION_GRANTED) {
+					ActivityCompat.requestPermissions(this,
+							new String[]{permission},
+							REQUEST_NOTIFICATION_PERMISSION);
+				} else {
+					// Permission already granted
+					onNotificationPermissionGranted();
+				}
+			}
+		} else {
+			// No runtime permission required before API 33
+			onNotificationPermissionGranted();
+		}
+	}
+
+	private String getNotificationPermission() {
+		try {
+			// Dynamically fetch Manifest.permission.POST_NOTIFICATIONS
+			return (String) Class.forName("android.Manifest$permission")
+					.getDeclaredField("POST_NOTIFICATIONS")
+					.get(null);
+		} catch (Exception e) {
+//			e.printStackTrace(); // Should never happen on API 33+
+			return null;
+		}
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+										   @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+		if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
+			if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+				onNotificationPermissionGranted();
+			} else {
+				onNotificationPermissionDenied();
+			}
+		}
+	}
+
+	private void onNotificationPermissionGranted() {
+		// Do something when permission is granted
+	}
+
+	private void onNotificationPermissionDenied() {
+		// Show explanation or fallback
+	}
+
 	
 	private void initialize(Bundle _savedInstanceState) {
 		vscroll1 = findViewById(R.id.vscroll1);
@@ -128,6 +197,15 @@ public class LoginActivity extends AppCompatActivity {
 		textview10 = findViewById(R.id.textview10);
 		auth = FirebaseAuth.getInstance();
 		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
+
+		textview2.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				String url = "https://petsfort.in/privacy_policy"; // Replace with the desired URL
+				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+				startActivity(intent);
+			}
+		});
 
 		textview_forgot_paasword.setOnClickListener(new View.OnClickListener() {
 			@Override

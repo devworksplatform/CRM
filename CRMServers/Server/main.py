@@ -104,7 +104,7 @@ app.add_middleware(
 )
 
 
-ALLOWED_HOST = "petsfort.in"
+ALLOWED_HOST = "admin.petsfort.in"
 PROXY_URL = "https://pets-fort.web.app"
 
 @app.middleware("http")
@@ -450,9 +450,9 @@ async def startup_event():
 
 # --- API Routes (Modified for Async) ---
 
-@app.get("/helo")
-async def read_root(): # Made async
-    return {"message": "Async SQLite Products API is running"}
+@app.get("/")
+async def read_root4(): # Made async
+    return {"message": "API is running"}
 
 from datetime import datetime, timedelta, timezone
 import dbbackup
@@ -1662,7 +1662,22 @@ async def check_table_exists(table_name: str):
 
 # --- FastAPI Routes (Async & Manual Connection Management) ---
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/privacy_policy", response_class=HTMLResponse)
+async def privacy_policy(request: Request):
+    html_file_path = "privacy_policy.html"
+    try:
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        # No Jinja - Initial data (like tables) must be fetched by JS on page load
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        logger.error(f"HTML file not found at {html_file_path}")
+        raise HTTPException(status_code=404, detail=f"{html_file_path} not found in the current directory.")
+    except Exception as e:
+        logger.error(f"Error reading HTML file {html_file_path}: {e}")
+        raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
+
+@app.get("/database", response_class=HTMLResponse)
 async def read_root(request: Request):
     """Serves the main HTML page from the current directory."""
     html_file_path = "index.html"
@@ -1677,6 +1692,7 @@ async def read_root(request: Request):
     except Exception as e:
         logger.error(f"Error reading HTML file {html_file_path}: {e}")
         raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
+
 
 @app.get("/api/tables", response_model=List[str])
 async def api_get_tables():
