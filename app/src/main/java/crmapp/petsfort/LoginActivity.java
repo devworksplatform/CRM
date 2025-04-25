@@ -458,29 +458,31 @@ public class LoginActivity extends AppCompatActivity {
 	
 	
 	public void _Custom_Loading(final boolean _ifShow) {
-		if (_ifShow) {
-			if (coreprog == null){
-				coreprog = new ProgressDialog(this);
-				coreprog.setCancelable(false);
-				coreprog.setCanceledOnTouchOutside(false);
-				
-				coreprog.requestWindowFeature(Window.FEATURE_NO_TITLE);  coreprog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-				
-			}
-			coreprog.setMessage(null);
-			coreprog.show();
-			View _view = getLayoutInflater().inflate(R.layout.custom_dialog, null);
-			LinearLayout linear_base = (LinearLayout) _view.findViewById(R.id.linear_base);
-			
-			android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
-			gd.setColor(Color.TRANSPARENT);
-			gd.setCornerRadius(25);
-			linear_base.setBackground(gd);
-			coreprog.setContentView(_view);
-		}
-		else {
-			if (coreprog != null){
-				coreprog.dismiss();
+		if (!isFinishing() && !isDestroyed()) {
+			if (_ifShow) {
+				if (coreprog == null) {
+					coreprog = new ProgressDialog(this);
+					coreprog.setCancelable(false);
+					coreprog.setCanceledOnTouchOutside(false);
+
+					coreprog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+					coreprog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+
+				}
+				coreprog.setMessage(null);
+				coreprog.show();
+				View _view = getLayoutInflater().inflate(R.layout.custom_dialog, null);
+				LinearLayout linear_base = (LinearLayout) _view.findViewById(R.id.linear_base);
+
+				android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+				gd.setColor(Color.TRANSPARENT);
+				gd.setCornerRadius(25);
+				linear_base.setBackground(gd);
+				coreprog.setContentView(_view);
+			} else {
+				if (coreprog != null) {
+					coreprog.dismiss();
+				}
 			}
 		}
 	}

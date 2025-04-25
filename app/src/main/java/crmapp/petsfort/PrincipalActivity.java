@@ -40,6 +40,8 @@ import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.*;
 import java.util.HashMap;
 import java.util.Timer;
@@ -142,51 +144,75 @@ public class PrincipalActivity extends AppCompatActivity {
 
 
 	void checkForAppUpdate() {
-		activityResultLauncher = registerForActivityResult(
-				new ActivityResultContracts.StartIntentSenderForResult(),
-				result -> {
-					if (result.getResultCode() == RESULT_OK) {
-						Log.d("AppUpdate", "Update flow completed successfully.");
-					} else {
-						Log.d("AppUpdate", "Update flow canceled or failed.");
+		try{
+			activityResultLauncher = registerForActivityResult(
+					new ActivityResultContracts.StartIntentSenderForResult(),
+					result -> {
+						if (result.getResultCode() == RESULT_OK) {
+							Log.d("AppUpdate", "Update flow completed successfully.");
+						} else {
+							Log.d("AppUpdate", "Update flow canceled or failed.");
+						}
 					}
+			);
+
+
+			if(AppVersionManager.getAlertFreezeEnableToCurrentVersion(getApplicationContext())) {
+				showAlertFreeze();
+			}
+
+
+			AppUpdateManager appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+
+			// Returns an intent object that you use to check for an update.
+			Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+
+
+			// Checks that the platform will allow the specified type of update.
+			appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
+				if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+
+					AppVersionManager.setAlertFreezeEnableToCurrentVersion(getApplicationContext());
+					showAlertFreeze();
+
+					appUpdateManager.startUpdateFlowForResult(
+							// Pass the intent that is returned by 'getAppUpdateInfo()'.
+							appUpdateInfo,
+							// an activity result launcher registered via registerForActivityResult
+							activityResultLauncher,
+							// Or pass 'AppUpdateType.FLEXIBLE' to newBuilder() for
+							// flexible updates.
+							AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
 				}
-		);
+			});
+		} catch (Exception e) {
+//			StringWriter sw = new StringWriter();
+//			PrintWriter pw = new PrintWriter(sw);
+//			e.printStackTrace(pw);
+//			String stackTrace = sw.toString();
+//			String message = e.getMessage();
+//
+//			TextView textView = new TextView(getApplicationContext());
+//			textView.setText(stackTrace);
+//			textView.setTextIsSelectable(true);
+//			textView.setPadding(32, 32, 32, 32); // Optional: padding for better readability
+//			textView.setTextSize(14); // Optional: adjust text size
+//
+//			AlertDialog.Builder builder = new AlertDialog.Builder(PrincipalActivity.this); // Use Activity context, not Application context
+//			builder.setTitle(message);
+//			builder.setView(textView);
+//			builder.setCancelable(false);
+//
+//			AlertDialog dialog = builder.create();
+//			dialog.show();
 
-
-		if(AppVersionManager.getAlertFreezeEnableToCurrentVersion(getApplicationContext())) {
-			showAlertFreeze();
 		}
 
-
-		AppUpdateManager appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
-
-		// Returns an intent object that you use to check for an update.
-		Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
-
-
-		// Checks that the platform will allow the specified type of update.
-		appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
-			if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
-
-				AppVersionManager.setAlertFreezeEnableToCurrentVersion(getApplicationContext());
-				showAlertFreeze();
-
-				appUpdateManager.startUpdateFlowForResult(
-						// Pass the intent that is returned by 'getAppUpdateInfo()'.
-						appUpdateInfo,
-						// an activity result launcher registered via registerForActivityResult
-						activityResultLauncher,
-						// Or pass 'AppUpdateType.FLEXIBLE' to newBuilder() for
-						// flexible updates.
-						AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
-			}
-		});
 	}
 
 
 	void showAlertFreeze(){
-		AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+		AlertDialog.Builder builder = new AlertDialog.Builder(PrincipalActivity.this);
 		builder.setTitle("Please Update the PetsFort App");
 		builder.setMessage("Please Update The PetsFort App in PlayStore to Use");
 
@@ -270,6 +296,9 @@ public class PrincipalActivity extends AppCompatActivity {
 		_drawer_textview12 = _nav_view.findViewById(R.id.textview12);
 		_drawer_imageview10 = _nav_view.findViewById(R.id.imageview10);
 		_drawer_textview13 = _nav_view.findViewById(R.id.textview13);
+
+
+		_drawer_textview12.setText("v" + AppVersionManager.getAppVersion(PrincipalActivity.this));
 
 
 		final Typeface normalTypeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");
