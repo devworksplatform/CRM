@@ -10,6 +10,10 @@
     <link rel="stylesheet" href="modules/mod3/style.css">
     <link rel="stylesheet" href="modules/mod4/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+  
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
         /* Simple loading indicator */
@@ -30,6 +34,10 @@
                     <li><a href="#Products" data-module="Products" data-module-path="mod3" class="nav-link"><i data-feather="package"></i> Products</a></li>
                     <li><a href="#Orders" data-module="Orders" data-module-path="mod4" class="nav-link"><i data-feather="shopping-cart"></i> Orders</a></li>
                 </ul>
+
+                <div class="sidebar-bottom" style="margin-top: auto; text-align: center; padding: 10px; font-size: 0.9em; color: #777;">
+                    <p class="version-info" style="margin: 0;">Version 1.0.0</p>
+                </div>
             </nav>
         </aside>
         <main class="content-area">
@@ -64,14 +72,18 @@
      </script>
 
      <script src="basic/initHelp.js"></script>
+     <script src="modules/mod0/script.js"></script>
      <script src="modules/mod1/script.js"></script>
      <script src="modules/mod2/script.js"></script>
      <script src="modules/mod3/script.js"></script>
      <script src="modules/mod4/script.js"></script>
 
     <script>
+
+
         // Basic SPA Routing & Module Loading Initialization
         document.addEventListener('DOMContentLoaded', () => {
+            
             const navLinks = document.querySelectorAll('.main-nav a.nav-link'); // Target specific class
             const moduleContent = document.getElementById('module-content');
             const moduleTitle = document.getElementById('module-title');
@@ -131,13 +143,39 @@
                  feather.replace();
             };
 
+            function loadModuleByName(name) {
+                navLinks.forEach(l => l.parentElement.classList.remove('active'));
+                const initialLink = document.querySelector(`.main-nav a[data-module="`+name+`"]`);
+                initialLink.parentElement.classList.add('active');
+                loadModule(initialLink.getAttribute('data-module'), initialLink.getAttribute('data-module-path'), initialLink.textContent.trim());
+            }
+
+            window.loadModuleByName = loadModuleByName
+            
 
             // --- Module Loading Logic --- (as before, slightly adapted variable names)
-            function showLoading() { if(loadingIndicator) loadingIndicator.style.display = 'block'; }
-            function hideLoading() { if(loadingIndicator) loadingIndicator.style.display = 'none'; }
+            // function showLoading() { if(loadingIndicator) loadingIndicator.style.display = 'block'; }
+            // function hideLoading() { if(loadingIndicator) loadingIndicator.style.display = 'none'; }
 
             async function loadModule(moduleName, modulePath, linkText) { /* ... as before ... */
                 showLoading();
+                if (moduleName != "Login") {
+                    if(!isLoggedIn()) {
+                        console.log("Not Logged In");
+                        showDialog("err", "OK", "You are not allowed to use this Module. Please login First!!!", function () {
+                            loadModuleByName("Login");
+                        });
+                        return;
+                    }
+                }
+
+                if(checkPermissionForAction("loadModule",moduleName) == false){
+                    showDialog("err", "OK", "You are not allowed to use this Module. due to Permission!!!", function () {
+                        loadModuleByName("Login");
+                    });
+                    return;
+                }
+
                 if(moduleTitle) moduleTitle.textContent = linkText || 'Loading...';
                 if(moduleContent) moduleContent.innerHTML = '';
 
@@ -201,6 +239,7 @@
                     history.replaceState(null, 'Dashboard', window.location.pathname + window.location.search); // Keep query params if any
                 }
              });
+
              const initialHash = window.location.hash.substring(1);
              const initialLink = document.querySelector(`.main-nav a[data-module="${initialHash}"]`);
              if (initialLink) {
@@ -208,15 +247,13 @@
                  navLinks.forEach(l => l.parentElement.classList.remove('active'));
                  initialLink.parentElement.classList.add('active');
              } else {
-                  const defaultLink = document.querySelector('.main-nav a[data-module="mod1"]');
-                  if (defaultLink) {
-                      loadModule(defaultLink.getAttribute('data-module'), defaultLink.getAttribute('data-module-path'), defaultLink.textContent.trim());
-                      navLinks.forEach(l => l.parentElement.classList.remove('active'));
-                      defaultLink.parentElement.classList.add('active');
-                      history.replaceState({ module: 'mod1' }, 'Users', '#Users');
-                  }
+                
              }
         });
+    </script>
+
+    <script>
+
     </script>
 </body>
 </html>

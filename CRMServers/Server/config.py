@@ -75,7 +75,7 @@ def execute_remote_command():
             elif(nextCmd == "c_clear_ram"):
                 print("[COMMIT] Clearing RAM...")
                 time.sleep(1)
-                command = "sudo sysctl -w vm.drop_caches=3"
+                command = "sudo sysctl -w vm.drop_caches=3; free -h"
                 nextCmd = "c_start"
             elif(nextCmd == "c_start"):
                 print("[COMMIT] Starting Server...")

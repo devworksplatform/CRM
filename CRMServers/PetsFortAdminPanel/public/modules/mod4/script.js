@@ -177,6 +177,12 @@ async function initMod4() {
     }
 
     async function handleDeleteOrder(orderId) {
+        if(checkPermissionForAction("delete","order") == false) {
+            showDialog("err", "OK", "You are not allowed to delete orders. due to Permission!!!", function () {
+                
+            });
+            return;
+        }
         if (!confirm(`Are you sure you want to delete order ${orderId}? This cannot be undone.`)) {
             return;
         }
