@@ -11,8 +11,8 @@ def is_ubuntu():
     else:
         return True
 
-key_path = "C:\\Users\\Jay\\Downloads\\AllowAll.pem"
-remote_host = "ec2-13-235-78-112.ap-south-1.compute.amazonaws.com"
+key_path = "C:\\Users\\Jay\\Documents\\pems\\petsfort.pem"
+remote_host = "petsfort.in"
 remote_user = "ubuntu"
 
 
@@ -51,6 +51,7 @@ def execute_remote_command():
     current_dir = "~/CRM"
 
     # temps
+    # server_cmd_prefix = "python3 serv.py"
     server_cmd_prefix = "source venv/bin/activate && python3 serv.py"
     
     print(f"SSH session started. Current directory: {current_dir}")
@@ -177,12 +178,4 @@ def execute_remote_command():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2:
-        if sys.argv[1] == "send":
-            send_file()
-        elif sys.argv[1] == "ssh":
-            execute_remote_command()
-        else:
-            print("Usage: python config.py send | ssh")
-    else:
-        print("Usage: python config.py send | ssh")
+    execute_remote_command()

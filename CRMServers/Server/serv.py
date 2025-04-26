@@ -142,8 +142,7 @@ def status():
     is_running, details = check_process_status()
     if is_running:
         print("--- Server Status: Running ---")
-        print("Process details (PID and Command):")
-        print(details)
+        print("Process details (PID and Command):",details)
         print("---")
     else:
         # check_process_status already prints errors if commands are missing
