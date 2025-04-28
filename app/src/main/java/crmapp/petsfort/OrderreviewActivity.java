@@ -294,99 +294,81 @@ public class OrderreviewActivity extends AppCompatActivity {
 							if(response.isSuccessful()) {
 								//credits decrease and save to db
 //								credits -= costDetails.getTotal();
-								credits = BigDecimal.valueOf(credits - costDetails.getTotal())
-										.setScale(2, RoundingMode.HALF_UP)
-										.doubleValue();
+								progressDialog.hide();
+								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+										.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+										.setCancelable(false)
+										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+											@Override
+											public void onClick(DialogInterface dialog, int which) {
+												Business.localDB_SharedPref.clearCart(localDB);
+												Intent intent = new Intent();
+												intent.setClass(OrderreviewActivity.this, MainActivity.class);
+												startActivity(intent);
+												finishAffinity();
+											}
+										}).show();
 
-								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
-									@Override
-									public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
-										if(_data.getStatusCode() == 200 && _data.getUser() != null) {
-											User userInfo = _data.getUser();
-											userInfo.credits = credits;
-											Business.UserDataApiClient.putUserDataCallApi(userId, userInfo,new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
-												@Override
-												public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
-													if(_data.getStatusCode() == 200) {
-														progressDialog.hide();
-														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-																.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-																.setCancelable(false)
-																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-																	@Override
-																	public void onClick(DialogInterface dialog, int which) {
-																		Business.localDB_SharedPref.clearCart(localDB);
-																		Intent intent = new Intent();
-																		intent.setClass(OrderreviewActivity.this, MainActivity.class);
-																		startActivity(intent);
-																		finishAffinity();
-																	}
-																}).show();
-													} else {
-														progressDialog.hide();
-														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-																.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-																.setCancelable(false)
-																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-																	@Override
-																	public void onClick(DialogInterface dialog, int which) {
-																		dialog.dismiss();
-																		confirmOrderLinearCard.setEnabled(true);
-																	}
-																}).show();
-													}
-												}
-											});
+//								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+//									@Override
+//									public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+//										if(_data.getStatusCode() == 200 && _data.getUser() != null) {
+//											User userInfo = _data.getUser();
+//											credits = BigDecimal.valueOf(credits - costDetails.getTotal())
+//													.setScale(2, RoundingMode.HALF_UP)
+//													.doubleValue();
+//											userInfo.credits = credits;
+//											Business.UserDataApiClient.putUserDataCallApi(userId, userInfo,new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
+//												@Override
+//												public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
+//													if(_data.getStatusCode() == 200) {
+//														progressDialog.hide();
+//														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+//																.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+//																.setCancelable(false)
+//																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//																	@Override
+//																	public void onClick(DialogInterface dialog, int which) {
+//																		Business.localDB_SharedPref.clearCart(localDB);
+//																		Intent intent = new Intent();
+//																		intent.setClass(OrderreviewActivity.this, MainActivity.class);
+//																		startActivity(intent);
+//																		finishAffinity();
+//																	}
+//																}).show();
+//													} else {
+//														progressDialog.hide();
+//														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+//																.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+//																.setCancelable(false)
+//																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//																	@Override
+//																	public void onClick(DialogInterface dialog, int which) {
+//																		dialog.dismiss();
+//																		confirmOrderLinearCard.setEnabled(true);
+//																	}
+//																}).show();
+//													}
+//												}
+//											});
+//
+//										} else {
+//
+//											progressDialog.hide();
+//											new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+//													.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
+//													.setCancelable(false)
+//													.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+//														@Override
+//														public void onClick(DialogInterface dialog, int which) {
+//															dialog.dismiss();
+//															confirmOrderLinearCard.setEnabled(true);
+//														}
+//													}).show();
+//										}
+//									}
+//								});
 
-										} else {
-
-											progressDialog.hide();
-											new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-													.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-													.setCancelable(false)
-													.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-														@Override
-														public void onClick(DialogInterface dialog, int which) {
-															dialog.dismiss();
-															confirmOrderLinearCard.setEnabled(true);
-														}
-													}).show();
-										}
-									}
-								});
-
-
-//								_firebase.getReference("datas/users/details/" + userId).child("credits").setValue(String.valueOf(credits))
-//										.addOnCompleteListener(task -> {
-//											if (task.isSuccessful()) {
-//												progressDialog.hide();
-//												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-//														.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-//														.setCancelable(false)
-//														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//															@Override
-//															public void onClick(DialogInterface dialog, int which) {
-//																Business.localDB_SharedPref.clearCart(localDB);
-//																Intent intent = new Intent();
-//																intent.setClass(OrderreviewActivity.this, MainActivity.class);
-//																startActivity(intent);
-//																finishAffinity();
-//															}
-//														}).show();
-//											} else {
-//												progressDialog.hide();
-//												new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-//														.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-//														.setCancelable(false)
-//														.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//															@Override
-//															public void onClick(DialogInterface dialog, int which) {
-//																dialog.dismiss();
-//																confirmOrderLinearCard.setEnabled(true);
-//															}
-//														}).show();
-//											}
-//										});
 							} else {
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
@@ -401,17 +383,43 @@ public class OrderreviewActivity extends AppCompatActivity {
 										}).show();
 							}
 						} else {
-							progressDialog.hide();
-							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-									.setMessage("Order was failed due to server busy, Please try again or Contact our admin team about the issue.")
-									.setCancelable(false)
-									.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-										@Override
-										public void onClick(DialogInterface dialog, int which) {
-											dialog.dismiss();
-											confirmOrderLinearCard.setEnabled(true);
-										}
-									}).show();
+							if(response.getErrorMessage().startsWith("OutOfStock")) {
+								String[] tuple = response.getErrorMessage().split(",");
+								Integer product_available_stock = Integer.parseInt(tuple[1]);
+								String product_id = tuple[2];
+								String product_name = tuple[3];
+
+								HashMap<String,Object> map = new HashMap<>();
+								map.put("count", product_available_stock);
+								Business.localDB_SharedPref.updateCartProduct(localDB,product_id,map);
+
+								progressDialog.hide();
+								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Out Of Stock!!!")
+										.setMessage("Order was failed to confirm, There is not enough stock for "+product_name+". Only "+product_available_stock+ " Left, please try again to confirm order.")
+										.setCancelable(false)
+										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+											@Override
+											public void onClick(DialogInterface dialog, int which) {
+												dialog.dismiss();
+												confirmOrderLinearCard.setEnabled(true);
+												finish();
+											}
+										}).show();
+							} else {
+								progressDialog.hide();
+								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
+										.setMessage("Order was failed due to server busy, Please try again or Contact our admin team about the issue.")
+										.setCancelable(false)
+										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+											@Override
+											public void onClick(DialogInterface dialog, int which) {
+												dialog.dismiss();
+												confirmOrderLinearCard.setEnabled(true);
+											}
+										}).show();
+							}
+
+
 						}
 					}
 				});

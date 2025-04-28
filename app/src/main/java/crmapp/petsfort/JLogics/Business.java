@@ -810,11 +810,17 @@ public class Business {
 
                     try {
                         JSONObject responseObject = new JSONObject(responseBody);
-                        parsedStatus = responseObject.optString("order_status", null); // Get the status field
-                        if (parsedStatus == null) {
-                            // If status field is missing, treat it as an unexpected response format
-                            errorMessage = "API response missing 'status' field.";
+                        String msg = responseObject.optString("message", "");
+                        if(msg.equals("OutOfStock")) {
+                            errorMessage = "OutOfStock,"+responseObject.optString("product_available_stock", "0")+","+responseObject.optString("product_id", "0")+","+responseObject.optString("product_name","product");
                             if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
+                        } else {
+                            parsedStatus = responseObject.optString("order_status", null); // Get the status field
+                            if (parsedStatus == null) {
+                                // If status field is missing, treat it as an unexpected response format
+                                errorMessage = "API response missing 'status' field.";
+                                if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
+                            }
                         }
                     } catch (JSONException e) {
                         // Failed to parse JSON - means unexpected response format

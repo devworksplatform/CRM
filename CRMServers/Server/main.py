@@ -1084,130 +1084,155 @@ async def get_products_bulk(data: dict): # Made async
     finally:
         await conn.close()
 
-
+import asyncio
+order_lock = asyncio.Lock()
 @app.post("/orders/checkout/{user_id}", response_model=Dict[str, Any])
 async def store_order(user_id: str, data: dict): # Made async
     """Stores a new order after calculating costs based on product data."""
-    conn = await get_db_connection()
-    product_details_for_order = [] # Details stored in the order
-    total_rate = 0.0
-    total_gst = 0.0
-    total_discount = 0.0
-    total = 0.0
-    not_found_ids = []
-    order_items_payload = {} # Payload as received
+    async with order_lock:
+        conn = await get_db_connection()
+        products_to_update_stock = []
+        value = data.pop('otherData')
 
-    value = data.pop('otherData')
+        product_details_for_order = [] # Details stored in the order
+        total_rate = 0.0
+        total_gst = 0.0
+        total_discount = 0.0
+        total = 0.0
+        not_found_ids = []
+        order_items_payload = {} # Payload as received
 
-    # Validate input data structure
-    if not isinstance(data, dict):
-        raise HTTPException(status_code=400, detail="Invalid request body: Expected a JSON object of product IDs and counts.")
 
-    try:
-        async with conn.cursor() as cur:
-            # First pass: Validate products and calculate totals
-            for pid, item_info in data.items():
-                if not isinstance(item_info, dict) or "count" not in item_info:
-                     raise HTTPException(status_code=400, detail=f"Invalid item data for product ID '{pid}'. Expected {{'count': number}}.")
+        # Validate input data structure
+        if not isinstance(data, dict):
+            raise HTTPException(status_code=400, detail="Invalid request body: Expected a JSON object of product IDs and counts.")
 
-                count = item_info.get("count", 0)
-                if not isinstance(count, int) or count <= 0:
-                    print(f"Warning: Invalid or zero count ({count}) for product ID '{pid}', skipping.")
-                    continue # Skip items with invalid or zero count
+        try:
+            async with conn.cursor() as cur:
+                # First pass: Validate products and calculate totals
+                for pid, item_info in data.items():
+                    if not isinstance(item_info, dict) or "count" not in item_info:
+                        raise HTTPException(status_code=400, detail=f"Invalid item data for product ID '{pid}'. Expected {{'count': number}}.")
 
-                await cur.execute("SELECT * FROM products WHERE id=? OR product_id=?", (pid, pid))
-                row = await cur.fetchone()
-                if not row:
-                    not_found_ids.append(pid)
-                    continue # Collect not found IDs, proceed if others are valid
+                    count = item_info.get("count", 0)
+                    if not isinstance(count, int) or count <= 0:
+                        print(f"Warning: Invalid or zero count ({count}) for product ID '{pid}', skipping.")
+                        continue # Skip items with invalid or zero count
 
-                prod = dict(row)
+                    await cur.execute("SELECT * FROM products WHERE id=? OR product_id=?", (pid, pid))
+                    row = await cur.fetchone()
+                    if not row:
+                        not_found_ids.append(pid)
+                        continue # Collect not found IDs, proceed if others are valid
 
-                # Store necessary details for the order record
-                product_details_for_order.append({
-                    "id": prod["id"],
-                    "product_id": prod.get("product_id"),
-                    "product_name": prod.get("product_name"),
-                    "product_desc": prod.get("product_desc"),
-                    "product_img": prod.get("product_img"),
-                    "cat_id": prod.get("cat_id"),
-                    "cat_sub": prod.get("cat_sub"),
-                    "created_at": prod.get("created_at"),
-                    "updated_at": prod.get("updated_at"),
-                    "cost_mrp": prod.get("cost_mrp", 0.0),
-                    "cost_rate": prod.get("cost_rate", 0.0),
-                    "cost_gst": prod.get("cost_gst", 0.0),
-                    "stock": prod.get("stock", 0.0),
-                    "cost_dis": prod.get("cost_dis", 0.0),
-                    "count": count # Store the count for this item in the order details
-                })
-                order_items_payload[pid] = {"count": count} # Rebuild payload with only valid items
+                    prod = dict(row)
 
-                # Recalculate totals based on DB data for valid items
-                rate = prod.get("cost_rate", 0.0)
-                gst_percent = prod.get("cost_gst", 0.0)
-                disc_percent = prod.get("cost_dis", 0.0)
-                gst_amt = (rate * gst_percent) / 100.0
-                base = rate + gst_amt
-                disc_amt = (base * disc_percent) / 100.0
+                    requested_count = item_info.get("count", 0)
+                    available_stock = prod.get("stock", 0)
 
-                total_rate += rate * count
-                total_gst += gst_amt * count
-                total_discount += disc_amt * count
-                total += (base - disc_amt) * count
+                    # Check stock
+                    if available_stock < requested_count:
+                        return {
+                            "message" : "OutOfStock",
+                            "product_available_stock" : available_stock,
+                            "product_id" : pid,
+                            "product_name" : prod.get("product_name", "product")
+                        }
+                    else:
+                        products_to_update_stock.append((pid,available_stock-requested_count))
 
-            # Check if any products were not found
-            if not_found_ids:
-                raise HTTPException(status_code=404, detail=f"Products not found: {', '.join(not_found_ids)}")
 
-            # Check if there are any valid items to create an order
-            if not order_items_payload:
-                 raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
 
-            # Insert order if all products were found and valid
-            order_id = generate_short_random_id() # Use the short ID generator
-            now = datetime.utcnow().isoformat() + "Z" # Add Z for UTC timezone indicator
+                    # Store necessary details for the order record
+                    product_details_for_order.append({
+                        "id": prod["id"],
+                        "product_id": prod.get("product_id"),
+                        "product_name": prod.get("product_name"),
+                        "product_desc": prod.get("product_desc"),
+                        "product_img": prod.get("product_img"),
+                        "cat_id": prod.get("cat_id"),
+                        "cat_sub": prod.get("cat_sub"),
+                        "created_at": prod.get("created_at"),
+                        "updated_at": prod.get("updated_at"),
+                        "cost_mrp": prod.get("cost_mrp", 0.0),
+                        "cost_rate": prod.get("cost_rate", 0.0),
+                        "cost_gst": prod.get("cost_gst", 0.0),
+                        "stock": prod.get("stock", 0.0),
+                        "cost_dis": prod.get("cost_dis", 0.0),
+                        "count": count # Store the count for this item in the order details
+                    })
+                    order_items_payload[pid] = {"count": count} # Rebuild payload with only valid items
 
-            insert_query = """
-                INSERT INTO orders
-                (order_id, user_id, items, items_detail, order_status, total_rate, total_gst, total_discount, total, created_at, address, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """
-            params = (
-                order_id, user_id,
-                json.dumps(order_items_payload), # Store the validated item counts
-                json.dumps(product_details_for_order), # Store the fetched product details for this order
-                "ORDER_PENDING",
-                round(total_rate, 3),
-                round(total_gst, 3),
-                round(total_discount, 3),
-                round(total, 3),
-                now,
-                value["address"],
-                value["notes"]
-            )
-            await cur.execute(insert_query, params)
-            await conn.commit()
+                    # Recalculate totals based on DB data for valid items
+                    rate = prod.get("cost_rate", 0.0)
+                    gst_percent = prod.get("cost_gst", 0.0)
+                    disc_percent = prod.get("cost_dis", 0.0)
+                    gst_amt = (rate * gst_percent) / 100.0
+                    base = rate + gst_amt
+                    disc_amt = (base * disc_percent) / 100.0
 
-            FCM_notify_order_checkout(user_id, round(total_rate, 3))
+                    total_rate += rate * count
+                    total_gst += gst_amt * count
+                    total_discount += disc_amt * count
+                    total += (base - disc_amt) * count
 
-            return {
-                "message": "Order created successfully",
-                "order_id": order_id,
-                "user_id": user_id,
-                "order_status": "ORDER_PENDING",
-                "total": round(total, 3)
-            }
-    except HTTPException:
-        await conn.rollback() # Rollback if HTTP error occurred
-        raise
-    except Exception as e:
-        await conn.rollback() # Rollback on generic error
-        print(f"Error in store_order: {e}")
-        # Consider more specific error handling (e.g., serialization errors)
-        raise HTTPException(status_code=500, detail=f"Failed to store order: {str(e)}")
-    finally:
-        await conn.close()
+                # Check if any products were not found
+                if not_found_ids:
+                    raise HTTPException(status_code=404, detail=f"Products not found: {', '.join(not_found_ids)}")
+
+                # Check if there are any valid items to create an order
+                if not order_items_payload:
+                    raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
+                
+                for product_id_t, new_stock_count_t in products_to_update_stock:
+                    await cur.execute("UPDATE products SET stock = ? WHERE id = ? OR product_id=?", (new_stock_count_t, product_id_t, product_id_t))
+
+                await cur.execute("UPDATE userdata SET credits=credits-? WHERE id=? OR uid=?", (total,user_id,user_id))
+
+                # Insert order if all products were found and valid
+                order_id = generate_short_random_id() # Use the short ID generator
+                now = datetime.utcnow().isoformat() + "Z" # Add Z for UTC timezone indicator
+
+                insert_query = """
+                    INSERT INTO orders
+                    (order_id, user_id, items, items_detail, order_status, total_rate, total_gst, total_discount, total, created_at, address, notes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """
+                params = (
+                    order_id, user_id,
+                    json.dumps(order_items_payload), # Store the validated item counts
+                    json.dumps(product_details_for_order), # Store the fetched product details for this order
+                    "ORDER_PENDING",
+                    round(total_rate, 3),
+                    round(total_gst, 3),
+                    round(total_discount, 3),
+                    round(total, 3),
+                    now,
+                    value["address"],
+                    value["notes"]
+                )
+                await cur.execute(insert_query, params)
+                await conn.commit()
+
+                FCM_notify_order_checkout(user_id, round(total, 3))
+
+                return {
+                    "message": "Order created successfully",
+                    "order_id": order_id,
+                    "user_id": user_id,
+                    "order_status": "ORDER_PENDING",
+                    "total": round(total, 3)
+                }
+        except HTTPException:
+            await conn.rollback() # Rollback if HTTP error occurred
+            raise
+        except Exception as e:
+            await conn.rollback() # Rollback on generic error
+            print(f"Error in store_order: {e}")
+            # Consider more specific error handling (e.g., serialization errors)
+            raise HTTPException(status_code=500, detail=f"Failed to store order: {str(e)}")
+        finally:
+            await conn.close()
 
 
 @app.post("/orders/query", response_model=List[OrderResponse])
@@ -1925,16 +1950,19 @@ async def api_delete_row(table_name: str, pk_value: str):
             logger.debug(f"Connection closed after deleting row from {table_name}.")
 
 
-def FCM_notify_order_checkout(user_id, total_rate):
-    name = "A User"
+async def FCM_notify_order_checkout(user_id, total_rate):
     try:
-        user = get_userdata(user_id)
-        name = user.name
+        name = "A User"
+        try:
+            user = await get_userdata(user_id)
+            name = user.name
+        except Exception as e:
+            logger.error(f"Unexpected error retriving user data when order checkout in FCM: {e}", exc_info=True)
+        
+        firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Made","Thank you for making order, your order is in pending, we will update you!", {})
+        firebaseAuth.send_topic_notification("order_checkout","New Order",str(name)+" is made a new order of Rs."+str(total_rate), {})
     except Exception as e:
         logger.error(f"Unexpected error retriving user data when order checkout in FCM: {e}", exc_info=True)
-    
-    firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Made","Thank you for making order, your order is in pending, we will update you!", {})
-    firebaseAuth.send_topic_notification("order_checkout","New Order",str(name)+" is made a new order of Rs."+str(total_rate), {})
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)
