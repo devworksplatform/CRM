@@ -153,11 +153,11 @@ async function initMod1() {
                     showToast('Password must be at least 6 characters long.','error'); return false;
                 }
 
-                // Basic rules regex: at least one uppercase letter, one lowercase letter, and one digit
-                const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-                if (!passwordRegex.test(passwordValue)) {
-                    showToast('Password must contain at least one uppercase letter, one lowercase letter, and one digit.','error'); return;
-                }
+                // // Basic rules regex: at least one uppercase letter, one lowercase letter, and one digit
+                // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+                // if (!passwordRegex.test(passwordValue)) {
+                //     showToast('Password must contain at least one uppercase letter, one lowercase letter, and one digit.','error'); return;
+                // }
             } else {
                 //pass
                 passwordValue = "";
@@ -168,11 +168,11 @@ async function initMod1() {
                 showToast('Password must be at least 6 characters long.','error'); return false;
             }
 
-            // Basic rules regex: at least one uppercase letter, one lowercase letter, and one digit
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
-            if (!passwordRegex.test(passwordValue)) {
-                showToast('Password must contain at least one uppercase letter, one lowercase letter, and one digit.','error'); return;
-            }
+            // // Basic rules regex: at least one uppercase letter, one lowercase letter, and one digit
+            // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+            // if (!passwordRegex.test(passwordValue)) {
+            //     showToast('Password must contain at least one uppercase letter, one lowercase letter, and one digit.','error'); return;
+            // }
 
         }
 

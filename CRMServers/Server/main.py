@@ -460,16 +460,17 @@ import dbbackup
 @app.get("/restore/{restore_path}")
 async def restoreAPI(restore_path: str): # Made async
     errRdb = None
+    rlog = None
     try:
         root_ref = firebaseAuth.db.reference()
-        dbbackup.restore_firebase_to_sqlite(DB_PATH, root_ref, restore_path)
+        rlog = dbbackup.restore_firebase_to_sqlite(DB_PATH, root_ref, restore_path)
     except NameError:
         errRdb = ("\nRestore skipped because Firebase Admin SDK is not initialized (check credentials).")
     except Exception as e:
         errRdb = (f"\nError during restore call: {e}")
 
 
-    return {"path":"tables/"+restore_path,"err": str(errRdb)}
+    return {"path":"tables/"+restore_path,"err": str(errRdb), "log":rlog}
 
 @app.get("/backup")
 async def backupAPI(): # Made async
@@ -477,16 +478,18 @@ async def backupAPI(): # Made async
 
     # Current time in IST
     now_ist = datetime.now(IST)
+    
+    blog = None
 
     # Format it as yyyy-mm-dd--HH-MM-SS
     formatted = now_ist.strftime("%Y-%m-%d--%H-%M-%S")
 
     path,url,err = firebaseAuth.upload_file_to_storage(DB_PATH,"backups/sqliteDBs/"+formatted+".db")
-
+    
     errRdb = None
     try:
         root_ref = firebaseAuth.db.reference()
-        dbbackup.backup_sqlite_to_firebase(DB_PATH, root_ref, formatted)
+        blog = dbbackup.backup_sqlite_to_firebase(DB_PATH, root_ref, formatted)
     except NameError:
         errRdb = ("\nBackup skipped because Firebase Admin SDK is not initialized (check credentials).")
     except Exception as e:
@@ -495,7 +498,8 @@ async def backupAPI(): # Made async
     return {"realtimeDb":{
         "path":"tables/"+formatted,
         "err":str(errRdb)
-    },"storage":{"path":path,"url": url, "err": str(err)}}
+    },"storage":{"path":path,"url": url, "err": str(err)},
+    "log":blog}
 
 
 
