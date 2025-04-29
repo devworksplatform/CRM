@@ -291,97 +291,20 @@ public class OrderreviewActivity extends AppCompatActivity {
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
 						if(response.getStatusCode() == 200) {
-							if(response.isSuccessful()) {
-								//credits decrease and save to db
-//								credits -= costDetails.getTotal();
-								progressDialog.hide();
-								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-										.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-										.setCancelable(false)
-										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-											@Override
-											public void onClick(DialogInterface dialog, int which) {
-												Business.localDB_SharedPref.clearCart(localDB);
-												Intent intent = new Intent();
-												intent.setClass(OrderreviewActivity.this, MainActivity.class);
-												startActivity(intent);
-												finishAffinity();
-											}
-										}).show();
-
-//								Business.UserDataApiClient.getUserDataCallApi(userId, new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
-//									@Override
-//									public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
-//										if(_data.getStatusCode() == 200 && _data.getUser() != null) {
-//											User userInfo = _data.getUser();
-//											credits = BigDecimal.valueOf(credits - costDetails.getTotal())
-//													.setScale(2, RoundingMode.HALF_UP)
-//													.doubleValue();
-//											userInfo.credits = credits;
-//											Business.UserDataApiClient.putUserDataCallApi(userId, userInfo,new Callbacker.ApiResponseWaiters.UserDataApiCallback(){
-//												@Override
-//												public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
-//													if(_data.getStatusCode() == 200) {
-//														progressDialog.hide();
-//														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
-//																.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-//																.setCancelable(false)
-//																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//																	@Override
-//																	public void onClick(DialogInterface dialog, int which) {
-//																		Business.localDB_SharedPref.clearCart(localDB);
-//																		Intent intent = new Intent();
-//																		intent.setClass(OrderreviewActivity.this, MainActivity.class);
-//																		startActivity(intent);
-//																		finishAffinity();
-//																	}
-//																}).show();
-//													} else {
-//														progressDialog.hide();
-//														new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-//																.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-//																.setCancelable(false)
-//																.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//																	@Override
-//																	public void onClick(DialogInterface dialog, int which) {
-//																		dialog.dismiss();
-//																		confirmOrderLinearCard.setEnabled(true);
-//																	}
-//																}).show();
-//													}
-//												}
-//											});
-//
-//										} else {
-//
-//											progressDialog.hide();
-//											new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-//													.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-//													.setCancelable(false)
-//													.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-//														@Override
-//														public void onClick(DialogInterface dialog, int which) {
-//															dialog.dismiss();
-//															confirmOrderLinearCard.setEnabled(true);
-//														}
-//													}).show();
-//										}
-//									}
-//								});
-
-							} else {
-								progressDialog.hide();
-								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-										.setMessage("Order was failed to confirm, Please try again or Contact our admin team about the issue.")
-										.setCancelable(false)
-										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-											@Override
-											public void onClick(DialogInterface dialog, int which) {
-												dialog.dismiss();
-												confirmOrderLinearCard.setEnabled(true);
-											}
-										}).show();
-							}
+							progressDialog.hide();
+							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+									.setMessage("Order Has been created successfully, Thank you for shopping with us.")
+									.setCancelable(false)
+									.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											Business.localDB_SharedPref.clearCart(localDB);
+											Intent intent = new Intent();
+											intent.setClass(OrderreviewActivity.this, MainActivity.class);
+											startActivity(intent);
+											finishAffinity();
+										}
+									}).show();
 						} else {
 							if(response.getErrorMessage().startsWith("OutOfStock")) {
 								String[] tuple = response.getErrorMessage().split(",");
@@ -408,7 +331,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 							} else {
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-										.setMessage("Order was failed due to server busy, Please try again or Contact our admin team about the issue.")
+										.setMessage("Order was failed due to "+response.getErrorMessage()+", Please try again or Contact our admin team about the issue.")
 										.setCancelable(false)
 										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 											@Override

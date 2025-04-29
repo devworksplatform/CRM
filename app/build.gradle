@@ -13,8 +13,8 @@ android {
 		applicationId "crmapp.petsfort"
 		minSdkVersion 26
 		targetSdkVersion 35
-		versionCode 8
-		versionName "1.8"
+		versionCode 9
+		versionName "1.9"
 	}
 
 	buildTypes {

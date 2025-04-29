@@ -21,6 +21,12 @@ async function initMod1() {
     const noUsersMessage = document.getElementById('no-users-message'); // Reference paragraph element
     const expiryInput = document.getElementById('user-credits-expiry');
 
+    usernameInput.addEventListener('input', () => {
+        // Remove non-alphanumeric characters and trim spaces
+        const cleanedUsername = usernameInput.value.replace(/[^a-zA-Z0-9]/g, '').trim();
+        emailInput.value = cleanedUsername + '@petsfort.in';
+    });
+    
     // const today = new Date().toISOString().split('T')[0];
     // expiryInput.value = today;
     // expiryInput.min = today;

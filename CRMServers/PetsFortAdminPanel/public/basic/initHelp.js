@@ -107,6 +107,8 @@ const firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const storage = firebase.storage();
+
 console.log("Firebase loaded and ready");
 
 function isLoggedIn() {
@@ -177,6 +179,18 @@ async function callApi(method, url, body = null) {
 }
   
 
+async function uploadBlobToFirebase(blob, path) {
+    const storageRef = storage.ref().child(path);
+
+    try {
+      const snapshot = await storageRef.put(blob);
+      const downloadURL = await snapshot.ref.getDownloadURL();
+      return downloadURL;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error;
+    }
+  }
 
 
 

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.PorterDuff;
 import android.os.*;
 import android.util.*;
 import android.view.*;
@@ -50,6 +51,8 @@ public class MainActivity extends AppCompatActivity {
 		linear1 = findViewById(R.id.linear1);
 //		imageview1 = findViewById(R.id.imageview1);
 		imageview2 = findViewById(R.id.imageview2);
+
+//		imageview2.setColorFilter(0xFFFFFFFF, PorterDuff.Mode.MULTIPLY);
 
 		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
 

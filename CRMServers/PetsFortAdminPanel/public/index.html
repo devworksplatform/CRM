@@ -13,6 +13,7 @@
 
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-storage-compat.js"></script>
   
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
@@ -21,6 +22,10 @@
     </style>
 </head>
 <body>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/compressorjs/1.1.1/compressor.min.js"></script>
+  
     <div class="overlay" id="overlay"></div>
 
     <div class="app-container" id="app-container"> 
@@ -53,7 +58,7 @@
         </main>
     </div>
 
-     <div id="loading-indicator">Loading...</div>
+     <!-- <div id="loading-indicator">Loading...</div> -->
      <div id="toast-message" class="toast"></div>
      <div id="genericModal" class="modal">
        <div class="modal-content">

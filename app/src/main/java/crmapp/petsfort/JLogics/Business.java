@@ -828,6 +828,8 @@ public class Business {
                         errorMessage = "Invalid JSON response from server.";
                         if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
                         parsedStatus = "failed"; // Default to failed if parsing fails
+
+                        errorMessage = responseBody;
                     }
 
                     // Create the response object using the parsed status and original HTTP code

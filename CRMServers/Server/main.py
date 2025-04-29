@@ -1183,7 +1183,19 @@ async def store_order(user_id: str, data: dict): # Made async
                 # Check if there are any valid items to create an order
                 if not order_items_payload:
                     raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
-                
+
+                await cur.execute("SELECT name,isblocked FROM userdata WHERE id=? OR uid=?", (user_id, user_id))
+                user_row = await cur.fetchone()
+                user_name = "A User"
+                if user_row:
+                    user_name = user_row[0]
+                    user_blocked = user_row[1]
+                    if(int(user_blocked) != 0):
+                        raise HTTPException(status_code=400, detail="User is Blocked")
+                else:
+                    raise HTTPException(status_code=400, detail="User Not found.")
+
+
                 for product_id_t, new_stock_count_t in products_to_update_stock:
                     await cur.execute("UPDATE products SET stock = ? WHERE id = ? OR product_id=?", (new_stock_count_t, product_id_t, product_id_t))
 
@@ -1214,7 +1226,7 @@ async def store_order(user_id: str, data: dict): # Made async
                 await cur.execute(insert_query, params)
                 await conn.commit()
 
-                FCM_notify_order_checkout(user_id, round(total, 3))
+                await FCM_notify_order_checkout(user_id, round(total, 3), user_name)
 
                 return {
                     "message": "Order created successfully",
@@ -1230,7 +1242,7 @@ async def store_order(user_id: str, data: dict): # Made async
             await conn.rollback() # Rollback on generic error
             print(f"Error in store_order: {e}")
             # Consider more specific error handling (e.g., serialization errors)
-            raise HTTPException(status_code=500, detail=f"Failed to store order: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Failed to store your order")
         finally:
             await conn.close()
 
@@ -1274,11 +1286,13 @@ async def update_order(order_id: str, order_update: OrderUpdate): # Made async
     conn = await get_db_connection()
     update_fields = []
     params = []
-
+    notifyStatus = False
+    
     # Build SET clause and params dynamically
     if order_update.order_status is not None:
         update_fields.append("order_status = ?")
         params.append(order_update.order_status)
+        notifyStatus = True
     if order_update.items is not None:
         # Add validation for items structure if needed
         update_fields.append("items = ?")
@@ -1323,7 +1337,17 @@ async def update_order(order_id: str, order_update: OrderUpdate): # Made async
             updated_order = await cur.fetchone()
             if not updated_order: # Should not happen if update succeeded, but check anyway
                  raise HTTPException(status_code=404, detail="Order not found after update attempt.")
-
+            
+            status = updated_order["order_status"]
+            if(status == "ORDER_PENDING"):
+                status = "pending"
+            elif(status == "ORDER_IN_PROGRESS"):
+                status = "in progress"
+            elif(status == "ORDER_DELIVERED"):
+                status = "delivered"
+            elif(status == "ORDER_CANCELLED"):
+                status = "cancelled"
+            await FCM_notify_order_status_change(updated_order["user_id"],status)
             return dict_to_order(updated_order)
     except HTTPException:
         await conn.rollback() # Rollback on explicit HTTP errors
@@ -1950,19 +1974,25 @@ async def api_delete_row(table_name: str, pk_value: str):
             logger.debug(f"Connection closed after deleting row from {table_name}.")
 
 
-async def FCM_notify_order_checkout(user_id, total_rate):
-    try:
-        name = "A User"
-        try:
-            user = await get_userdata(user_id)
-            name = user.name
-        except Exception as e:
-            logger.error(f"Unexpected error retriving user data when order checkout in FCM: {e}", exc_info=True)
-        
-        firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Made","Thank you for making order, your order is in pending, we will update you!", {})
-        firebaseAuth.send_topic_notification("order_checkout","New Order",str(name)+" is made a new order of Rs."+str(total_rate), {})
+
+async def FCM_notify_user_credits_change(user_id, msg):
+    try:        
+        firebaseAuth.send_topic_notification("user_"+str(user_id),"Credits Updated","Hi, "+msg+"!", {})
     except Exception as e:
-        logger.error(f"Unexpected error retriving user data when order checkout in FCM: {e}", exc_info=True)
+        logger.error(f"Unexpected error fcm notify when FCM_notify_user_credits_change in FCM: {e}", exc_info=True)
+
+async def FCM_notify_order_status_change(user_id, status):
+    try:        
+        firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Status Updated","Hi, your order is "+status+"!", {})
+    except Exception as e:
+        logger.error(f"Unexpected error fcm notify when FCM_notify_order_status_change in FCM: {e}", exc_info=True)
+
+async def FCM_notify_order_checkout(user_id, total_rate, user_name):
+    try:        
+        firebaseAuth.send_topic_notification("user_"+str(user_id),"Order Made","Thank you for making order, your order is in pending, we will update you!", {})
+        firebaseAuth.send_topic_notification("order_checkout","New Order",str(user_name)+" is made a new order of Rs."+str(total_rate), {})
+    except Exception as e:
+        logger.error(f"Unexpected error fcm notify when FCM_notify_order_checkout in FCM: {e}", exc_info=True)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)

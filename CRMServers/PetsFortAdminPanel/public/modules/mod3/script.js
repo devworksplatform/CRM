@@ -135,13 +135,14 @@ async function initMod3() {
         }
          noImagesText.style.display = 'none';
 
+
         currentImageUrls.forEach((url, index) => {
             const item = document.createElement('div');
             item.className = 'img-preview-item';
             item.innerHTML = `
                 <img src="${escapeHtml(url)}" class="img-preview" alt="Preview ${index+1}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" >
                 <span style="display: none; font-size: 0.7em; color: var(--text-muted);">Invalid URL or image</span>
-                <button type="button" class="remove-img-btn" data-index="${index}">&times;</button>
+                <button type="button" class="remove-img-btn" data-index="${index}"></button>
             `;
             item.querySelector('.remove-img-btn').onclick = () => removeImage(index);
             imagePreviewList.appendChild(item);
@@ -175,12 +176,18 @@ async function initMod3() {
         costDisInput.value = product.cost_dis || 0;
         stockInput.value = product.stock;
 
+
+        console.log(product.cat_sub)
         // Populate subcategories
         const checkedSubIds = product.cat_sub ? product.cat_sub.filter(id => id) : []; // Handle empty string/null
         populateSubcategoryCheckboxes(product.cat_id, checkedSubIds);
 
+        
+
         // Populate images
         currentImageUrls = Array.isArray(product.product_img) ? [...product.product_img] : [];
+        console.log(product.product_img)
+
         renderImagePreviews();
 
         formTitle.textContent = 'Edit Product';
@@ -189,6 +196,14 @@ async function initMod3() {
         feather.replace();
         productForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+
+
+    function addImageUploaded(url) {
+        newImageUrlInput.value = url;
+        addImage();
+    }
+
+    window.addImageUploaded = addImageUploaded;
 
     function addImage() {
         const url = newImageUrlInput.value.trim();
@@ -216,9 +231,10 @@ async function initMod3() {
 
 
     // --- Event Handlers ---
-    function handleFormSubmit(event) {
+    async function handleFormSubmit(event) {
         event.preventDefault();
         const editId = productIdInput.value; // Use product_id for editing check
+
 
         // Get selected subcategory IDs
         const selectedSubcategoryCheckboxes = productSubcategoriesContainer.querySelectorAll('input[name="product-subcategories"]:checked');
@@ -256,20 +272,24 @@ async function initMod3() {
         const isUpdating = Boolean(editId);
 
         if (isUpdating) {
+            await callApi("PUT","products/"+editId,product)
+            product.cat_sub = product.cat_sub.split(',').filter(Boolean)
             products = products.map(p => (p.product_id === editId ? product : p));
             showToast(`Product "${product.product_name}" updated.`, 'success');
         } else {
+
+            await callApi("POST","products/",product)
+
             // Optional: Check for duplicate product name before adding?
             const nameLower = product.product_name.toLowerCase();
             if (products.some(p => p.product_name.toLowerCase() === nameLower)) {
                showToast(`Product name "${product.product_name}" already exists.`, 'error'); return;
             }
+            product.cat_sub = product.cat_sub.split(',').filter(Boolean)
             products.push(product);
-             showToast(`Product "${product.product_name}" added.`, 'success');
+            showToast(`Product "${product.product_name}" added.`, 'success');
         }
 
-
-        callApi("POST","products/",product)
         saveProducts(products);
         handleFilterAndSearch(); // Re-render table based on current filters
         resetForm();
@@ -351,7 +371,7 @@ async function initMod3() {
         product_id: p.product_id,
         product_name: p.product_name,
         product_desc: p.product_desc,
-        product_img: p.product_img[0] || null,
+        product_img: p.product_img || null,
         cat_id: p.cat_id,
         cat_sub: p.cat_sub.split(',').filter(Boolean),
         cost_rate: p.cost_rate,
@@ -365,5 +385,118 @@ async function initMod3() {
     renderProductTable(); // Load and display products
     // Ensure subcategory checkboxes are initially empty/prompted
     populateSubcategoryCheckboxes(null);
+
+
+
+    imagePicker();
 }
 window.initMod3 = initMod3;
+
+
+async function imageSelected(imageBlob) {
+    console.log('Image selected and compressed. Blob object:', imageBlob);
+    showLoading();
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0]; // "2025-04-30"
+    
+    // Generate a simple random string (e.g., 8 characters)
+    const randomStr = Math.random().toString(36).substring(2, 10); // "fj3kd9wq"
+    
+    // Combine into a unique path
+    const path = `images/products/hello_${dateStr}_${Date.now()}_${randomStr}.txt`;
+    
+    const url = await uploadBlobToFirebase(imageBlob, path)
+
+    window.addImageUploaded(url);
+    hideLoading();    
+}
+
+
+async function imagePicker() {
+    const fileInput = document.getElementById('fileInput');
+    const cropModal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('cropImage');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const cropBtn = document.getElementById('cropBtn');
+    const preview = document.getElementById('preview');
+    let cropper = null;
+
+    // Controller variable for image quality (0 to 1)
+    const imageQuality = 0.7; // You can change this value (e.g., 0.8 for higher quality, 0.5 for lower)
+
+    // Function to be called after image is selected and compressed
+    // This function will receive the compressed image as a Blob object
+
+
+    fileInput.addEventListener('change', e => {
+        const file = e.target.files[0]; if (!file) return;
+        console.log('Original Image File:', file.name);
+        console.log('Original Image Size:', (file.size / 1024).toFixed(2), 'KB', (file.size / (1024 * 1024)).toFixed(2), 'MB');
+        const url = URL.createObjectURL(file);
+        cropImage.src = url;
+        cropModal.classList.remove('hidden');
+        cropImage.onload = () => {
+            console.log('Original Image Resolution:', cropImage.naturalWidth, 'x', cropImage.naturalHeight);
+            if (cropper) cropper.destroy();
+            cropper = new Cropper(cropImage, {
+                aspectRatio: 1,
+                viewMode: 1,
+                background: false,
+                modal: true,
+                guides: false,
+                movable: true,
+                zoomable: true,
+                responsive: true,
+                autoCropArea: 0.8,
+            });
+        };
+    });
+
+    cancelBtn.addEventListener('click', () => {
+        cropModal.classList.add('hidden');
+        if (cropper) cropper.destroy();
+        URL.revokeObjectURL(cropImage.src);
+        cropImage.src = '';
+    });
+
+    cropBtn.addEventListener('click', () => {
+        if (!cropper) return;
+        // get cropped canvas
+        const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+        console.log('Cropped Image Resolution (Target):', canvas.width, 'x', canvas.height);
+        // convert canvas to blob
+        canvas.toBlob(blob => {
+            console.log('Cropped Image Size (Before Compression):', (blob.size / 1024).toFixed(2), 'KB', (blob.size / (1024 * 1024)).toFixed(2), 'MB');
+            // compress using Compressor.js
+            new Compressor(blob, {
+                quality: imageQuality, // Use the controller variable here
+                maxWidth: 300,
+                maxHeight: 300,
+                convertSize: 0, // always convert
+                success(compressedBlob) {
+                    console.log('Compressed Image Size:', (compressedBlob.size / 1024).toFixed(2), 'KB', (compressedBlob.size / (1024 * 1024)).toFixed(2), 'MB');
+                    console.log('Compressed Image Resolution (Expected):', 300, 'x', 300); // Based on getCroppedCanvas and Compressor options
+                    // create URL and display
+                    const url = URL.createObjectURL(compressedBlob);
+                    preview.innerHTML = '';
+                    const imgEl = document.createElement('img');
+                    imgEl.src = url;
+                    imgEl.className = 'rounded-lg shadow-md';
+                    preview.appendChild(imgEl);
+
+                    // *** Call the imageSelected function with the compressed blob ***
+                    imageSelected(compressedBlob);
+
+                    // clean up
+                    cropModal.classList.add('hidden');
+                    cropper.destroy();
+                    URL.revokeObjectURL(cropImage.src);
+                    cropImage.src = '';
+                },
+                error(err) {
+                    console.error('Compression error:', err.message);
+                },
+            });
+        }, 'image/jpeg', 0.9); // Quality 0.9 for the *uncopressed* blob before Compressor.js - this is less important as Compressor.js will re-encode with its own quality
+    });
+}

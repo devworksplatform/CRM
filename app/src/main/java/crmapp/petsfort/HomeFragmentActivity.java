@@ -242,9 +242,9 @@ public class HomeFragmentActivity extends Fragment {
 
 		tvBalanceAmount.setText("...");
 
-		JHelpers.runAfterDelay(getActivity(),100, new Callbacker.Timer(){
-			@Override
-			public void onEnd() {
+//		JHelpers.runAfterDelay(getActivity(),100, new Callbacker.Timer(){
+//			@Override
+//			public void onEnd() {
 				_firebase.getReference("datas/announcement/all").addListenerForSingleValueEvent(new ValueEventListener() {
 					@Override
 					public void onDataChange(DataSnapshot _dataSnapshot) {
@@ -268,8 +268,8 @@ public class HomeFragmentActivity extends Fragment {
 					@Override
 					public void onCancelled(DatabaseError _databaseError) { }
 				});
-			}
-		});
+//			}
+//		});
 
 
 		linear1.setVisibility(View.GONE);
@@ -306,7 +306,7 @@ public class HomeFragmentActivity extends Fragment {
 
 
 	public void hideLoadingAndStartIntro() {
-		JHelpers.runAfterDelay(getActivity(), 1000, new Callbacker.Timer(){
+		JHelpers.runAfterDelay(getActivity(), 100, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
 				JHelpers.TransitionManager(linear3, 400);

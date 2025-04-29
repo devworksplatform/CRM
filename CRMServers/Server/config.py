@@ -11,7 +11,7 @@ def is_ubuntu():
     else:
         return True
 
-key_path = "C:\\Users\\Jay\\Documents\\pems\\petsfort.pem"
+key_path = "C:\\Users\\Jay\\Documents\\pems\\AllowAll.pem"
 remote_host = "petsfort.in"
 remote_user = "ubuntu"
 

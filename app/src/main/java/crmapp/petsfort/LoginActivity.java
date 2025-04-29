@@ -470,7 +470,11 @@ public class LoginActivity extends AppCompatActivity {
 
 				}
 				coreprog.setMessage(null);
-				coreprog.show();
+				try{
+					coreprog.show();
+				} catch (Exception e){
+
+				}
 				View _view = getLayoutInflater().inflate(R.layout.custom_dialog, null);
 				LinearLayout linear_base = (LinearLayout) _view.findViewById(R.id.linear_base);
 
