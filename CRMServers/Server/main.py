@@ -450,9 +450,31 @@ async def startup_event():
 
 # --- API Routes (Modified for Async) ---
 
+# @app.get("/")
+# async def rootPage(): # Made async
+#     return {"message": "API is running"}
+
 @app.get("/")
-async def read_root4(): # Made async
-    return {"message": "API is running"}
+async def rootPage(request: Request):
+    host = request.headers.get("host", "")
+    host = host.split(":")[0]
+    
+    if host == "server.petsfort.in":
+        return {"message": "API is running"}
+    elif host == "petsfort.in":
+        html_file_path = "index.html"
+        try:
+            with open(html_file_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+            return HTMLResponse(content=html_content)
+        except FileNotFoundError:
+            logger.error(f"HTML file not found at {html_file_path}")
+            raise HTTPException(status_code=404, detail=f"{html_file_path} not found in the current directory.")
+        except Exception as e:
+            logger.error(f"Error reading HTML file {html_file_path}: {e}")
+            raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
+    else:
+        raise HTTPException(status_code=404, detail=f"Could not load the page you are requesting")
 
 from datetime import datetime, timedelta, timezone
 import dbbackup
@@ -1735,7 +1757,7 @@ async def privacy_policy(request: Request):
 @app.get("/database", response_class=HTMLResponse)
 async def read_root(request: Request):
     """Serves the main HTML page from the current directory."""
-    html_file_path = "index.html"
+    html_file_path = "database.html"
     try:
         with open(html_file_path, "r", encoding="utf-8") as f:
             html_content = f.read()
