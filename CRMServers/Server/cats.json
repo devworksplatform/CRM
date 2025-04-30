@@ -1,0 +1,728 @@
+{
+	  "category1": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat1.jpg?alt=media&token=ed4af7bf-2051-4aec-b4dd-9b48f4e6c234",
+        "name": "Snacks & Treats",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Soft Treats"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Tough Chews"
+          },
+          "subcat11": {
+            "img": "",
+            "name": "Bone Shaped"
+          },
+          "subcat12": {
+            "img": "",
+            "name": "Cat Snacks"
+          },
+          "subcat13": {
+            "img": "",
+            "name": "Energy Treats"
+          },
+          "subcat14": {
+            "img": "",
+            "name": "Semi-Moist Treats"
+          },
+          "subcat15": {
+            "img": "",
+            "name": "Ice Cream & Cheese"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Wanpy Tasty Meat"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Calcium Bones"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Made in India"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Cat Creamy Treats"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Puppy Snacks"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Dental Chews"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Meat Jerky Treats"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Groovy Gravy"
+          }
+        }
+      },
+      "category10": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat10.jpg?alt=media&token=f1dcbdde-41e8-4365-ad89-ed90daf0d2a3",
+        "name": "Beddings",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Sofa Beds"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Mattress"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Round Bed"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Basket Beds"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Fancy Designer"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Water Proof Beds"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Pet Mat"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Cooling Mats"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Miscellaneous"
+          }
+        }
+      },
+      "category11": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat11.jpg?alt=media&token=fdc894ef-25d1-4667-95ab-8d0a7de105a4",
+        "name": "Toys & Training",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Economy Range"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Squeaky Toys"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Imported Range"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Plush Toys"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Premium Rope Toys"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Fetching Toys"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Premium Latex Toys"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Premium Range"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Interactive Toys"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Ball Toys"
+          },
+          "subcat11": {
+            "img": "",
+            "name": "TPR & FT Toys"
+          },
+          "subcat12": {
+            "img": "",
+            "name": "Puppy Toys"
+          },
+          "subcat13": {
+            "img": "",
+            "name": "Edible Toys"
+          },
+          "subcat14": {
+            "img": "",
+            "name": "Bone Toys"
+          },
+          "subcat15": {
+            "img": "",
+            "name": "Latex Toys"
+          },
+          "subcat16": {
+            "img": "",
+            "name": "Tough Durable Toys"
+          },
+          "subcat17": {
+            "img": "",
+            "name": "Rope Toys"
+          },
+          "subcat18": {
+            "img": "",
+            "name": "Premium Rubber Toys"
+          },
+          "subcat19": {
+            "img": "",
+            "name": "Rubber Toys"
+          },
+          "subcat20": {
+            "img": "",
+            "name": "Treat Toy"
+          }
+        }
+      },
+      "category12": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat12.jpg?alt=media&token=088e6cdd-8d10-4e9c-964b-8882c0b1a921",
+        "name": "Collars",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Indian Hound"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Puppy Collars"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Imported Range"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Basic Range"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Classic Range"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Premium Range"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Choke Collars"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Choke Chains"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Brass Choke Chains"
+          }
+        }
+      },
+      "category13": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat13.jpg?alt=media&token=1f4bd363-8e58-4943-ba40-9915df351e6b",
+        "name": "Ropes & Leashes",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Indain Hound"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Indian Classic"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Rope Essentials"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Dog Chains"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Premium Ropes"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Imported Leash"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Indian Premium"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Handle Chain"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Retractable Leash"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Premium Chains"
+          }
+        }
+      },
+      "category14": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat14.jpg?alt=media&token=518ea6dc-5a4b-4292-9106-62bd9ffe7e5d",
+        "name": "Harness",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Premium Indian"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Indian Harnesses"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Imported Full Body"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Tough Wear Harness"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Imported Harness"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Indain Full Body"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Premium Indian"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Special Harness"
+          }
+        }
+      },
+      "category15": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat15.jpg?alt=media&token=bb245804-9119-472b-9d7c-b098e31114ee",
+        "name": "Collars, Leashes, Harness Set",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Puppy Leash-Harness"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Puppy Leash-Collars"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Imported Range"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Imported Toy Breed"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Classic Range"
+          }
+        }
+      },
+      "category2": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat2.jpg?alt=media&token=7e821fab-f518-40f9-b1fa-e294af347bed",
+        "name": "Grooming",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Grooming & Bathing"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Deshhedding Combs"
+          },
+          "subcat11": {
+            "img": "",
+            "name": "Miscellaneous"
+          },
+          "subcat12": {
+            "img": "",
+            "name": "Pet Tooth Brushes"
+          },
+          "subcat13": {
+            "img": "",
+            "name": "Hair Clippers & Brushes"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Spa Items"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Pin Brushes"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Combs"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Nail Clippers & Grinders"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Lint Rollers/Fur Remover"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Self Clean Slickers"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Brushes"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Slickers"
+          }
+        }
+      },
+      "category3": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat3.jpg?alt=media&token=4989cd5d-5a68-4aa7-bd20-bf7d63d4fcbe",
+        "name": "Cosmetics",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Wet Wipes & Diapers"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Oral Care"
+          },
+          "subcat11": {
+            "img": "",
+            "name": "Hygiene Products"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Training Pads"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Powders & Sprays"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Basic Shampoos"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Performance"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Super Premium"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Essential Cosmetics"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Cat Shampoo"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Pet Perfumes"
+          }
+        }
+      },
+      "category4": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat4.jpg?alt=media&token=89998110-c4cc-4ba4-bf8b-de8a4ef1eab5",
+        "name": "Accessories",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Steel Feeding"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Slow Feeding"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Premium Bowls"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Plastic Feeding"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Special Feeding"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Adjustable Stand"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Food & Water"
+          },
+		  "subcat8": {
+            "img": "",
+            "name": "Feeding Bottles"
+          },
+		  "subcat9": {
+            "img": "",
+            "name": "E Collar"
+          },
+		  "subcat10": {
+            "img": "",
+            "name": "Bells & Name Tag"
+          },
+		  "subcat11": {
+            "img": "",
+            "name": "Muzzle/Mouth"
+          },
+		  "subcat12": {
+            "img": "",
+            "name": "Miscellaneous"
+          },
+		  "subcat13": {
+            "img": "",
+            "name": "Premium Muzzles"
+          },
+		  "subcat14": {
+            "img": "",
+            "name": "Training & Outdoor"
+          },
+		  "subcat15": {
+            "img": "",
+            "name": "Scoopers & Poop Bags"
+          },
+		  "subcat16": {
+            "img": "",
+            "name": "Dog Socks & Shoes"
+          },
+		  "subcat17": {
+            "img": "",
+            "name": "Wire Hooks"
+          },
+		  "subcat18": {
+            "img": "",
+            "name": "Sign Plates & Boards"
+          },
+		  "subcat19": {
+            "img": "",
+            "name": "Pawlaland Accessories"
+          },
+		  "subcat20": {
+            "img": "",
+            "name": "Display Rack"
+          }
+        }
+      },
+      "category5": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat5.jpg?alt=media&token=47e84d76-1d01-4776-a3f0-4e33dafe890d",
+        "name": "Rawhides & Biscuits",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Pouch Biscuits"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Jar Biscuits"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Ranch Chew Bone"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "SPP Chew Bones"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Ranch Munchies"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "SPP Munchies"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Rawhide Treats"
+          }
+        }
+      },
+      "category6": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat6.jpg?alt=media&token=1df56f34-907b-4e7c-9d96-e81a674cbe44",
+        "name": "Feed",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Premium Range"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Supplements"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Bird Feed"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Small Animal Feed"
+          }
+        }
+      },
+      "category7": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat7.jpg?alt=media&token=df947b2a-e439-4495-b151-3b66f7ba4c6a",
+        "name": "Apparels",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Designer T-Shirts"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Speciality Wear"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Jackets"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Fashion T-Shirts"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Summer T-Shirts"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Cooling T-Shirts"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Flurocent T-Shirts"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Fancy Bandanas"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Raincoats"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Fancy Dog Bows & Tie"
+          }
+        }
+      },
+      "category8": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat8.jpg?alt=media&token=50e1e0aa-d009-43e4-87fc-0e6cbcc65196",
+        "name": "Cat Accessories",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Miscellaneous"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Cat Scratchers"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Cat Teasing Toys"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Cat Litter"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Cat Leash Collars"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Cat Litter Accessories"
+          },
+          "subcat7": {
+            "img": "",
+            "name": "Cat Toys"
+          },
+          "subcat8": {
+            "img": "",
+            "name": "Catnip Toys"
+          },
+          "subcat9": {
+            "img": "",
+            "name": "Premium Cat Toys"
+          },
+          "subcat10": {
+            "img": "",
+            "name": "Cat Tree"
+          },
+          "subcat11": {
+            "img": "",
+            "name": "Cat Tunnel"
+          },
+          "subcat12": {
+            "img": "",
+            "name": "Cat Apparels"
+          }
+        }
+      },
+      "category9": {
+        "img": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat9.jpg?alt=media&token=e61b699b-aead-4d9d-b3a9-6ebac78d4cf7",
+        "name": "Cages & Carries",
+        "subcats": {
+          "subcat1": {
+            "img": "",
+            "name": "Puppy Carry Bag"
+          },
+          "subcat2": {
+            "img": "",
+            "name": "Imported Cages"
+          },
+          "subcat3": {
+            "img": "",
+            "name": "Fiber Carriers"
+          },
+          "subcat4": {
+            "img": "",
+            "name": "Indian Cages"
+          },
+          "subcat5": {
+            "img": "",
+            "name": "Miscellaneous"
+          },
+          "subcat6": {
+            "img": "",
+            "name": "Accessories"
+          }
+        }
+      }
+}

@@ -149,6 +149,10 @@ function checkPermissionForAction(action, param1) {
         if(moduleName == "Login" || moduleName == "Orders") {
             return true;
         } else return false;
+    } else if(action == "delete") {
+      const type = param1;
+      const userdata = JSON.parse(localStorage.getItem("userdata"));
+      return userdata != null && userdata.role == "4";
     } else return false;
 }
 
