@@ -97,7 +97,7 @@ TABLE_SCHEMAS = {
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in"], #,"http://localhost:5500"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500"],  # Or specify: ["http://127.0.0.1:5500"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -475,6 +475,22 @@ async def rootPage(request: Request):
             raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
     else:
         raise HTTPException(status_code=404, detail=f"Could not load the page you are requesting")
+
+
+from fastapi import Request, HTTPException
+from fastapi.responses import Response
+
+@app.get("/sitemap.xml")
+async def rootPage(request: Request):
+    html_file_path = "sitemap.xml"
+    try:
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            xml_content = f.read()
+        return Response(content=xml_content, media_type="application/xml")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not find the sitemap.xml")
+
+
 
 from datetime import datetime, timedelta, timezone
 import dbbackup

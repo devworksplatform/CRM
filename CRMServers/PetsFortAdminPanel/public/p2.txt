@@ -1,0 +1,1182 @@
+Categories:
+[
+    {
+        "id": "0d8ce5d163e44",
+        "name": "Cat Accessories",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat8.jpg?alt=media&token=50e1e0aa-d009-43e4-87fc-0e6cbcc65196"
+    },
+    {
+        "id": "38ec1c2fc7594",
+        "name": "Toys & Training",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat11.jpg?alt=media&token=fdc894ef-25d1-4667-95ab-8d0a7de105a4"
+    },
+    {
+        "id": "445851774eea4",
+        "name": "Accessories",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat4.jpg?alt=media&token=89998110-c4cc-4ba4-bf8b-de8a4ef1eab5"
+    },
+    {
+        "id": "4c276e984eed4",
+        "name": "Feed",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat6.jpg?alt=media&token=1df56f34-907b-4e7c-9d96-e81a674cbe44"
+    },
+    {
+        "id": "4d05bf3148994",
+        "name": "Rawhides & Biscuits",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat5.jpg?alt=media&token=47e84d76-1d01-4776-a3f0-4e33dafe890d"
+    },
+    {
+        "id": "78e3eff3297a4",
+        "name": "Harness",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat14.jpg?alt=media&token=518ea6dc-5a4b-4292-9106-62bd9ffe7e5d"
+    },
+    {
+        "id": "80ddea5d27164",
+        "name": "Apparels",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat7.jpg?alt=media&token=df947b2a-e439-4495-b151-3b66f7ba4c6a"
+    },
+    {
+        "id": "8f89376ab4834",
+        "name": "Beddings",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat10.jpg?alt=media&token=f1dcbdde-41e8-4365-ad89-ed90daf0d2a3"
+    },
+    {
+        "id": "9ee96e49ea004",
+        "name": "Cosmetics",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat3.jpg?alt=media&token=4989cd5d-5a68-4aa7-bd20-bf7d63d4fcbe"
+    },
+    {
+        "id": "a88cdae65f974",
+        "name": "Grooming",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat2.jpg?alt=media&token=7e821fab-f518-40f9-b1fa-e294af347bed"
+    },
+    {
+        "id": "b2c41b5e81694",
+        "name": "Cages & Carries",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat9.jpg?alt=media&token=e61b699b-aead-4d9d-b3a9-6ebac78d4cf7"
+    },
+    {
+        "id": "c36f30b71e154",
+        "name": "Ropes & Leashes",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat13.jpg?alt=media&token=1f4bd363-8e58-4943-ba40-9915df351e6b"
+    },
+    {
+        "id": "c5c4e13e01094",
+        "name": "Collars",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat12.jpg?alt=media&token=088e6cdd-8d10-4e9c-964b-8882c0b1a921"
+    },
+    {
+        "id": "cc41f1da652f4",
+        "name": "Snacks & Treats",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat1.jpg?alt=media&token=ed4af7bf-2051-4aec-b4dd-9b48f4e6c234"
+    },
+    {
+        "id": "e21b191eaec74",
+        "name": "Collars, Leashes, Harness Set",
+        "image": "https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat15.jpg?alt=media&token=bb245804-9119-472b-9d7c-b098e31114ee"
+    }
+]
+Sub Categories:
+[
+    {
+        "id": "02f1dc2c4b054",
+        "parentid": "445851774eea4",
+        "name": "Muzzle/Mouth",
+        "image": ""
+    },
+    {
+        "id": "04bc34e622f04",
+        "parentid": "9ee96e49ea004",
+        "name": "Cat Shampoo",
+        "image": ""
+    },
+    {
+        "id": "05860b3050ce4",
+        "parentid": "445851774eea4",
+        "name": "Miscellaneous",
+        "image": ""
+    },
+    {
+        "id": "06de847e7d514",
+        "parentid": "cc41f1da652f4",
+        "name": "Puppy Snacks",
+        "image": ""
+    },
+    {
+        "id": "07cb7cf5a59a4",
+        "parentid": "445851774eea4",
+        "name": "Premium Muzzles",
+        "image": ""
+    },
+    {
+        "id": "086301fa2a2c4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Apparels",
+        "image": ""
+    },
+    {
+        "id": "0bb6e9c162734",
+        "parentid": "38ec1c2fc7594",
+        "name": "Squeaky Toys",
+        "image": ""
+    },
+    {
+        "id": "0bcc52d435f54",
+        "parentid": "e21b191eaec74",
+        "name": "Puppy Leash-Harness",
+        "image": ""
+    },
+    {
+        "id": "0dd6bb0d90114",
+        "parentid": "80ddea5d27164",
+        "name": "Jackets",
+        "image": ""
+    },
+    {
+        "id": "0f768a1860144",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Leash Collars",
+        "image": ""
+    },
+    {
+        "id": "0fe6fe9b9a604",
+        "parentid": "cc41f1da652f4",
+        "name": "Made in India",
+        "image": ""
+    },
+    {
+        "id": "11f28e5f45f74",
+        "parentid": "445851774eea4",
+        "name": "Pawlaland Accessories",
+        "image": ""
+    },
+    {
+        "id": "16156a846e294",
+        "parentid": "38ec1c2fc7594",
+        "name": "Puppy Toys",
+        "image": ""
+    },
+    {
+        "id": "162f085545a64",
+        "parentid": "38ec1c2fc7594",
+        "name": "Edible Toys",
+        "image": ""
+    },
+    {
+        "id": "1717a56469404",
+        "parentid": "a88cdae65f974",
+        "name": "Miscellaneous",
+        "image": ""
+    },
+    {
+        "id": "17d87eb3f7d24",
+        "parentid": "445851774eea4",
+        "name": "Display Rack",
+        "image": ""
+    },
+    {
+        "id": "18488215e8f14",
+        "parentid": "c5c4e13e01094",
+        "name": "Classic Range",
+        "image": ""
+    },
+    {
+        "id": "1ac6f66c05884",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Litter Accessories",
+        "image": ""
+    },
+    {
+        "id": "1c1e790a5d4f4",
+        "parentid": "78e3eff3297a4",
+        "name": "Premium Indian",
+        "image": ""
+    },
+    {
+        "id": "1e3b632cbcd14",
+        "parentid": "38ec1c2fc7594",
+        "name": "Plush Toys",
+        "image": ""
+    },
+    {
+        "id": "211e22a64f3e4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Toys",
+        "image": ""
+    },
+    {
+        "id": "23a7743496e04",
+        "parentid": "a88cdae65f974",
+        "name": "Hair Clippers & Brushes",
+        "image": ""
+    },
+    {
+        "id": "23d525e4f3644",
+        "parentid": "e21b191eaec74",
+        "name": "Classic Range",
+        "image": ""
+    },
+    {
+        "id": "259b3479a0b94",
+        "parentid": "445851774eea4",
+        "name": "Bells & Name Tag",
+        "image": ""
+    },
+    {
+        "id": "25bb3a192dbc4",
+        "parentid": "9ee96e49ea004",
+        "name": "Hygiene Products",
+        "image": ""
+    },
+    {
+        "id": "284196747d4d4",
+        "parentid": "c5c4e13e01094",
+        "name": "Choke Collars",
+        "image": ""
+    },
+    {
+        "id": "2c8e2b89a3414",
+        "parentid": "cc41f1da652f4",
+        "name": "Soft Treats",
+        "image": ""
+    },
+    {
+        "id": "2ce49902d40b4",
+        "parentid": "445851774eea4",
+        "name": "Scoopers & Poop Bags",
+        "image": ""
+    },
+    {
+        "id": "2d842d13d0274",
+        "parentid": "a88cdae65f974",
+        "name": "Spa Items",
+        "image": ""
+    },
+    {
+        "id": "30da3aee5da64",
+        "parentid": "4d05bf3148994",
+        "name": "SPP Chew Bones",
+        "image": ""
+    },
+    {
+        "id": "31097302716c4",
+        "parentid": "78e3eff3297a4",
+        "name": "Premium Indian",
+        "image": ""
+    },
+    {
+        "id": "318a296149ba4",
+        "parentid": "80ddea5d27164",
+        "name": "Fancy Dog Bows & Tie",
+        "image": ""
+    },
+    {
+        "id": "31c7e1007f344",
+        "parentid": "4d05bf3148994",
+        "name": "Rawhide Treats",
+        "image": ""
+    },
+    {
+        "id": "32bff15ba8b14",
+        "parentid": "a88cdae65f974",
+        "name": "Nail Clippers & Grinders",
+        "image": ""
+    },
+    {
+        "id": "3469ee38533f4",
+        "parentid": "445851774eea4",
+        "name": "Special Feeding",
+        "image": ""
+    },
+    {
+        "id": "363df7ee45474",
+        "parentid": "b2c41b5e81694",
+        "name": "Miscellaneous",
+        "image": ""
+    },
+    {
+        "id": "36baf27c29d74",
+        "parentid": "c36f30b71e154",
+        "name": "Dog Chains",
+        "image": ""
+    },
+    {
+        "id": "37b8085588034",
+        "parentid": "c5c4e13e01094",
+        "name": "Premium Range",
+        "image": ""
+    },
+    {
+        "id": "38fda99ea00a4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Litter",
+        "image": ""
+    },
+    {
+        "id": "415010f1cfe84",
+        "parentid": "38ec1c2fc7594",
+        "name": "Imported Range",
+        "image": ""
+    },
+    {
+        "id": "42112f390c274",
+        "parentid": "cc41f1da652f4",
+        "name": "Dental Chews",
+        "image": ""
+    },
+    {
+        "id": "42f027968bfc4",
+        "parentid": "b2c41b5e81694",
+        "name": "Accessories",
+        "image": ""
+    },
+    {
+        "id": "44d731cfed2b4",
+        "parentid": "c36f30b71e154",
+        "name": "Imported Leash",
+        "image": ""
+    },
+    {
+        "id": "45bd50a810b34",
+        "parentid": "38ec1c2fc7594",
+        "name": "TPR & FT Toys",
+        "image": ""
+    },
+    {
+        "id": "46f670b4e2414",
+        "parentid": "4d05bf3148994",
+        "name": "Pouch Biscuits",
+        "image": ""
+    },
+    {
+        "id": "47af150f19bb4",
+        "parentid": "a88cdae65f974",
+        "name": "Pin Brushes",
+        "image": ""
+    },
+    {
+        "id": "47b1fdfcc0a74",
+        "parentid": "80ddea5d27164",
+        "name": "Raincoats",
+        "image": ""
+    },
+    {
+        "id": "4867b3de7bec4",
+        "parentid": "c36f30b71e154",
+        "name": "Indain Hound",
+        "image": ""
+    },
+    {
+        "id": "495ff5a0ec234",
+        "parentid": "0d8ce5d163e44",
+        "name": "Miscellaneous",
+        "image": ""
+    },
+    {
+        "id": "4a48ddf3fde04",
+        "parentid": "cc41f1da652f4",
+        "name": "Calcium Bones",
+        "image": ""
+    },
+    {
+        "id": "4a4cf19f2c474",
+        "parentid": "9ee96e49ea004",
+        "name": "Wet Wipes & Diapers",
+        "image": ""
+    },
+    {
+        "id": "549d5ff912774",
+        "parentid": "b2c41b5e81694",
+        "name": "Puppy Carry Bag",
+        "image": ""
+    },
+    {
+        "id": "56d85576e78c4",
+        "parentid": "a88cdae65f974",
+        "name": "Combs",
+        "image": ""
+    },
+    {
+        "id": "5711bacb29454",
+        "parentid": "38ec1c2fc7594",
+        "name": "Tough Durable Toys",
+        "image": ""
+    },
+    {
+        "id": "574d957587ec4",
+        "parentid": "cc41f1da652f4",
+        "name": "Cat Snacks",
+        "image": ""
+    },
+    {
+        "id": "5da04a83bfae4",
+        "parentid": "cc41f1da652f4",
+        "name": "Tough Chews",
+        "image": ""
+    },
+    {
+        "id": "5e32adba50254",
+        "parentid": "8f89376ab4834",
+        "name": "Pet Mat",
+        "image": ""
+    },
+    {
+        "id": "5e735dcead144",
+        "parentid": "38ec1c2fc7594",
+        "name": "Fetching Toys",
+        "image": ""
+    },
+    {
+        "id": "5e8e6373e6a34",
+        "parentid": "4d05bf3148994",
+        "name": "Jar Biscuits",
+        "image": ""
+    },
+    {
+        "id": "6253c6e9aa754",
+        "parentid": "445851774eea4",
+        "name": "Steel Feeding",
+        "image": ""
+    },
+    {
+        "id": "62faf4b0583e4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Scratchers",
+        "image": ""
+    },
+    {
+        "id": "638173e141a14",
+        "parentid": "9ee96e49ea004",
+        "name": "Super Premium",
+        "image": ""
+    },
+    {
+        "id": "63a34e68f7ab4",
+        "parentid": "78e3eff3297a4",
+        "name": "Tough Wear Harness",
+        "image": ""
+    },
+    {
+        "id": "642c91d04d1f4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Tree",
+        "image": ""
+    },
+    {
+        "id": "666c0578cda44",
+        "parentid": "c5c4e13e01094",
+        "name": "Indian Hound",
+        "image": ""
+    },
+    {
+        "id": "66ead347dbde4",
+        "parentid": "cc41f1da652f4",
+        "name": "Groovy Gravy",
+        "image": ""
+    },
+    {
+        "id": "69a75377d02e4",
+        "parentid": "cc41f1da652f4",
+        "name": "Ice Cream & Cheese",
+        "image": ""
+    },
+    {
+        "id": "72c08a5993b34",
+        "parentid": "78e3eff3297a4",
+        "name": "Indain Full Body",
+        "image": ""
+    },
+    {
+        "id": "747468850ccf4",
+        "parentid": "9ee96e49ea004",
+        "name": "Training Pads",
+        "image": ""
+    },
+    {
+        "id": "76550557354b4",
+        "parentid": "e21b191eaec74",
+        "name": "Imported Range",
+        "image": ""
+    },
+    {
+        "id": "7895e9d3292e4",
+        "parentid": "c5c4e13e01094",
+        "name": "Choke Chains",
+        "image": ""
+    },
+    {
+        "id": "791e867644e74",
+        "parentid": "c36f30b71e154",
+        "name": "Premium Chains",
+        "image": ""
+    },
+    {
+        "id": "7abdc36e34bb4",
+        "parentid": "9ee96e49ea004",
+        "name": "Basic Shampoos",
+        "image": ""
+    },
+    {
+        "id": "7ef6a529ec4f4",
+        "parentid": "38ec1c2fc7594",
+        "name": "Rope Toys",
+        "image": ""
+    },
+    {
+        "id": "810294b18f554",
+        "parentid": "8f89376ab4834",
+        "name": "Basket Beds",
+        "image": ""
+    },
+    {
+        "id": "81ad719157e74",
+        "parentid": "445851774eea4",
+        "name": "Adjustable Stand",
+        "image": ""
+    },
+    {
+        "id": "81fd72e515574",
+        "parentid": "38ec1c2fc7594",
+        "name": "Rubber Toys",
+        "image": ""
+    },
+    {
+        "id": "835037abc5374",
+        "parentid": "38ec1c2fc7594",
+        "name": "Economy Range",
+        "image": ""
+    },
+    {
+        "id": "876e2ba87da14",
+        "parentid": "b2c41b5e81694",
+        "name": "Imported Cages",
+        "image": ""
+    },
+    {
+        "id": "8892e17a484b4",
+        "parentid": "c36f30b71e154",
+        "name": "Indian Premium",
+        "image": ""
+    },
+    {
+        "id": "88f91b56b9394",
+        "parentid": "8f89376ab4834",
+        "name": "Cooling Mats",
+        "image": ""
+    },
+    {
+        "id": "88fc9596d05d4",
+        "parentid": "38ec1c2fc7594",
+        "name": "Ball Toys",
+        "image": ""
+    },
+    {
+        "id": "8dd3e0dd0a6a4",
+        "parentid": "4d05bf3148994",
+        "name": "SPP Munchies",
+        "image": ""
+    },
+    {
+        "id": "8e1f3e0f462b4",
+        "parentid": "cc41f1da652f4",
+        "name": "Energy Treats",
+        "image": ""
+    },
+    {
+        "id": "906327c683044",
+        "parentid": "cc41f1da652f4",
+        "name": "Semi-Moist Treats",
+        "image": ""
+    },
+    {
+        "id": "90dd0997f5f04",
+        "parentid": "38ec1c2fc7594",
+        "name": "Premium Latex Toys",
+        "image": ""
+    },
+    {
+        "id": "90ee9377af2b4",
+        "parentid": "9ee96e49ea004",
+        "name": "Performance",
+        "image": ""
+    },
+    {
+        "id": "91c599aeca784",
+        "parentid": "c36f30b71e154",
+        "name": "Handle Chain",
+        "image": ""
+    },
+    {
+        "id": "9298d9162cd14",
+        "parentid": "a88cdae65f974",
+        "name": "Slickers",
+        "image": ""
+    },
+    {
+        "id": "957f9c95cc544",
+        "parentid": "4c276e984eed4",
+        "name": "Supplements",
+        "image": ""
+    },
+    {
+        "id": "95a91eb3b3cf4",
+        "parentid": "cc41f1da652f4",
+        "name": "Cat Creamy Treats",
+        "image": ""
+    },
+    {
+        "id": "95ac13e54e014",
+        "parentid": "a88cdae65f974",
+        "name": "Pet Tooth Brushes",
+        "image": ""
+    },
+    {
+        "id": "960271daec634",
+        "parentid": "80ddea5d27164",
+        "name": "Fashion T-Shirts",
+        "image": ""
+    },
+    {
+        "id": "968a0928de8c4",
+        "parentid": "a88cdae65f974",
+        "name": "Deshhedding Combs",
+        "image": ""
+    },
+    {
+        "id": "9804970684e94",
+        "parentid": "445851774eea4",
+        "name": "Premium Bowls",
+        "image": ""
+    },
+    {
+        "id": "9962b4dc910c4",
+        "parentid": "445851774eea4",
+        "name": "Feeding Bottles",
+        "image": ""
+    },
+    {
+        "id": "99c5a38066624",
+        "parentid": "78e3eff3297a4",
+        "name": "Imported Harness",
+        "image": ""
+    },
+    {
+        "id": "9ac282b55f114",
+        "parentid": "445851774eea4",
+        "name": "Food & Water",
+        "image": ""
+    },
+    {
+        "id": "9c98615e30cd4",
+        "parentid": "80ddea5d27164",
+        "name": "Summer T-Shirts",
+        "image": ""
+    },
+    {
+        "id": "9f38cd1aedf94",
+        "parentid": "c5c4e13e01094",
+        "name": "Imported Range",
+        "image": ""
+    },
+    {
+        "id": "9ff0fdc748cc4",
+        "parentid": "8f89376ab4834",
+        "name": "Water Proof Beds",
+        "image": ""
+    },
+    {
+        "id": "a026052fb0c24",
+        "parentid": "c36f30b71e154",
+        "name": "Indian Classic",
+        "image": ""
+    },
+    {
+        "id": "a3feb47390d64",
+        "parentid": "e21b191eaec74",
+        "name": "Imported Toy Breed",
+        "image": ""
+    },
+    {
+        "id": "a52ca78c8bb84",
+        "parentid": "9ee96e49ea004",
+        "name": "Pet Perfumes",
+        "image": ""
+    },
+    {
+        "id": "a5e555697e574",
+        "parentid": "78e3eff3297a4",
+        "name": "Indian Harnesses",
+        "image": ""
+    },
+    {
+        "id": "a8e701f3efa14",
+        "parentid": "cc41f1da652f4",
+        "name": "Bone Shaped",
+        "image": ""
+    },
+    {
+        "id": "abf234a07df64",
+        "parentid": "cc41f1da652f4",
+        "name": "Meat Jerky Treats",
+        "image": ""
+    },
+    {
+        "id": "acf4b044eb5c4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Tunnel",
+        "image": ""
+    },
+    {
+        "id": "aec06e5b7bff4",
+        "parentid": "c36f30b71e154",
+        "name": "Retractable Leash",
+        "image": ""
+    },
+    {
+        "id": "aedeb02a627b4",
+        "parentid": "80ddea5d27164",
+        "name": "Flurocent T-Shirts",
+        "image": ""
+    },
+    {
+        "id": "b32db4f9ae3e4",
+        "parentid": "445851774eea4",
+        "name": "Plastic Feeding",
+        "image": ""
+    },
+    {
+        "id": "b508946e22624",
+        "parentid": "c36f30b71e154",
+        "name": "Premium Ropes",
+        "image": ""
+    },
+    {
+        "id": "b712168347d74",
+        "parentid": "9ee96e49ea004",
+        "name": "Oral Care",
+        "image": ""
+    },
+    {
+        "id": "b7bd7143ca394",
+        "parentid": "4c276e984eed4",
+        "name": "Premium Range",
+        "image": ""
+    },
+    {
+        "id": "b84e5f6cdb634",
+        "parentid": "9ee96e49ea004",
+        "name": "Essential Cosmetics",
+        "image": ""
+    },
+    {
+        "id": "b911b75f5fee4",
+        "parentid": "0d8ce5d163e44",
+        "name": "Catnip Toys",
+        "image": ""
+    },
+    {
+        "id": "ba45523d83954",
+        "parentid": "c5c4e13e01094",
+        "name": "Puppy Collars",
+        "image": ""
+    },
+    {
+        "id": "bd1192e4f39a4",
+        "parentid": "a88cdae65f974",
+        "name": "Self Clean Slickers",
+        "image": ""
+    },
+    {
+        "id": "bd6d3368a8004",
+        "parentid": "9ee96e49ea004",
+        "name": "Powders & Sprays",
+        "image": ""
+    },
+    {
+        "id": "be8b3ee750df4",
+        "parentid": "4d05bf3148994",
+        "name": "Ranch Chew Bone",
+        "image": ""
+    },
+    {
+        "id": "c0497d6419fb4",
+        "parentid": "c5c4e13e01094",
+        "name": "Brass Choke Chains",
+        "image": ""
+    },
+    {
+        "id": "c0f07e5e0af74",
+        "parentid": "0d8ce5d163e44",
+        "name": "Premium Cat Toys",
+        "image": ""
+    },
+    {
+        "id": "c1843915c0164",
+        "parentid": "80ddea5d27164",
+        "name": "Designer T-Shirts",
+        "image": ""
+    },
+    {
+        "id": "c202b516c5e04",
+        "parentid": "8f89376ab4834",
+        "name": "Miscellaneous",
+        "image": ""
+    },
+    {
+        "id": "c39074fe7b504",
+        "parentid": "38ec1c2fc7594",
+        "name": "Premium Rubber Toys",
+        "image": ""
+    },
+    {
+        "id": "c4c79e56f0504",
+        "parentid": "a88cdae65f974",
+        "name": "Brushes",
+        "image": ""
+    },
+    {
+        "id": "c4e1b6ad89964",
+        "parentid": "4d05bf3148994",
+        "name": "Ranch Munchies",
+        "image": ""
+    },
+    {
+        "id": "c78f8490895c4",
+        "parentid": "c5c4e13e01094",
+        "name": "Basic Range",
+        "image": ""
+    },
+    {
+        "id": "c84e3cf8a3024",
+        "parentid": "c36f30b71e154",
+        "name": "Rope Essentials",
+        "image": ""
+    },
+    {
+        "id": "cc44d8fb289d4",
+        "parentid": "4c276e984eed4",
+        "name": "Bird Feed",
+        "image": ""
+    },
+    {
+        "id": "ce587e34e1e24",
+        "parentid": "0d8ce5d163e44",
+        "name": "Cat Teasing Toys",
+        "image": ""
+    },
+    {
+        "id": "d8e4a52c43994",
+        "parentid": "e21b191eaec74",
+        "name": "Puppy Leash-Collars",
+        "image": ""
+    },
+    {
+        "id": "ded0debfaadf4",
+        "parentid": "38ec1c2fc7594",
+        "name": "Bone Toys",
+        "image": ""
+    },
+    {
+        "id": "e04e4af4ddf84",
+        "parentid": "80ddea5d27164",
+        "name": "Fancy Bandanas",
+        "image": ""
+    },
+    {
+        "id": "e0e21c79d8d44",
+        "parentid": "b2c41b5e81694",
+        "name": "Fiber Carriers",
+        "image": ""
+    },
+    {
+        "id": "e0ea2ec6dd734",
+        "parentid": "b2c41b5e81694",
+        "name": "Indian Cages",
+        "image": ""
+    },
+    {
+        "id": "e16456c7bc064",
+        "parentid": "80ddea5d27164",
+        "name": "Cooling T-Shirts",
+        "image": ""
+    },
+    {
+        "id": "e2d5db3298c14",
+        "parentid": "8f89376ab4834",
+        "name": "Fancy Designer",
+        "image": ""
+    },
+    {
+        "id": "e3e85d8668d84",
+        "parentid": "38ec1c2fc7594",
+        "name": "Latex Toys",
+        "image": ""
+    },
+    {
+        "id": "e41be502fc304",
+        "parentid": "80ddea5d27164",
+        "name": "Speciality Wear",
+        "image": ""
+    },
+    {
+        "id": "e61f9a41dd684",
+        "parentid": "445851774eea4",
+        "name": "Wire Hooks",
+        "image": ""
+    },
+    {
+        "id": "e6856b8ff95e4",
+        "parentid": "445851774eea4",
+        "name": "E Collar",
+        "image": ""
+    },
+    {
+        "id": "e78c696df88f4",
+        "parentid": "4c276e984eed4",
+        "name": "Small Animal Feed",
+        "image": ""
+    },
+    {
+        "id": "e8c104455c794",
+        "parentid": "8f89376ab4834",
+        "name": "Sofa Beds",
+        "image": ""
+    },
+    {
+        "id": "e8d85e2a8cb04",
+        "parentid": "8f89376ab4834",
+        "name": "Mattress",
+        "image": ""
+    },
+    {
+        "id": "eaeb8302b05a4",
+        "parentid": "38ec1c2fc7594",
+        "name": "Treat Toy",
+        "image": ""
+    },
+    {
+        "id": "ec2067f663d44",
+        "parentid": "445851774eea4",
+        "name": "Slow Feeding",
+        "image": ""
+    },
+    {
+        "id": "ec4df10e11044",
+        "parentid": "38ec1c2fc7594",
+        "name": "Premium Rope Toys",
+        "image": ""
+    },
+    {
+        "id": "ee33101ed16a4",
+        "parentid": "78e3eff3297a4",
+        "name": "Special Harness",
+        "image": ""
+    },
+    {
+        "id": "ee5a30eff62a4",
+        "parentid": "a88cdae65f974",
+        "name": "Lint Rollers/Fur Remover",
+        "image": ""
+    },
+    {
+        "id": "f2d3091583124",
+        "parentid": "38ec1c2fc7594",
+        "name": "Premium Range",
+        "image": ""
+    },
+    {
+        "id": "f35820e5647f4",
+        "parentid": "8f89376ab4834",
+        "name": "Round Bed",
+        "image": ""
+    },
+    {
+        "id": "f36054d3bb8b4",
+        "parentid": "cc41f1da652f4",
+        "name": "Wanpy Tasty Meat",
+        "image": ""
+    },
+    {
+        "id": "f55f2e4d0fcc4",
+        "parentid": "445851774eea4",
+        "name": "Sign Plates & Boards",
+        "image": ""
+    },
+    {
+        "id": "f691ae51ddc44",
+        "parentid": "445851774eea4",
+        "name": "Training & Outdoor",
+        "image": ""
+    },
+    {
+        "id": "f880be7d14984",
+        "parentid": "a88cdae65f974",
+        "name": "Grooming & Bathing",
+        "image": ""
+    },
+    {
+        "id": "f8b68dd1280b4",
+        "parentid": "38ec1c2fc7594",
+        "name": "Interactive Toys",
+        "image": ""
+    },
+    {
+        "id": "fa98726a3f104",
+        "parentid": "78e3eff3297a4",
+        "name": "Imported Full Body",
+        "image": ""
+    },
+    {
+        "id": "fbcd471e93b14",
+        "parentid": "445851774eea4",
+        "name": "Dog Socks & Shoes",
+        "image": ""
+    },
+    {
+        "id": "m9pvfv629euo0",
+        "parentid": "m9ughfm2pjoea",
+        "name": "scat1",
+        "image": ""
+    }
+]
+
+
+
+---------------------------------------------------------------------
+products:
+Name : chicken sausages
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+
+Name : spiral chicken 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken & bone 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : small chicken & bone 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken & fish 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : Milky chew sticks 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken & hard jerky 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken sliced
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp 300
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : cod fish with chicken 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : calcum bon & chicken rice 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : screwed stick 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken Breast
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken cheese
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : puppy ring
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+
+Name : chicken sandwich 
+Description 
+Stock count :250
+Category : snakes & treats
+Mrp : 195
+Rate
+Gst percentage 18%
+Discount percentage 40%
+

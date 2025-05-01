@@ -29,6 +29,17 @@ async function initMod3() {
     const saveButton = document.getElementById('product-save-btn');
     const cancelButton = document.getElementById('product-cancel-btn');
 
+
+    // Import Elements
+    const importBlock = document.getElementById('importBlock');
+    const fileInputCsv = document.getElementById('fileInputCsv');
+
+    fileInputCsv.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        onCsvFileImported(file);
+    });
+
     // --- Storage Keys ---
     const PRODUCT_KEY = 'products';
     const CATEGORY_KEY = 'categories';
@@ -392,6 +403,53 @@ async function initMod3() {
 }
 window.initMod3 = initMod3;
 
+
+async function onCsvFileImported(file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const text = e.target.result;
+      const data = parseCSV(text);
+      displayData(data);
+      loopTheDataToSaveWisely(data);
+    };
+    reader.readAsText(file);
+}
+
+function parseCSV(text) {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',');
+  
+    return lines.slice(1).map(line => {
+      const values = line.split(',');
+      const obj = {};
+  
+      headers.forEach((header, index) => {
+        const key = header.trim();
+        let value = values[index]?.trim();
+  
+        // Special case: convert "Sub Categories List" into array
+        if (key === "Sub Categories List") {
+          obj[key] = value.split(';').map(item => item.trim());
+        }
+        // Optional: parse numbers for Stocks, Mrp, Rate, Gst, Discount
+        else if (["Stocks", "Mrp", "Rate", "Gst", "Discount"].includes(key)) {
+          obj[key] = parseFloat(value);
+        } else {
+          obj[key] = value;
+        }
+      });
+  
+      return obj;
+    });
+}
+  
+function displayData(data) {
+    console.clear(); // optional: clears the console before logging
+    data.forEach((row, index) => {
+      console.log(`Item ${index + 1}:`, row);
+    });
+}
+  
 
 async function imageSelected(imageBlob) {
     console.log('Image selected and compressed. Blob object:', imageBlob);
