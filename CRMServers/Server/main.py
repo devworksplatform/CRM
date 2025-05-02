@@ -34,6 +34,7 @@ TABLE_SCHEMAS = {
             product_id TEXT UNIQUE,
             product_name TEXT NOT NULL,
             product_desc TEXT,
+            product_hsn TEXT DEFAULT '',
             product_img TEXT, -- Stored as JSON string
             cat_id TEXT,
             cat_sub TEXT, -- Comma-separated string
@@ -186,6 +187,7 @@ class Product(BaseModel):
     product_id: Optional[str] = None
     product_name: str
     product_desc: str
+    product_hsn: Optional[str] = "",
     product_img: Optional[List[str]] = []
     cat_id: str
     cat_sub: str  # Comma-separated string
@@ -1187,6 +1189,7 @@ async def store_order(user_id: str, data: dict): # Made async
                         "product_id": prod.get("product_id"),
                         "product_name": prod.get("product_name"),
                         "product_desc": prod.get("product_desc"),
+                        "product_hsn": prod.get("product_hsn"),
                         "product_img": prod.get("product_img"),
                         "cat_id": prod.get("cat_id"),
                         "cat_sub": prod.get("cat_sub"),
@@ -1442,6 +1445,19 @@ async def get_category_list():
             await cursor.execute("SELECT id, name, image FROM category")
             rows = await cursor.fetchall()
             categories = [Category(**row) for row in rows]
+
+            # START Bug Fix
+            fixed_categories = []
+            category = None
+            for cat in categories:
+                if(cat.id != "cc41f1da652f4"):
+                    fixed_categories.append(cat)
+                else:
+                    category = cat
+            categories = fixed_categories
+            if category:categories.insert(0, category)
+            # END Bug Fix
+
             return categories
     except Exception as e:
         print(f"Error in get_category_list: {e}")
