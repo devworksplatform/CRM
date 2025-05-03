@@ -127,7 +127,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		isViewOnly = getIntent().getBooleanExtra("isViewOnly",false);
 
 		productNameTextView.setText(product.getProductName());
-		productIdTextView.setText(String.valueOf(product.getProductId()));
+		productIdTextView.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
 
 		mrpTextView.setText("₹".concat(df.format(product.getCostMrp())));
 		rateTextView.setText("₹".concat(df.format(product.getCostRate())));

@@ -259,8 +259,8 @@ public class SearchActivity extends AppCompatActivity {
 				Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
 			}
 
-
-			textviewRefId.setText(product.getProductId());
+//			textviewRefId.setText(product.getProductId());
+			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
 			textviewName.setText(product.getProductName());
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));

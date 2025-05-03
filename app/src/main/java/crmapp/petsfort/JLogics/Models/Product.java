@@ -7,6 +7,8 @@ import java.util.List;
 public class Product implements Serializable {
     private String productId;
     private String productName;
+    private String productCid;
+    private String productHsn;
     private String productDesc;
     private List<String> productImg;
     private String catId;
@@ -23,6 +25,8 @@ public class Product implements Serializable {
         // Initialize fields to default non-null values to be safe
         this.productId = "";
         this.productName = "";
+        this.productCid = "";
+        this.productHsn = "";
         this.productDesc = "";
         this.productImg = new ArrayList<>();
         this.catId = "";
@@ -37,6 +41,8 @@ public class Product implements Serializable {
             // Handle null input product, perhaps initialize with defaults
             this.productId = "";
             this.productName = "";
+            this.productCid = "";
+            this.productHsn = "";
             this.productDesc = "";
             this.productImg = new ArrayList<>();
             this.catId = "";
@@ -53,6 +59,8 @@ public class Product implements Serializable {
             this.setProductId(product.productId);
             this.setProductName(product.productName);
             this.setProductDesc(product.productDesc);
+            this.setProductCid(product.productCid);
+            this.setProductHsn(product.productHsn);
             // Note: setProductImg performs a shallow copy by default if input is not null.
             // If a deep copy of the list is needed, modify the setProductImg method.
             this.setProductImg(product.productImg);
@@ -89,8 +97,24 @@ public class Product implements Serializable {
         return (productDesc == null) ? "" : productDesc;
     }
 
+    public String getProductCid() {
+        return (productCid == null) ? "" : productCid;
+    }
+
+    public String getProductHsn() {
+        return (productHsn == null) ? "" : productHsn;
+    }
+
     public void setProductDesc(String productDesc) {
         this.productDesc = (productDesc == null) ? "" : productDesc;
+    }
+
+    public void setProductCid(String productCid) {
+        this.productCid = (productCid == null) ? "" : productCid;
+    }
+
+    public void setProductHsn(String productHsn) {
+        this.productHsn = (productHsn == null) ? "" : productHsn;
     }
 
     public List<String> getProductImg() {
