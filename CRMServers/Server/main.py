@@ -35,6 +35,7 @@ TABLE_SCHEMAS = {
             product_name TEXT NOT NULL,
             product_desc TEXT,
             product_hsn TEXT DEFAULT '',
+            product_cid TEXT DEFAULT '',
             product_img TEXT, -- Stored as JSON string
             cat_id TEXT,
             cat_sub TEXT, -- Comma-separated string
@@ -188,6 +189,7 @@ class Product(BaseModel):
     product_name: str
     product_desc: str
     product_hsn: Optional[str] = "",
+    product_cid: Optional[str] = "",
     product_img: Optional[List[str]] = []
     cat_id: str
     cat_sub: str  # Comma-separated string
@@ -1190,6 +1192,7 @@ async def store_order(user_id: str, data: dict): # Made async
                         "product_name": prod.get("product_name"),
                         "product_desc": prod.get("product_desc"),
                         "product_hsn": prod.get("product_hsn"),
+                        "product_cid": prod.get("product_cid"),
                         "product_img": prod.get("product_img"),
                         "cat_id": prod.get("cat_id"),
                         "cat_sub": prod.get("cat_sub"),

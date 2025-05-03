@@ -21,6 +21,7 @@ async function initMod3() {
     const productCategorySelect = document.getElementById('product-category');
     const productDescInput = document.getElementById('product-desc');
     const productHsnInput = document.getElementById('product-hsn');
+    const productCidInput = document.getElementById('product-cid');
     const productSubcategoriesContainer = document.getElementById('product-subcategories-container');
     const costRateInput = document.getElementById('product-cost-rate');
     const costMrpInput = document.getElementById('product-cost-mrp');
@@ -183,6 +184,7 @@ async function initMod3() {
         productCategorySelect.value = product.cat_id;
         productDescInput.value = product.product_desc || '';
         productHsnInput.value = product.product_hsn || '';
+        productCidInput.value = product.product_cid || '';
         costRateInput.value = product.cost_rate;
         costMrpInput.value = product.cost_mrp;
         costGstInput.value = product.cost_gst || 0;
@@ -266,6 +268,8 @@ async function initMod3() {
             product_name: productNameInput.value.trim(),
             product_desc: productDescInput.value.trim(),
             product_hsn: productHsnInput.value.trim(),
+            product_cid: productCidInput.value.trim(),
+            
             product_img: [...currentImageUrls], // Use images currently in the form/preview
             cat_id: productCategorySelect.value,
             cat_sub: subcategoryIds.join(','), // Store as comma-separated string for API/storage format
@@ -400,7 +404,8 @@ async function initMod3() {
             products = products.filter(p =>
                 p.product_name.toLowerCase().includes(searchTerm) ||
                 (p.product_desc && p.product_desc.toLowerCase().includes(searchTerm)) || 
-                (p.product_hsn && p.product_hsn.toLowerCase().includes(searchTerm))
+                (p.product_hsn && p.product_hsn.toLowerCase().includes(searchTerm))|| 
+                (p.product_cid && p.product_cid.toLowerCase().includes(searchTerm))
             );
         }
 
@@ -454,6 +459,8 @@ async function initMod3() {
         productNameInput.value = csvRowData["Name"] ? csvRowData["Name"].trim() : '';
         productDescInput.value = csvRowData["Description"] ? csvRowData["Description"].trim() : '';
         // productHsnInput.value = csvRowData["Hsn"] ? csvRowData["Hsn"].trim() : '';
+        // productCidInput.value = csvRowData["Cid"] ? csvRowData["Cid"].trim() : '';
+        
 
         // Handle Category lookup and selection
         const categoryName = csvRowData["Category"] ? csvRowData["Category"].trim() : '';
@@ -931,6 +938,7 @@ async function initMod3() {
              product_name: p.product_name,
              product_desc: p.product_desc,
              product_hsn: p.product_hsn,
+             product_cid: p.product_cid,
              product_img: Array.isArray(p.product_img) ? p.product_img : (p.product_img ? [p.product_img] : []), // Ensure it's an array
              cat_id: p.cat_id,
              cat_sub: p.cat_sub ? p.cat_sub.split(',').filter(Boolean) : [], // Convert comma-separated string to array
