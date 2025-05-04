@@ -43,6 +43,12 @@
             line-height: 1.4; /* Improve readability */
         }
 
+
+        
+
+        .items-table td:nth-child(9) { width: 15%; text-align: right;}
+        .items-table2 td:nth-child(7) { width: 15%; text-align: right;}
+
         .details-grid {
             display: grid;
             /* Define columns based on the image structure */
@@ -148,16 +154,6 @@
             background-color: #f2f2f2;
             font-weight: bold;
         }
-/* 
-        .items-table td:nth-child(1) { width: 3%; text-align: left;} 
-        .items-table td:nth-child(2) { width: 25%; }
-        .items-table td:nth-child(3) { width: 10%; text-align: center;} 
-        .items-table td:nth-child(4) { width: 10%; text-align: center;} 
-        .items-table td:nth-child(5) { width: 8%; text-align: center;} 
-        .items-table td:nth-child(6) { width: 8%; text-align: center;} 
-        .items-table td:nth-child(7) { width: 10%; text-align: right;} 
-        .items-table td:nth-child(8) { width: 8%; text-align: center;} 
-        .items-table td:nth-child(9) { width: 10%; text-align: right;}  */
 
         .items-table thead th {
             text-align: center;
@@ -238,38 +234,29 @@
         <div class="parties">
             <div class="consignee">
                 <h3>Europet Products Private Limited</h3>
-                <p>No 230/2, Nageshwararao Road,</p>
-                <p>Vanagaram Main Road, Athipet,</p>
-                <p>Ambattur Industrial Estate,</p>
-                <p>Chennai - 600 058.</p>
-                <p>GST : 33AAFCE4172K1ZM</p>
-                <p>State Name : Tamil Nadu, Code : 33</p>
-                <p>E-Mail : europetpvtltd@gmail.com</p>
+                <p id="Address"></p>
+                <p>GST : <span id="GstNo"></span></p>
+                <p>E-Mail : <span id="Email"></span></p>
             </div>
             <div class="buyer">
                 <table class="items-table">
-                    <tr><th>Invoice No<div>EP/24-25/2453</div></th><th>Dated<div>30-Jan-25</div></th></tr>
-                    <tr><th>Delivery Note</th><th></th></tr>
-                    <tr><th>Reference No. & Date<div>67649 dt. 30-Jan-25</div></th><th>Other References<div>Arun</div></th></tr>
-                    <tr><th>Checked By</th><th></th></tr>
+                    <tr><th>Invoice No<div id="InvoiceNo"></div></th><th>Dated<div id="Dated"></div></th></tr>
+                    <tr><th>Delivery Note</th><th id="DeliveryNote"></th></tr>
+                    <tr><th>Reference No. & Date<div id="RefNoDate"></div></th><th>Other References<div id="OtherRef"></div></th></tr>
+                    <tr><th>Checked By</th><th id="CheckedBy"></th></tr>
                 </table>
             </div>
         </div>
         <div class="parties">
             <div class="consignee">
                 <h3>Consignee (Ship to)</h3>
-                <p>PUPPIES & KITTENS- SHENOY NAGAR</p>
-                <p>No.6 Link road, Kilpauk garden road, Opp : CSI Church</p>
-                <p>Shenoy nagar, Chennai - 600030</p>
-                <p>Contact No.99416 76844</p>
-                <p class="state-info"><span>State Name</span> : Tamil Nadu, Code : 33</p>
+                <p id="Caddress1"></p>
+                <p>Contact No.<span id="Ccontact1"></span></p>
             </div>
             <div class="buyer">
                  <h3>Buyer (Bill to)</h3>
-                 <p>PUPPIES & KITTENS- SHENOY NAGAR</p>
-                 <p>No.6 Link road, Kilpauk garden road, Opp : CSI Church, Shenoy nagar, Chennai - 600030</p>
-                 <p>Contact No.99416 76844</p>
-                 <p class="state-info"><span>State Name</span> : Tamil Nadu, Code : 33</p>
+                 <p id="Caddress2"></p>
+                 <p>Contact No.<span id="Ccontact2"></span></p>
             </div>
         </div>
 
@@ -290,110 +277,8 @@
                     <th>Billed</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>1</td>
-                    <td>Nunbell Milk Bottle</td>
-                    <td>39233090</td>
-                    <td>ACO38</td>
-                    <td>5 No</td>
-                    <td>5 No</td>
-                    <td>210.00</td>
-                    <td>50 %</td>
-                    <td>525.00</td>
-                </tr>
-                <tr>
-                    <td>2</td>
-                    <td>PF Cat Scooper w Cat Face</td>
-                    <td>392690</td>
-                    <td>ACP12</td>
-                    <td>5 No</td>
-                    <td>5 No</td>
-                    <td>70.00</td>
-                    <td>50 %</td>
-                    <td>175.00</td>
-                </tr>
-                <tr>
-                    <td>3</td>
-                    <td>Nunbell Cat Scooper with Poop Bag</td>
-                    <td>39249090</td>
-                    <td>ACP33</td>
-                    <td>10 No</td>
-                    <td>10 No</td>
-                    <td>180.00</td>
-                    <td>50 %</td>
-                    <td>900.00</td>
-                </tr>
-                <tr>
-                    <td colspan="9"></td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Sub Total</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>900.00</td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Output CGST</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>900.00</td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Output SGST</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>900.00</td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Special Discount</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><b>(-)567.00</b></td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Round Off</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td><b>(-)0.42</b></td>
-                </tr>
-                <tr>
-                    <td></td>
-                    <td>Total</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>900.00</td>
-                </tr>
-                </tbody>
+            <tbody id="productTableEditable">
+            </tbody>
         </table>
 
         <table class="items-table">
@@ -401,7 +286,7 @@
                 <tr>
                     <td>
                         <p class="label">Amount Chargeable (in words)</p>
-                        <b><p class="value">INR Eighteen Thousand Seven Hundred Eighteen Only</p></b>
+                        <b><p class="value" id="AmountChargeableInWords">INR Eighteen Thousand Seven Hundred Eighteen Only</p></b>
                     </td>
                 </tr>
 
@@ -456,7 +341,7 @@
         </table>
 
 
-            <table class="items-table">
+            <table class="items-table items-table2">
                 <thead>
                     <tr>
                         <th rowspan="2">HSN/SAC</th>
@@ -472,153 +357,12 @@
                         <th>Amount</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>39233090</td>
-                        <td>1,050.00</td>
-                        <td>9%</td>
-                        <td>94.50</td>
-                        <td>9%</td>
-                        <td>94.50</td>
-                        <td>189.00</td>
-                    </tr>
-                    <tr>
-                        <td>392690</td>
-                        <td>2,287.95</td>
-                        <td>9%</td>
-                        <td>205.92</td>
-                        <td>9%</td>
-                        <td>205.92</td>
-                        <td>411.84</td>
-                    </tr>
-                    <tr>
-                        <td>39249090</td>
-                        <td>900.00</td>
-                        <td>9%</td>
-                        <td>81.00</td>
-                        <td>9%</td>
-                        <td>81.00</td>
-                        <td>162.00</td>
-                    </tr>
-                    <tr>
-                        <td>39269099</td>
-                        <td>673.20</td>
-                        <td>9%</td>
-                        <td>60.59</td>
-                        <td>9%</td>
-                        <td>60.59</td>
-                        <td>121.18</td>
-                    </tr>
-                    <tr>
-                        <td>392330</td>
-                        <td>1,105.00</td>
-                        <td>9%</td>
-                        <td>99.45</td>
-                        <td>9%</td>
-                        <td>99.45</td>
-                        <td>198.90</td>
-                    </tr>
-                    <tr>
-                        <td>401700</td>
-                        <td>6,641.25</td>
-                        <td>9%</td>
-                        <td>597.73</td>
-                        <td>9%</td>
-                        <td>597.73</td>
-                        <td>1,195.46</td>
-                    </tr>
-                    <tr>
-                        <td>40169990</td>
-                        <td>1,440.00</td>
-                        <td>9%</td>
-                        <td>129.60</td>
-                        <td>9%</td>
-                        <td>129.60</td>
-                        <td>259.20</td>
-                    </tr>
-                     <tr>
-                        <td>392490</td>
-                        <td>180.00</td>
-                        <td>9%</td>
-                        <td>16.20</td>
-                        <td>9%</td>
-                        <td>16.20</td>
-                        <td>32.40</td>
-                    </tr>
-                     <tr>
-                        <td>401699</td>
-                        <td>1,720.00</td>
-                        <td>9%</td>
-                        <td>154.82</td>
-                        <td>9%</td>
-                        <td>154.82</td>
-                        <td>309.64</td>
-                    </tr>
-                     <tr>
-                        <td>95062900</td>
-                        <td>265.00</td>
-                        <td>9%</td>
-                        <td>23.85</td>
-                        <td>9%</td>
-                        <td>23.85</td>
-                        <td>47.70</td>
-                    </tr>
-                     <tr>
-                        <td>39269080</td>
-                        <td>1,257.50</td>
-                        <td>9%</td>
-                        <td>113.18</td>
-                        <td>9%</td>
-                        <td>113.18</td>
-                        <td>226.36</td>
-                    </tr>
-                     <tr>
-                        <td>630790</td>
-                        <td>250.25</td>
-                        <td>2.50%</td>
-                        <td>6.26</td>
-                        <td>2.50%</td>
-                        <td>6.26</td>
-                        <td>12.52</td>
-                    </tr>
-                    <tr>
-                        <td>40170090</td>
-                        <td>1,389.00</td>
-                        <td>9%</td>
-                        <td>125.01</td>
-                        <td>9%</td>
-                        <td>125.01</td>
-                        <td>250.02</td>
-                    </tr>
-                     <tr>
-                        <td>40169100</td>
-                        <td>274.45</td>
-                        <td>9%</td>
-                        <td>24.70</td>
-                        <td>9%</td>
-                        <td>24.70</td>
-                        <td>49.40</td>
-                    </tr>
-                     <tr>
-                        <td>63079099</td>
-                        <td>270.00</td>
-                        <td>2.50%</td>
-                        <td>6.75</td>
-                        <td>2.50%</td>
-                        <td>6.75</td>
-                        <td>13.50</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td colspan="2" class="total-label">Total</td>
-                        <td></td> <td class="total-amount">1,739.56</td>
-                        <td></td> <td class="total-amount">1,739.56</td>
-                        <td class="total-amount">3,479.12</td>
-                    </tr>
+                <tbody id="gstTableEditable">
                 </tbody>
             </table>
     
         <div class="tax-amount-in-words">
-            <p>Tax Amount (in words) : <strong>INR Three Thousand Four Hundred Seventy Nine and Twelve paise Only</strong></p>
+            <p>Tax Amount (in words) : <strong id="taxAmountInWords">INR Three Thousand Four Hundred Seventy Nine and Twelve paise Only</strong></p>
         </div>
     
 
