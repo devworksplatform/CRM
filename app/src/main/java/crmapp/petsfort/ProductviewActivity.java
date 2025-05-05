@@ -136,7 +136,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		gstTextView.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
 		gstRsTextView.setText(df.format(gst).concat(" ₹"));
 
-		double discount = ((product.getCostRate()+gst)*product.getCostDis())/100;
+		double discount = ((product.getCostMrp())*product.getCostDis())/100;
 		discountTextView.setText("-".concat(df.format(product.getCostDis()).concat("%")));
 		discountRsTextView.setText(df.format(discount).concat(" ₹"));
 

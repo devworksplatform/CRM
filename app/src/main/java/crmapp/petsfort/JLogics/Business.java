@@ -38,10 +38,55 @@ import crmapp.petsfort.R;
 
 public class Business {
 //    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
-    private static final String ServerURL = "https://server.petsfort.in";
+//    private static final String ServerURL = "https://server.petsfort.in";
+    private static final String ServerURL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com";
     Context context;
     public Business(Context context) {
         this.context = context;
+    }
+
+
+    public static OkHttpClient client;
+    static {
+        try {
+            // Create a trust manager that does not validate certificate chains
+            final javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[] {
+                    new javax.net.ssl.X509TrustManager() {
+                        @Override
+                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
+                        }
+
+                        @Override
+                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
+                        }
+
+                        @Override
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[]{};
+                        }
+                    }
+            };
+
+            // Install the all-trusting trust manager
+            final javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            // Create an SSL socket factory with our all-trusting manager
+            final javax.net.ssl.SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+
+            okhttp3.OkHttpClient.Builder builder = new okhttp3.OkHttpClient.Builder();
+            builder.sslSocketFactory(sslSocketFactory, (javax.net.ssl.X509TrustManager)trustAllCerts[0]);
+            builder.hostnameVerifier(new javax.net.ssl.HostnameVerifier() {
+                @Override
+                public boolean verify(String hostname, javax.net.ssl.SSLSession session) {
+                    return true;
+                }
+            });
+
+            client = builder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e); // Throw a RuntimeException to indicate initialization failure.
+        }
     }
 
     public enum JOrderStatus {
@@ -329,7 +374,7 @@ public class Business {
 
 
     public static class UserDataApiClient {
-        private static final OkHttpClient client = new OkHttpClient();
+//        private static final OkHttpClient client = new OkHttpClient();
         private static final String getURL = ServerURL + "/user/";
         private static final String URL = ServerURL + "/userdata/";
 
@@ -493,7 +538,7 @@ public class Business {
 
     public static class CategoriesApiClient {
         private static final String URL = ServerURL + "/categories";
-        private static final OkHttpClient client = new OkHttpClient();
+//        private static final OkHttpClient client = new OkHttpClient();
 
         public static void getCategoriesCallApi(Callbacker.ApiResponseWaiters.CategoriesApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -561,7 +606,7 @@ public class Business {
 
     public static class QueryApiClient {
         private static final String URL = ServerURL + "/products/query";
-        private final OkHttpClient client = new OkHttpClient();
+//        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.QueryApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -646,7 +691,7 @@ public class Business {
     }
     public static class BulkDetailsApiClient {
         private static final String URL = ServerURL + "/products/bulk-details";
-        private final OkHttpClient client = new OkHttpClient();
+//        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.BulkDetailsApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -706,6 +751,7 @@ public class Business {
             }
 
             CostDetails costDetails = new CostDetails(
+                    costObject != null ? costObject.optDouble("total_mrp", 0.0) : 0.0,
                     costObject != null ? costObject.optDouble("total_rate", 0.0) : 0.0,
                     costObject != null ? costObject.optDouble("total_gst", 0.0) : 0.0,
                     costObject != null ? costObject.optDouble("total", 0.0) : 0.0,
@@ -733,7 +779,7 @@ public class Business {
 
             public BulkDetailsApiResponse() {
                 this.products = new ArrayList<>();
-                this.costDetails = new CostDetails(0.0, 0.0, 0.0, 0.0);
+                this.costDetails = new CostDetails(0.0,0.0, 0.0, 0.0, 0.0);
             }
 
             public ArrayList<Product> getProducts() { return products; }
@@ -742,18 +788,21 @@ public class Business {
         }
 
         public static class CostDetails {
+            private final double totalMrp;
             private final double totalRate;
             private final double totalGst;
             private final double total;
             private final double totalDiscount;
 
-            public CostDetails(double totalRate, double totalGst, double total, double totalDiscount) {
+            public CostDetails(double totalMrp, double totalRate, double totalGst, double total, double totalDiscount) {
+                this.totalMrp = totalMrp;
                 this.totalRate = totalRate;
                 this.totalGst = totalGst;
                 this.total = total;
                 this.totalDiscount = totalDiscount;
             }
 
+            public double getTotalMrp() { return totalMrp; }
             public double getTotalRate() { return totalRate; }
             public double getTotalGst() { return totalGst; }
             public double getTotalDiscount() { return totalDiscount; }
@@ -774,7 +823,7 @@ public class Business {
 
         // Define ServerURL here or pass it in constructor/method if needed
         private static final String BASE_URL = ServerURL + "/orders/checkout/"; // Note the trailing slash
-        private final OkHttpClient client = new OkHttpClient();
+//        private final OkHttpClient client = new OkHttpClient();
 
         /**
          * Calls the order checkout API.
@@ -938,7 +987,7 @@ public class Business {
     }
     public static class OrderQueryApiClient {
         private static final String URL = ServerURL + "/orders/query";
-        private final OkHttpClient client = new OkHttpClient();
+//        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, OrderApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -1100,7 +1149,8 @@ public class Business {
             public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 
             public BulkDetailsApiClient.CostDetails getCostDetails() {
-                return new BulkDetailsApiClient.CostDetails(this.totalRate, this.totalGst, this.total, this.totalDiscount);
+                final double mrp = this.totalRate + this.totalDiscount;
+                return new BulkDetailsApiClient.CostDetails(mrp, this.totalRate, this.totalGst, this.total, this.totalDiscount);
             }
         }
 

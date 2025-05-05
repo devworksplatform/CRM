@@ -32,10 +32,6 @@ def create_user_account(email, password):
         return user.uid,None
     except auth.EmailAlreadyExistsError:
         return None,f"Error: The email '{email}' is already in use."
-    except auth.InvalidEmailError:
-        return None,f"Error: The email '{email}' is not valid."
-    except auth.WeakPasswordError:
-        return None,"Error: The password is too weak. It must be at least 6 characters long."
     except Exception as e:
         return None,f"An unexpected error occurred while creating the user: {e}"
 

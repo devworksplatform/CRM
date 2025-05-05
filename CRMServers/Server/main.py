@@ -91,6 +91,12 @@ TABLE_SCHEMAS = {
             creditse TEXT NOT NULL,
             isblocked INTEGER NOT NULL DEFAULT 0
         )
+        """,
+    "bills": """
+        CREATE TABLE IF NOT EXISTS bills (
+            order_id TEXT PRIMARY KEY,
+            bill TEXT NOT NULL
+        )
         """
 }
 
@@ -99,7 +105,7 @@ TABLE_SCHEMAS = {
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -278,6 +284,8 @@ def dict_to_product(row: aiosqlite.Row):
         return None
     row_dict = dict(row)
     # Handle the product_img list stored as JSON
+    row_dict['cost_rate'] = row_dict['cost_mrp'] - (row_dict['cost_mrp'] * row_dict['cost_dis'] / 100)
+
     if 'product_img' in row_dict and row_dict['product_img']:
         try:
             row_dict['product_img'] = json.loads(row_dict['product_img'])
@@ -380,6 +388,7 @@ async def init_db():
             await cursor.execute(TABLE_SCHEMAS["category"])
             await cursor.execute(TABLE_SCHEMAS["subcategory"])
             await cursor.execute(TABLE_SCHEMAS["userdata"])
+            await cursor.execute(TABLE_SCHEMAS["bills"])
             # await cursor.execute("""
             # CREATE TABLE IF NOT EXISTS products (
             #     id TEXT PRIMARY KEY,
@@ -1066,6 +1075,7 @@ async def get_products_bulk(data: dict): # Made async
     """Get details for multiple products and calculate totals."""
     conn = await get_db_connection()
     product_details = []
+    total_mrp = 0.0
     total_rate = 0.0
     total_gst = 0.0
     total_discount = 0.0
@@ -1075,40 +1085,42 @@ async def get_products_bulk(data: dict): # Made async
     try:
         async with conn.cursor() as cursor:
             for prod_id, item_data in data.items():
-                 count = item_data.get("count", 0)
-                 if not isinstance(count, int) or count < 0:
-                     count = 0 # Ignore invalid counts
+                count = item_data.get("count", 0)
+                if not isinstance(count, int) or count < 0:
+                    count = 0 # Ignore invalid counts
 
-                 # Try to find product by id or product_id
-                 await cursor.execute("SELECT * FROM products WHERE id = ? OR product_id = ?", (prod_id, prod_id))
-                 row = await cursor.fetchone()
+                # Try to find product by id or product_id
+                await cursor.execute("SELECT * FROM products WHERE id = ? OR product_id = ?", (prod_id, prod_id))
+                row = await cursor.fetchone()
 
-                 if not row:
-                     not_found_ids.append(prod_id)
-                     continue # Skip to next product if not found
+                if not row:
+                    not_found_ids.append(prod_id)
+                    continue # Skip to next product if not found
 
-                 product = dict_to_product(row)
-                 product['requested_count'] = count # Add requested count to details
-                 product_details.append(product)
+                product = dict_to_product(row)
+                product['requested_count'] = count # Add requested count to details
+                product_details.append(product)
 
-                 # Calculation based on fetched product data
-                 rate = product.get("cost_rate", 0.0)
-                 gst_percent = product.get("cost_gst", 0.0)
-                 disc_percent = product.get("cost_dis", 0.0)
+                # Calculation based on fetched product data
+                mrp = product.get("cost_mrp", 0.0)
+                rate = product.get("cost_rate", 0.0)
+                gst_percent = product.get("cost_gst", 0.0)
+                disc_percent = product.get("cost_dis", 0.0)
 
-                 gst_amount = (rate * gst_percent) / 100.0
-                 actual_rate_without_discount = rate + gst_amount
-                 disc_amount = (actual_rate_without_discount * disc_percent) / 100.0
-                 actual_rate = actual_rate_without_discount - disc_amount
+                gst_amount = (rate * gst_percent) / 100.0
+                actual_rate = rate + gst_amount
+                disc_amount = mrp * disc_percent / 100.0  # Discount based on the original rate
 
-                 total_rate += rate * count
-                 total_gst += gst_amount * count
-                 total_discount += disc_amount * count
-                 total += actual_rate * count
+                total_mrp += mrp * count
+                total_rate += rate * count
+                total_gst += gst_amount * count
+                total_discount += disc_amount * count
+                total += actual_rate * count
 
         response = {
             "product_details": product_details,
             "cost": {
+                "total_mrp": round(total_mrp, 3),
                 "total_rate": round(total_rate, 3),
                 "total_gst": round(total_gst, 3),
                 "total_discount": round(total_discount, 3),
@@ -1126,6 +1138,180 @@ async def get_products_bulk(data: dict): # Made async
     finally:
         await conn.close()
 
+# from num2words import num2words
+# --- Helper function to convert amount to Indian currency words ---
+def amount_to_words_inr(amount: float) -> str:
+    """Converts a float amount to Indian Rupees and Paise in words."""
+    # rupees = int(amount)
+    # paise = round((amount - rupees) * 100)
+
+    # rupees_words = num2words(rupees, lang='en_IN').title()
+    # paise_words = num2words(paise, lang='en_IN').title() if paise > 0 else ""
+
+    # result = f"INR {rupees_words} Rupees"
+    # if paise > 0:
+    #     result += f" and {paise_words} Paise"
+    # result += " Only"
+    # return result
+    return str(amount)
+
+
+def generate_invoice_data(
+    order_id: str,
+    creation_time_str: str, # UTC ISO format string like '2023-10-27T10:00:00Z'
+    user_id: str,
+    product_details_for_order: List[Dict[str, Any]], # List of product dicts
+    order_values: Dict[str, Any] # Corresponds to 'value' in store_order
+) -> Dict[str, Any]:
+    """
+    Generates an invoice data dictionary in the desired format using
+    data collected during the store_order process.
+    """
+
+    # --- 1. Initialize Invoice Structure ---
+    invoice_data = {
+        'company': {},
+        'details': {},
+        'consignee': {},
+        'buyer': {},
+        'items': [],
+        'totals': {},
+        'gstDetails': [],
+        'amountsInWords': {}
+    }
+
+    # --- 2. Populate 'details' ---
+    # Extract date from the ISO string
+    creation_date = datetime.fromisoformat(creation_time_str.replace('Z', '+00:00'))
+    formatted_date = creation_date.strftime('%Y-%m-%d')
+
+    invoice_data['details'] = {
+        'invoiceNo': f"INV-{order_id}", # Use order_id for uniqueness
+        'dated': formatted_date,
+        'deliveryNote': f"DN-{order_id}", # Placeholder using order_id
+        'refNoDate': f"REF-{user_id}/{formatted_date}", # Placeholder
+        'otherRef': order_values.get("notes", ""), # Use notes if available
+        'checkedBy': "System Generated" # Placeholder
+    }
+
+    # --- 3. Populate 'consignee' and 'buyer' ---
+    # Assuming the address in 'value' is the consignee (shipping address)
+    invoice_data['consignee'] = {
+        'address': order_values.get("address", "N/A"),
+        'contactNo': "N/A" # Placeholder - Not available in store_order data
+    }
+    # Buyer details are not directly available in store_order
+    # You might need to fetch these based on user_id separately
+    invoice_data['buyer'] = {
+        'address': order_values.get("address", "N/A"),
+        'contactNo': "N/A" # Placeholder
+    }
+
+    # --- 4. Process Items and Calculate Totals ---
+    sub_total = 0.0
+    total_cgst_amount = 0.0
+    total_sgst_amount = 0.0
+    gst_summary = {} # To aggregate GST details by HSN
+
+    for index, prod in enumerate(product_details_for_order):
+        s_no = index + 1
+        rate = prod.get("cost_rate", 0.0)
+        count = prod.get("count", 0)
+        discount_percent = prod.get("cost_dis", 0.0)
+        gst_percent = prod.get("cost_gst", 0.0)
+        hsn_sac = prod.get("product_hsn", "N/A")
+
+        # Calculate amount *after* discount (Taxable Value for this item)
+        amount_before_discount = rate * count
+        discount_amount_item = (amount_before_discount * discount_percent) / 100.0
+        taxable_value_item = amount_before_discount - discount_amount_item
+
+        # Calculate GST amounts for this item (assuming CGST = SGST = GST/2)
+        cgst_rate_item = gst_percent / 2.0
+        sgst_rate_item = gst_percent / 2.0
+        cgst_amount_item = (taxable_value_item * cgst_rate_item) / 100.0
+        sgst_amount_item = (taxable_value_item * sgst_rate_item) / 100.0
+        total_tax_item = cgst_amount_item + sgst_amount_item
+
+        # Append to 'items' list
+        invoice_data['items'].append({
+            'sNo': s_no,
+            'description': prod.get("product_name", "N/A"),
+            'hsnSac': hsn_sac,
+            'partNo': prod.get("product_cid", "N/A"),
+            'quantityShipped': f'{count} No',
+            'quantityBilled': f'{count} No',
+            'rate': round(rate, 2),
+            'discount': f'{discount_percent} %',
+            'amount': round(taxable_value_item, 2) # Amount after discount
+        })
+
+        # Aggregate GST details by HSN
+        if hsn_sac not in gst_summary:
+            gst_summary[hsn_sac] = {
+                'taxableValue': 0.0,
+                'cgstRate': f'{cgst_rate_item}%', # Assuming same rate for all items with same HSN
+                'cgstAmount': 0.0,
+                'sgstUtgstRate': f'{sgst_rate_item}%', # Assuming same rate
+                'sgstUtgstAmount': 0.0,
+                'totalTaxAmount': 0.0
+            }
+        gst_summary[hsn_sac]['taxableValue'] += taxable_value_item
+        gst_summary[hsn_sac]['cgstAmount'] += cgst_amount_item
+        gst_summary[hsn_sac]['sgstUtgstAmount'] += sgst_amount_item
+        gst_summary[hsn_sac]['totalTaxAmount'] += total_tax_item
+
+        # Add to overall totals
+        sub_total += taxable_value_item
+        total_cgst_amount += cgst_amount_item
+        total_sgst_amount += sgst_amount_item
+
+    # --- 5. Populate 'gstDetails' from summary ---
+    for hsn, details in gst_summary.items():
+         invoice_data['gstDetails'].append({
+            'hsnSac': hsn,
+            'taxableValue': round(details['taxableValue'], 2),
+            'cgstRate': details['cgstRate'],
+            'cgstAmount': round(details['cgstAmount'], 2),
+            'sgstUtgstRate': details['sgstUtgstRate'],
+            'sgstUtgstAmount': round(details['sgstUtgstAmount'], 2),
+            'totalTaxAmount': round(details['totalTaxAmount'], 2)
+        })
+
+    # --- 6. Populate 'totals' ---
+    grand_total = sub_total + total_cgst_amount + total_sgst_amount
+    # Assuming no special discount or rounding based on store_order logic
+    special_discount = 0.0
+    round_off = 0.00 # Or calculate if specific rounding rules apply
+    final_total = grand_total - special_discount + round_off
+
+
+    invoice_data['totals'] = {
+        'subTotal': round(sub_total, 2),
+        'cgstAmount': round(total_cgst_amount, 2),
+        'sgstAmount': round(total_sgst_amount, 2),
+        'specialDiscount': round(special_discount, 2), # Placeholder
+        'roundOff': round(round_off, 2), # Placeholder
+        'total': round(final_total, 2)
+    }
+
+    # --- 7. Populate 'amountsInWords' ---
+    total_tax_amount = total_cgst_amount + total_sgst_amount
+    invoice_data['amountsInWords'] = {
+        'amountChargeable': amount_to_words_inr(final_total),
+        'taxAmount': amount_to_words_inr(total_tax_amount)
+    }
+
+    invoice_data["company"] = {
+        'address': 'Your Company Address, City, Postal Code',
+        'gstNo': 'YOUR_GST_NUMBER',
+        'email': 'your.email@example.com'
+    }
+
+
+    # --- 8. Return the complete invoice data ---
+    return invoice_data
+
 import asyncio
 order_lock = asyncio.Lock()
 @app.post("/orders/checkout/{user_id}", response_model=Dict[str, Any])
@@ -1137,6 +1323,7 @@ async def store_order(user_id: str, data: dict): # Made async
         value = data.pop('otherData')
 
         product_details_for_order = [] # Details stored in the order
+        total_mrp = 0.0
         total_rate = 0.0
         total_gst = 0.0
         total_discount = 0.0
@@ -1199,26 +1386,44 @@ async def store_order(user_id: str, data: dict): # Made async
                         "created_at": prod.get("created_at"),
                         "updated_at": prod.get("updated_at"),
                         "cost_mrp": prod.get("cost_mrp", 0.0),
-                        "cost_rate": prod.get("cost_rate", 0.0),
+                        "cost_rate": prod.get("cost_mrp", 0.0) - ((prod.get("cost_mrp", 0.0) * prod.get("cost_dis", 0.0)) / 100),
                         "cost_gst": prod.get("cost_gst", 0.0),
                         "stock": prod.get("stock", 0.0),
                         "cost_dis": prod.get("cost_dis", 0.0),
                         "count": count # Store the count for this item in the order details
                     })
+                    
                     order_items_payload[pid] = {"count": count} # Rebuild payload with only valid items
 
                     # Recalculate totals based on DB data for valid items
-                    rate = prod.get("cost_rate", 0.0)
+                    # rate = prod.get("cost_rate", 0.0)
+                    # gst_percent = prod.get("cost_gst", 0.0)
+                    # disc_percent = prod.get("cost_dis", 0.0)
+                    # gst_amt = (rate * gst_percent) / 100.0
+                    # base = rate + gst_amt
+                    # disc_amt = (base * disc_percent) / 100.0
+
+                    # total_rate += rate * count
+                    # total_gst += gst_amt * count
+                    # total_discount += disc_amt * count
+                    # total += (base - disc_amt) * count
+
+
+                    mrp = prod.get("cost_mrp", 0.0)
+                    rate = prod.get("cost_mrp", 0.0) - ((prod.get("cost_mrp", 0.0) * prod.get("cost_dis", 0.0)) / 100)
                     gst_percent = prod.get("cost_gst", 0.0)
                     disc_percent = prod.get("cost_dis", 0.0)
-                    gst_amt = (rate * gst_percent) / 100.0
-                    base = rate + gst_amt
-                    disc_amt = (base * disc_percent) / 100.0
 
+                    gst_amount = (rate * gst_percent) / 100.0
+                    actual_rate = rate + gst_amount
+                    disc_amount = mrp * disc_percent / 100.0  # Discount based on the original rate
+
+                    total_mrp += mrp * count
                     total_rate += rate * count
-                    total_gst += gst_amt * count
-                    total_discount += disc_amt * count
-                    total += (base - disc_amt) * count
+                    total_gst += gst_amount * count
+                    total_discount += disc_amount * count
+                    total += actual_rate * count
+
 
                 # Check if any products were not found
                 if not_found_ids:
@@ -1270,7 +1475,25 @@ async def store_order(user_id: str, data: dict): # Made async
                 await cur.execute(insert_query, params)
                 await conn.commit()
 
+
+                try:
+                    # *** Generate the invoice data HERE ***
+                    final_invoice_data = generate_invoice_data(
+                        order_id=order_id,
+                        creation_time_str=now,
+                        user_id=user_id,
+                        product_details_for_order=product_details_for_order,
+                        order_values=value # Pass the 'otherData' dict
+                    )
+
+                    raw_json_string = json.dumps(final_invoice_data, indent=None, separators=(',', ':'))
+                    await cur.execute("INSERT INTO bills(order_id, bill) VALUES(?, ?)", (order_id, raw_json_string))
+                    await conn.commit()
+                except Exception as e:
+                    print(str(e))
+
                 await FCM_notify_order_checkout(user_id, round(total, 3), user_name)
+
 
                 return {
                     "message": "Order created successfully",
@@ -1289,6 +1512,28 @@ async def store_order(user_id: str, data: dict): # Made async
             raise HTTPException(status_code=500, detail=f"Failed to store your order")
         finally:
             await conn.close()
+
+
+import traceback
+@app.get("/bills/{order_id}")
+async def get_bill(order_id: str):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT bill FROM bills WHERE order_id=?", (order_id,))
+            bill_row = await cursor.fetchone()
+            bill = "{}"
+            if bill_row:
+                bill = bill_row[0]
+                bill = json.loads(bill)
+            return bill
+    except Exception as e:
+        print(f"Error in get_bill: {e}")
+        raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
+    finally:
+        await conn.close()
+
+
 
 
 @app.post("/orders/query", response_model=List[OrderResponse])

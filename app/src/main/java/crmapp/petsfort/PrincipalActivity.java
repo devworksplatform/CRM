@@ -142,7 +142,6 @@ public class PrincipalActivity extends AppCompatActivity {
 
 	private ActivityResultLauncher<IntentSenderRequest> activityResultLauncher;
 
-
 	void checkForAppUpdate() {
 		try{
 			activityResultLauncher = registerForActivityResult(
@@ -185,28 +184,7 @@ public class PrincipalActivity extends AppCompatActivity {
 							AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
 				}
 			});
-		} catch (Exception e) {
-//			StringWriter sw = new StringWriter();
-//			PrintWriter pw = new PrintWriter(sw);
-//			e.printStackTrace(pw);
-//			String stackTrace = sw.toString();
-//			String message = e.getMessage();
-//
-//			TextView textView = new TextView(getApplicationContext());
-//			textView.setText(stackTrace);
-//			textView.setTextIsSelectable(true);
-//			textView.setPadding(32, 32, 32, 32); // Optional: padding for better readability
-//			textView.setTextSize(14); // Optional: adjust text size
-//
-//			AlertDialog.Builder builder = new AlertDialog.Builder(PrincipalActivity.this); // Use Activity context, not Application context
-//			builder.setTitle(message);
-//			builder.setView(textView);
-//			builder.setCancelable(false);
-//
-//			AlertDialog dialog = builder.create();
-//			dialog.show();
-
-		}
+		} catch (Exception e) { }
 
 	}
 

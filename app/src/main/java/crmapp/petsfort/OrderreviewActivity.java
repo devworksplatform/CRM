@@ -365,7 +365,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 						JHelpers.TransitionManager(rootLinear, 800);
 						subTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotalRate())));
 						gstTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotalGst())));
-						totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));
+						totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalMrp())));
 						discountTotalTextView.setText("- ₹ ".concat(String.valueOf(costDetails.getTotalDiscount())));
 						grandTotalTextView.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
 					}

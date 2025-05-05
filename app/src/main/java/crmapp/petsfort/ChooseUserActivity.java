@@ -109,13 +109,21 @@ public class ChooseUserActivity extends AppCompatActivity {
         linearLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View _view) {
-                Business.JFCM.unSubscribeAll();
-                FirebaseAuth.getInstance().signOut();
+                try{
+                    Business.JFCM.unSubscribeAll();
+                } catch (Exception e) {
+                    Toast.makeText(ChooseUserActivity.this, "Failed to Unsubscribe FCM", Toast.LENGTH_SHORT).show();
+                }
+
+                try{
+                    FirebaseAuth.getInstance().signOut();
+                } catch (Exception e) {
+                    Toast.makeText(ChooseUserActivity.this, "Failed to Logout", Toast.LENGTH_SHORT).show();
+                }
 
                 Intent intent = new Intent();
                 intent.setClass(getApplicationContext(), MainActivity.class);
                 startActivity(intent);
-
                 finishAffinity();
             }
         });

@@ -314,7 +314,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			JHelpers.TransitionManager(costLinear, 300);
 			subTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalRate())));
 			gstTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalGst())));
-			totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));
+			totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalMrp())));
 			discountTotalTextview.setText("- ₹ ".concat(String.valueOf(costDetails.getTotalDiscount())));
 			grandTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
 			textviewTotal.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
@@ -390,7 +390,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			gstTotalTextView.setText("+".concat(df.format(gst*product.productCount)).concat(" ₹"));
 
 
-			double discount = ((product.getCostRate()+gst)*product.getCostDis())/100;
+			double discount = ((product.getCostMrp())*product.getCostDis())/100;
 			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
 
 			discountTextView.setText("-".concat(df.format(discount)).concat(" ₹ OFF"));

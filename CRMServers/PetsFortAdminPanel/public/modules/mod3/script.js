@@ -5,6 +5,21 @@
 // and are accessible in this scope.
 // Assume libraries like feather-icons, cropperjs, compressorjs are included in your HTML.
 
+function onInputChange(el, cb) {
+    el.addEventListener('input', () => cb(el.value));
+    const d = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    Object.defineProperty(el, 'value', {
+      get() { return d.get.call(this); },
+      set(v) {
+        d.set.call(this, v);
+        cb(v);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+}
+  
+
+  
 async function initMod3() {
     console.log("Initializing Product Management Module (Mod3)...");
 
@@ -36,6 +51,11 @@ async function initMod3() {
     const formTitle = document.getElementById('product-form-title');
     const saveButton = document.getElementById('product-save-btn');
     const cancelButton = document.getElementById('product-cancel-btn');
+
+    onInputChange(costMrpInput, val => {
+        costRateInput.value = val
+    });
+      
 
 
     // Import Elements

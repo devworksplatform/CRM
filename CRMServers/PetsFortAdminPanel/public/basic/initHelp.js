@@ -169,7 +169,8 @@ async function callApi(method, url, body = null) {
     }
 
     try {
-        const response = await fetch("https://server.petsfort.in/"+url, options);
+      // const response = await fetch("https://server.petsfort.in/"+url, options);
+      const response = await fetch("https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/"+url, options);
 
         if (!response.ok) {
         throw new Error(`HTTP ${response.status} - ${response.statusText}`);

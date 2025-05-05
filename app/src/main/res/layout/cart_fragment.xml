@@ -31,7 +31,7 @@
 		<RelativeLayout
 			android:id="@+id/linear2"
 			android:layout_width="match_parent"
-			android:layout_height="280dp"
+			android:layout_height="300dp"
 			android:translationY="-50dp"
 			android:orientation="vertical" >
 
@@ -151,7 +151,61 @@
 						<LinearLayout
 							android:layout_marginRight="20dp"
 							android:layout_marginLeft="20dp"
+							android:layout_marginBottom="10dp"
 							android:layout_marginTop="10dp"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content">
+							<TextView
+								android:id="@+id/totalNoDiscountLabelTextView"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:text="MRP"
+								android:textSize="16sp"
+								android:layout_weight="1"
+								android:textColor="#30476c"/>
+							<TextView
+								android:id="@+id/totalNoDiscountTextView"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:text="₹ 0.00"
+								android:textSize="16sp"
+								android:textColor="#000000"/>
+						</LinearLayout>
+
+						<LinearLayout
+							android:layout_marginRight="20dp"
+							android:layout_marginLeft="20dp"
+							android:layout_marginBottom="10dp"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content">
+							<TextView
+								android:id="@+id/discountTotalLabelTextView"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:text="Discount"
+								android:textSize="16sp"
+								android:layout_weight="1"
+								android:textColor="#30476c"/>
+							<TextView
+								android:id="@+id/discountTotalTextView"
+								android:layout_width="wrap_content"
+								android:layout_height="wrap_content"
+								android:text="₹ 0.00"
+								android:textSize="16sp"
+								android:textColor="#000000"/>
+						</LinearLayout>
+
+						<View
+							android:layout_width="match_parent"
+							android:layout_height="1dp"
+							android:background="#E0E0E0"
+							android:layout_marginTop="6dp"
+							android:layout_marginBottom="6dp"/>
+
+
+						<LinearLayout
+							android:layout_marginRight="20dp"
+							android:layout_marginLeft="20dp"
 							android:layout_marginBottom="10dp"
 							android:layout_width="match_parent"
 							android:layout_height="wrap_content">
@@ -182,7 +236,7 @@
 								android:id="@+id/gstTotalLabelTextView"
 								android:layout_width="wrap_content"
 								android:layout_height="wrap_content"
-								android:text="GST Amount"
+								android:text="CGST + SGST"
 								android:textSize="16sp"
 								android:layout_weight="1"
 								android:textColor="#30476c"/>
@@ -202,51 +256,6 @@
 							android:layout_marginTop="6dp"
 							android:layout_marginBottom="6dp"/>
 
-						<LinearLayout
-							android:layout_marginRight="20dp"
-							android:layout_marginLeft="20dp"
-							android:layout_marginBottom="10dp"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content">
-							<TextView
-								android:id="@+id/totalNoDiscountLabelTextView"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:text="Sub Total + GST Amount"
-								android:textSize="16sp"
-								android:layout_weight="1"
-								android:textColor="#30476c"/>
-							<TextView
-								android:id="@+id/totalNoDiscountTextView"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:text="₹ 0.00"
-								android:textSize="16sp"
-								android:textColor="#000000"/>
-						</LinearLayout>
-
-						<LinearLayout
-							android:layout_marginRight="20dp"
-							android:layout_marginLeft="20dp"
-							android:layout_marginBottom="10dp"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content">
-							<TextView
-								android:id="@+id/discountTotalLabelTextView"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:text="Discount Total"
-								android:textSize="16sp"
-								android:layout_weight="1"
-								android:textColor="#30476c"/>
-							<TextView
-								android:id="@+id/discountTotalTextView"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:text="₹ 0.00"
-								android:textSize="16sp"
-								android:textColor="#000000"/>
-						</LinearLayout>
 
 						<LinearLayout
 							android:layout_marginRight="20dp"

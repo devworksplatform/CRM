@@ -237,7 +237,7 @@ public class CartFragmentActivity extends Fragment {
 		}
 
 		float currentY = targetView.getTranslationY();
-		float targetDp = isOpen ? -50f : -280f;
+		float targetDp = isOpen ? -50f : -300f;
 		float targetPx = TypedValue.applyDimension(
 				TypedValue.COMPLEX_UNIT_DIP, targetDp, targetView.getResources().getDisplayMetrics()
 		);
@@ -335,7 +335,7 @@ public class CartFragmentActivity extends Fragment {
 					JHelpers.TransitionManager(costLinear, 300);
 					subTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalRate())));
 					gstTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotalGst())));
-					totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalRate()+costDetails.getTotalGst())));
+					totalNoDiscountTextView.setText("₹ ".concat(df.format(costDetails.getTotalMrp())));
 					discountTotalTextview.setText("- ₹ ".concat(String.valueOf(costDetails.getTotalDiscount())));
 					grandTotalTextview.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
 					textviewTotal.setText("₹ ".concat(String.valueOf(costDetails.getTotal())));
@@ -457,7 +457,7 @@ public class CartFragmentActivity extends Fragment {
 			gstTotalTextView.setText("+".concat(df.format(gst*product.productCount)).concat(" ₹"));
 
 
-			double discount = ((product.getCostRate()+gst)*product.getCostDis())/100;
+			double discount = ((product.getCostMrp())*product.getCostDis())/100;
 			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
 //			discountShow.setText("₹".concat(df.format(discount)).concat(" OFF"));
 

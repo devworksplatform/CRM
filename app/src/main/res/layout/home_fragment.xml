@@ -273,10 +273,12 @@
 								android:layout_width="match_parent"
 								android:layout_height="wrap_content"
 								android:text="Total Balance Credits"
-								android:textSize="12sp"
+								android:textSize="16sp"
 								android:textColor="#ffffff"
+								android:lines="2"
 								android:layout_marginBottom="4dp"/>
 							<TextView
+								android:visibility="gone"
 								android:id="@+id/tvBalanceAmount"
 								android:layout_width="match_parent"
 								android:layout_height="wrap_content"

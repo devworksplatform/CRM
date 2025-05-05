@@ -21,14 +21,22 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
@@ -105,9 +113,75 @@ public class LoginActivity extends AppCompatActivity {
 		FirebaseApp.initializeApp(this);
 		initializeLogic();
 
+		checkForAppUpdate();
 		// Call this method to check/request permission
 		acquireNotificationPermission();
 	}
+
+
+	private ActivityResultLauncher<IntentSenderRequest> activityResultLauncher;
+
+	void checkForAppUpdate() {
+		try{
+			activityResultLauncher = registerForActivityResult(
+					new ActivityResultContracts.StartIntentSenderForResult(),
+					result -> {
+						if (result.getResultCode() == RESULT_OK) {
+							Log.d("AppUpdate", "Update flow completed successfully.");
+						} else {
+							Log.d("AppUpdate", "Update flow canceled or failed.");
+						}
+					}
+			);
+
+
+			if(AppVersionManager.getAlertFreezeEnableToCurrentVersion(getApplicationContext())) {
+				showAlertFreeze();
+			}
+
+
+			AppUpdateManager appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+
+			// Returns an intent object that you use to check for an update.
+			Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+
+
+			// Checks that the platform will allow the specified type of update.
+			appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
+				if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+
+					AppVersionManager.setAlertFreezeEnableToCurrentVersion(getApplicationContext());
+					showAlertFreeze();
+
+					appUpdateManager.startUpdateFlowForResult(
+							// Pass the intent that is returned by 'getAppUpdateInfo()'.
+							appUpdateInfo,
+							// an activity result launcher registered via registerForActivityResult
+							activityResultLauncher,
+							// Or pass 'AppUpdateType.FLEXIBLE' to newBuilder() for
+							// flexible updates.
+							AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
+				}
+			});
+		} catch (Exception e) { }
+
+	}
+
+
+	void showAlertFreeze(){
+		androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(LoginActivity.this);
+		builder.setTitle("Please Update the PetsFort App");
+		builder.setMessage("Please Update The PetsFort App in PlayStore to Use");
+
+		// Optional: disable all buttons or don't add them at all
+		builder.setCancelable(false);
+
+		AlertDialog dialog = builder.create();
+		dialog.show();
+	}
+
+
+
 
 	private static final int REQUEST_NOTIFICATION_PERMISSION = 101;
 
@@ -201,7 +275,8 @@ public class LoginActivity extends AppCompatActivity {
 		textview2.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				String url = "https://petsfort.in/privacy_policy"; // Replace with the desired URL
+//				String url = "https://petsfort.in/privacy_policy"; // Replace with the desired URL
+				String url = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/privacy_policy"; // Replace with the desired URL
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 				startActivity(intent);
 			}

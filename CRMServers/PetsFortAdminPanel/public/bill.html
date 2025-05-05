@@ -166,6 +166,62 @@
             margin-top: 30px;
         }
 
+        /* Basic responsiveness - adjust padding for smaller screens */
+        @media (max-width: 768px) {
+            .container {
+                width: 100%;
+                padding: 10mm;
+            }
+            .header, .parties {
+                flex-direction: column;
+            }
+            .company-info, .consignee, .buyer {
+                width: 100%;
+                margin-right: 0;
+                text-align: left;
+            }
+             .parties .consignee {
+                 border-right: none;
+                 padding-bottom: 10px;
+                 border-bottom: 1px solid #eee;
+                 margin-bottom: 10px;
+             }
+             .parties .consignee, .parties .buyer {
+                 padding: 0;
+             }
+             .items-table th, .items-table td {
+                 padding: 5px;
+             }
+             .items-table td:nth-child(1),
+             .items-table td:nth-child(3),
+             .items-table td:nth-child(4),
+             .items-table td:nth-child(5),
+             .items-table td:nth-child(6),
+             .items-table td:nth-child(7),
+             .items-table td:nth-child(8),
+             .items-table td:nth-child(9) {
+                 text-align: left; /* Adjust alignment for small screens */
+             }
+             .details-grid {
+                 width: 100%; /* Full width on small screens */
+                 grid-template-columns: auto 1fr; /* Maintain two columns */
+                 padding: 5px; /* Adjust padding for small screens */
+                 grid-template-rows: repeat(6, auto); /* Adjust rows for all items */
+             }
+             .details-grid .label {
+                 white-space: normal; /* Allow wrapping on small screens */
+             }
+             /* Reset specific grid placement for smaller screens */
+             .details-grid .invoice-no-label, .details-grid .invoice-no-value,
+             .details-grid .dated-label, .details-grid .dated-value,
+             .details-grid .delivery-note-label-row2, .details-grid .delivery-note-empty-row2,
+             .details-grid .reference-no-label, .details-grid .reference-no-value,
+             .details-grid .other-references-label, .details-grid .other-references-value,
+             .details-grid .checked-by-label, .details-grid .checked-by-value {
+                 grid-row: auto !important;
+                 grid-column: auto !important;
+             }
+        }
 
     </style>
 </head>
