@@ -45,6 +45,11 @@ public class Callbacker {
 
             }
         }
+        public static class SubCategoriesApiCallback {
+            public void onReceived(Business.SubCategoriesApiClient.SubCategoriesApiResponse response) {
+
+            }
+        }
     }
 
     public static class Auth {

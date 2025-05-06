@@ -127,7 +127,33 @@ public class ProductviewActivity extends AppCompatActivity {
 		isViewOnly = getIntent().getBooleanExtra("isViewOnly",false);
 
 		productNameTextView.setText(product.getProductName());
-		productIdTextView.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
+
+		String text = "";
+		if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
+			text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
+		} else {
+			text += "HSN-(NONE)";
+		}
+
+		if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
+			text += " Code-(".concat(product.getProductCid()).concat(")");
+		} else {
+			text += " Code-(NONE)";
+		}
+
+		productImageView.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				Intent i = new Intent(ProductviewActivity.this, ImagesViewActivity.class);
+				i.putStringArrayListExtra(
+						ImagesViewActivity.EXTRA_IMAGE_URLS,
+						new ArrayList<String>(product.getProductImg())
+				);
+				startActivity(i);
+			}
+		});
+
+		productIdTextView.setText(text);
 
 		mrpTextView.setText("₹".concat(df.format(product.getCostMrp())));
 		rateTextView.setText("₹".concat(df.format(product.getCostRate())));

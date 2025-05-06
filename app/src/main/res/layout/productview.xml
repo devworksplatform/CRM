@@ -290,7 +290,7 @@
 											android:layout_height="wrap_content"
 											android:text="Hurry up ! Last few pieces left !"
 											android:textColor="#F44336"
-											android:textSize="12sp" />
+											android:textSize="16sp" />
 
 									</LinearLayout>
 

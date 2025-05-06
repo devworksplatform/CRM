@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import crmapp.petsfort.JLogics.Models.Category;
+import crmapp.petsfort.JLogics.Models.SubCategory;
 import crmapp.petsfort.JLogics.Models.User;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -597,6 +598,75 @@ public class Business {
             }
 
             public ArrayList<Category> getCategories() {return categories;}
+            public int getStatusCode() {
+                return statusCode;
+            }
+        }
+
+    }
+
+    public static class SubCategoriesApiClient {
+        private static final String URL = ServerURL + "/subcats/";
+//        private static final OkHttpClient client = new OkHttpClient();
+
+        public static void getSubCategoriesCallApi(String category_id, Callbacker.ApiResponseWaiters.SubCategoriesApiCallback callback) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.execute(() -> {
+                try {
+                    Request request = new Request.Builder()
+                            .url(URL.concat(category_id))
+                            .addHeader("Content-Type", "application/json")
+                            .build();
+
+                    Response response = client.newCall(request).execute();
+                    String responseBody = response.body() != null ? response.body().string() : "";
+
+                    ArrayList<SubCategory> categoryList = parseCategories(responseBody);
+                    // Switch back to the main thread to update the UI
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new SubCategoriesApiClient.SubCategoriesApiResponse(response.code(), categoryList));
+                    });
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    // Switch back to the main thread to update the UI
+                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                        callback.onReceived(new SubCategoriesApiClient.SubCategoriesApiResponse(500,new ArrayList<>()));
+                    });
+                }
+            });
+        }
+
+        public static ArrayList<SubCategory> parseCategories(String responseBody) {
+            ArrayList<SubCategory> categories = new ArrayList<>();
+            try {
+                JSONArray jsonArray = new JSONArray(responseBody);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject obj = jsonArray.getJSONObject(i);
+                    String parentid = obj.getString("parentid");
+                    String id = obj.getString("id");
+                    String name = obj.getString("name");
+                    String image = obj.getString("image");
+
+                    SubCategory category = new SubCategory(parentid,id,name,image);
+                    categories.add(category);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return categories;
+        }
+
+        public static class SubCategoriesApiResponse {
+            private final int statusCode;
+            private final ArrayList<SubCategory> categories;
+
+            public SubCategoriesApiResponse(int statusCode, ArrayList<SubCategory> categories) {
+                this.statusCode = statusCode;
+                this.categories = categories;
+            }
+
+            public ArrayList<SubCategory> getSubCategories() {return categories;}
             public int getStatusCode() {
                 return statusCode;
             }

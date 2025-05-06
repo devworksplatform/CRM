@@ -20,8 +20,11 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -42,6 +45,7 @@ import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.Models.CartProduct;
 import crmapp.petsfort.JLogics.Models.Product;
+import crmapp.petsfort.JLogics.Models.SubCategory;
 
 public class SearchActivity extends AppCompatActivity {
 	
@@ -95,6 +99,12 @@ public class SearchActivity extends AppCompatActivity {
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
 		initializeLogic();
+
+		if(getIntent().hasExtra("category") && !getIntent().getStringExtra("category").equals("")) {
+			drawer();
+		} else {
+			imageview2.setVisibility(View.GONE);
+		}
 	}
 
 	@Override
@@ -156,7 +166,7 @@ public class SearchActivity extends AppCompatActivity {
 			@Override
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
 				final String _charSeq = _param1.toString();
-				searchForProductAndList(_charSeq);
+				searchForProductAndList(_charSeq, null);
 			}
 			
 			@Override
@@ -191,7 +201,7 @@ public class SearchActivity extends AppCompatActivity {
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
 		recyclerview1.setLayoutManager(gridlayoutManager);
 
-		searchForProductAndList("");
+		searchForProductAndList("", null);
 	}
 	
 	public void _ICC(final ImageView _img, final String _c1, final String _c2) {
@@ -260,7 +270,20 @@ public class SearchActivity extends AppCompatActivity {
 			}
 
 //			textviewRefId.setText(product.getProductId());
-			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
+			String text = "";
+			if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
+				text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
+			} else {
+				text += "HSN-(NONE)";
+			}
+
+			if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
+				text += " Code-(".concat(product.getProductCid()).concat(")");
+			} else {
+				text += " Code-(NONE)";
+			}
+			textviewRefId.setText(text);
+//			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
 			textviewName.setText(product.getProductName());
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
@@ -341,7 +364,7 @@ public class SearchActivity extends AppCompatActivity {
 
 
 
-	private void searchForProductAndList(String product_name) {
+	private void searchForProductAndList(String product_name, List<HashMap<String, String>> filtersSubCats) {
 		Business.QueryApiClient queryApiClient = new Business.QueryApiClient();
 
 		// Create filters list
@@ -355,13 +378,9 @@ public class SearchActivity extends AppCompatActivity {
 			filter1.put("value", getIntent().getStringExtra("category"));
 			filters.add(filter1);
 
-			//Sub Category
-			HashMap<String, String> filter2 = new HashMap<>();
-			filter2.put("field", "cat_sub");
-			filter2.put("operator", "contains");
-			filter2.put("value", "subcat6,");
-//					filters.add(filter2);
-
+			if(filtersSubCats != null) {
+				filters.addAll(filtersSubCats);
+			}
 		}
 
 		if(!product_name.equals("")) {
@@ -369,6 +388,18 @@ public class SearchActivity extends AppCompatActivity {
 			HashMap<String, String> filter3 = new HashMap<>();
 			filter3.put("field", "product_name");
 			filter3.put("operator", "contains");
+			filter3.put("value", product_name);
+			filters.add(filter3);
+
+			filter3 = new HashMap<>();
+			filter3.put("field", "product_hsn");
+			filter3.put("operator", "eq");
+			filter3.put("value", product_name);
+			filters.add(filter3);
+
+			filter3 = new HashMap<>();
+			filter3.put("field", "product_cid");
+			filter3.put("operator", "eq");
 			filter3.put("value", product_name);
 			filters.add(filter3);
 		}
@@ -403,6 +434,154 @@ public class SearchActivity extends AppCompatActivity {
 				recyclerview1.setLayoutManager(gridlayoutManager);
 			}
 		});
+	}
+
+
+
+
+
+	void drawer() {
+		DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+		LinearLayout drawer = (LinearLayout) findViewById(R.id._nav_view);
+		LinearLayout rootLinear = (LinearLayout) drawer.findViewById(R.id.rootLinear);
+
+
+		TextView textview1 = drawer.findViewById(R.id.textview1);
+		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+
+
+
+		String catId = getIntent().getStringExtra("category");
+
+		Business.SubCategoriesApiClient.getSubCategoriesCallApi(catId, new Callbacker.ApiResponseWaiters.SubCategoriesApiCallback(){
+			@Override
+			public void onReceived(Business.SubCategoriesApiClient.SubCategoriesApiResponse response) {
+				if (response.getStatusCode() == 200) {
+
+					ArrayList<SubCategory> myDataList = response.getSubCategories();
+
+					int selectedColor = 0xFF64B5F6; // Blue 300 (Material Design)
+					int unselectedColor = 0xFFE0E0E0; // Grey 300 (Material Design)
+
+					SelectableStaggeredGridAdapter adapter = new SelectableStaggeredGridAdapter(myDataList, selectedColor, unselectedColor);
+					RecyclerView staggeredRecyclerView = drawer.findViewById(R.id.staggeredRecyclerView);
+					StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL); // Same values as in XML
+					staggeredRecyclerView.setLayoutManager(layoutManager);
+					staggeredRecyclerView.setAdapter(adapter);
+//					ArrayList<Integer> selectedItems = adapter.getSelectedPositions();
+				}
+			}
+		});
+
+
+
+		rootLinear.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//pass
+			}
+		});
+
+		imageview2.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+					drawerLayout.closeDrawer(GravityCompat.START);
+				} else {
+					drawerLayout.openDrawer(GravityCompat.START);
+				}
+			}
+		});
+
+
+	}
+
+
+
+	public  class SelectableStaggeredGridAdapter extends RecyclerView.Adapter<SelectableStaggeredGridAdapter.ViewHolder> {
+
+		private ArrayList<SubCategory> dataList;
+		private ArrayList<Integer> selectedPositions = new ArrayList<>();
+		private final int selectedColor;
+		private final int unselectedColor;
+
+		public SelectableStaggeredGridAdapter(ArrayList<SubCategory> dataList, int selectedColor, int unselectedColor) {
+			this.dataList = dataList;
+			this.selectedColor = selectedColor;
+			this.unselectedColor = unselectedColor;
+		}
+
+		@NonNull
+		@Override
+		public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+			View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_staggered_selectable, parent, false);
+			return new ViewHolder(view);
+		}
+
+		@Override
+		public void onBindViewHolder(ViewHolder holder, int position) {
+			SubCategory subcat = dataList.get(position);
+			holder.itemText.setText(subcat.getName());
+
+			holder.itemText.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+
+			if (selectedPositions.contains(position)) {
+				holder.itemRootContainer.setBackgroundColor(selectedColor);
+			} else {
+				holder.itemRootContainer.setBackgroundColor(unselectedColor);
+			}
+
+			holder.itemView.setOnClickListener(v -> {
+				if (selectedPositions.contains(position)) {
+					selectedPositions.remove(Integer.valueOf(position));
+				} else {
+					selectedPositions.add(position);
+				}
+				notifyItemChanged(position); // Only update the clicked item
+
+				ArrayList<HashMap<String, String>> filters = new ArrayList<>();
+				for (int i = 0; i < selectedPositions.size(); i++) {
+					int index = selectedPositions.get(i);
+					HashMap<String, String> filter = new HashMap<>();
+					filter.put("field", "cat_sub");
+					filter.put("operator", "contains");
+					filter.put("value", dataList.get(index).getId());
+					filters.add(filter);
+				}
+
+				searchForProductAndList(edittext1.getText().toString().trim(), filters);
+			});
+		}
+
+		@Override
+		public int getItemCount() {
+			return dataList.size();
+		}
+
+		public static class ViewHolder extends RecyclerView.ViewHolder {
+			LinearLayout itemRootContainer;
+			TextView itemText;
+
+			public ViewHolder(View itemView) {
+				super(itemView);
+				itemRootContainer = itemView.findViewById(R.id.item_root_container);
+				itemText = itemView.findViewById(R.id.item_text);
+			}
+		}
+
+		public ArrayList<Integer> getSelectedPositions() {
+			return selectedPositions;
+		}
+
+		public void setSelectedPositions(ArrayList<Integer> selectedPositions) {
+			this.selectedPositions = selectedPositions;
+			notifyDataSetChanged();
+		}
+
+		public void clearSelections() {
+			selectedPositions.clear();
+			notifyDataSetChanged();
+		}
 	}
 
 

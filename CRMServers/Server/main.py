@@ -362,7 +362,14 @@ def build_query(filters: List[QueryParam]):
             else:
                 # Handle case where value is not a list or is empty for 'in' operator
                 query_parts.append("1=0") # Ensures no results match
-    where_clause = " AND ".join(query_parts) if query_parts else "1=1"
+    # where_clause = " OR ".join(query_parts) if query_parts else "1=1"
+    if query_parts:
+        if len(query_parts) > 1:
+            where_clause = f"{query_parts[0]} AND ({' OR '.join(query_parts[1:])})"
+        else:
+            where_clause = query_parts[0]
+    else:
+        where_clause = "1=1"
     return where_clause, params
 
 def generate_id():
@@ -1767,6 +1774,41 @@ async def get_subcategory_list():
             return categories
     except Exception as e:
         print(f"Error in get_category_list: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
+# @app.get("/subcats/{category_id}", response_model=List[Subcategory])
+# async def get_subcategory_list2(category_id: str):
+#     conn = await get_db_connection()
+#     try:
+#         async with conn.cursor() as cursor:
+#             await cursor.execute("SELECT id, parentid, name, image FROM subcategory WHERE parentid=?", (category_id,))
+#             rows = await cursor.fetchall()
+#             categories = [Subcategory(**row) for row in rows]
+#             return categories
+#     except Exception as e:
+#         print(f"Error in get_category_list: {e}")
+#         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+#     finally:
+#         await conn.close()
+
+@app.get("/subcats/{category_id}", response_model=List[Subcategory])
+async def get_available_subcategory_list(category_id: str):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("""
+                SELECT DISTINCT s.id, s.parentid, s.name, s.image
+                FROM subcategory s
+                JOIN products p ON s.id = p.cat_sub
+                WHERE s.parentid=?
+            """, (category_id,))
+            rows = await cursor.fetchall()
+            available_subcategories = [Subcategory(**row) for row in rows]
+            return available_subcategories
+    except Exception as e:
+        print(f"Error in get_available_subcategory_list: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     finally:
         await conn.close()

@@ -11,6 +11,7 @@ import android.graphics.drawable.*;
 import android.os.*;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.*;
 import android.view.View;
 import android.view.View.*;
@@ -21,11 +22,22 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.IntentSenderRequest;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.*;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.tasks.Task;
+import com.google.android.play.core.appupdate.AppUpdateInfo;
+import com.google.android.play.core.appupdate.AppUpdateManager;
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
+import com.google.android.play.core.appupdate.AppUpdateOptions;
+import com.google.android.play.core.install.model.AppUpdateType;
+import com.google.android.play.core.install.model.UpdateAvailability;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
@@ -33,6 +45,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import java.util.*;
 import java.util.ArrayList;
 
+import crmapp.petsfort.JLogics.AppVersionManager;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
@@ -73,6 +86,73 @@ public class ChooseUserActivity extends AppCompatActivity {
         initialize(_savedInstanceState);
         FirebaseApp.initializeApp(this);
         initializeLogic();
+
+
+        checkForAppUpdate();
+    }
+
+
+
+
+    private ActivityResultLauncher<IntentSenderRequest> activityResultLauncher;
+
+    void checkForAppUpdate() {
+        try{
+            activityResultLauncher = registerForActivityResult(
+                    new ActivityResultContracts.StartIntentSenderForResult(),
+                    result -> {
+                        if (result.getResultCode() == RESULT_OK) {
+                            Log.d("AppUpdate", "Update flow completed successfully.");
+                        } else {
+                            Log.d("AppUpdate", "Update flow canceled or failed.");
+                        }
+                    }
+            );
+
+
+            if(AppVersionManager.getAlertFreezeEnableToCurrentVersion(getApplicationContext())) {
+                showAlertFreeze();
+            }
+
+
+            AppUpdateManager appUpdateManager = AppUpdateManagerFactory.create(getApplicationContext());
+
+            // Returns an intent object that you use to check for an update.
+            Task<AppUpdateInfo> appUpdateInfoTask = appUpdateManager.getAppUpdateInfo();
+
+
+            // Checks that the platform will allow the specified type of update.
+            appUpdateInfoTask.addOnSuccessListener(appUpdateInfo -> {
+                if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE) {
+
+                    AppVersionManager.setAlertFreezeEnableToCurrentVersion(getApplicationContext());
+                    showAlertFreeze();
+
+                    appUpdateManager.startUpdateFlowForResult(
+                            // Pass the intent that is returned by 'getAppUpdateInfo()'.
+                            appUpdateInfo,
+                            // an activity result launcher registered via registerForActivityResult
+                            activityResultLauncher,
+                            // Or pass 'AppUpdateType.FLEXIBLE' to newBuilder() for
+                            // flexible updates.
+                            AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
+                }
+            });
+        } catch (Exception e) { }
+
+    }
+
+
+    void showAlertFreeze(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(ChooseUserActivity.this);
+        builder.setTitle("Please Update the PetsFort App");
+        builder.setMessage("Please Update The PetsFort App in PlayStore to Use");
+
+        // Optional: disable all buttons or don't add them at all
+        builder.setCancelable(false);
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void initialize(Bundle _savedInstanceState) {
