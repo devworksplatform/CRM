@@ -105,7 +105,8 @@ TABLE_SCHEMAS = {
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_origins=["*"],
+    # allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
