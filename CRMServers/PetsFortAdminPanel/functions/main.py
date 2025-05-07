@@ -9,7 +9,7 @@ initialize_app()
 
 # Define the target URL where requests will be proxied
 # TODO: Replace with your actual target URL
-TARGET_URL = "http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
+TARGET_URL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
 
 # @https_fn.on_request()
 @https_fn.on_request(region="asia-south1")
@@ -54,7 +54,7 @@ def proxy_request(req: https_fn.Request):
             # Pass data for non-GET methods, use json parameter if body is JSON
             data=body if not isinstance(body, dict) and body is not None else None,
             json=body if isinstance(body, dict) else None,
-            verify=True # Set to False if you need to ignore SSL certificate errors (not recommended for production)
+            verify=False # Set to False if you need to ignore SSL certificate errors (not recommended for production)
         )
 
         print(f"Proxied request to {full_target_url}")

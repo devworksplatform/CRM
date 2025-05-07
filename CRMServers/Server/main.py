@@ -107,9 +107,9 @@ TABLE_SCHEMAS = {
 app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    # allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
-    allow_credentials=False,
+    # allow_origins=["*"],
+    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -118,8 +118,15 @@ app.add_middleware(
 ALLOWED_HOST = "admin.petsfort.in"
 PROXY_URL = "https://pets-fort.web.app"
 
+headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Headers': '*',
+    }
+
 @app.middleware("http")
 async def proxy_petsfort(request: Request, call_next):
+    
     host = request.headers.get("host")
     if host == ALLOWED_HOST:
         url = urlparse(str(request.url))
@@ -131,7 +138,7 @@ async def proxy_petsfort(request: Request, call_next):
         return RedirectResponse(url=proxy_url, status_code=307)
     # return await call_next(request)
     response = await call_next(request)
-    response.headers["Content-Security-Policy"] = "default-src 'self' https:; connect-src 'self' https: http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com; upgrade-insecure-requests;"
+    response.headers.update(headers)
     return response
 
 # async def reverse_proxy(request: Request, proxy_url: str):
