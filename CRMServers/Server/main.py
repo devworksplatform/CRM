@@ -129,7 +129,10 @@ async def proxy_petsfort(request: Request, call_next):
         if proxy_query:
             proxy_url += f"?{proxy_query}"
         return RedirectResponse(url=proxy_url, status_code=307)
-    return await call_next(request)
+    # return await call_next(request)
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = "default-src 'self' https:; connect-src 'self' https: http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com; upgrade-insecure-requests;"
+    return response
 
 # async def reverse_proxy(request: Request, proxy_url: str):
 #     url = urlparse(str(request.url))

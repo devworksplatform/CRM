@@ -9,14 +9,16 @@ LOG_FILE = "serverLogs.txt"
 # Command to start the server
 # sudo uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/server.petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/server.petsfort.in/privkey.pem
 # CMD_START = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/etc/letsencrypt/live/petsfort.in/fullchain.pem", "--ssl-keyfile", "/etc/letsencrypt/live/petsfort.in/privkey.pem"]
+# CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/etc/letsencrypt/live/petsfort.in/fullchain.pem", "--ssl-keyfile", "/etc/letsencrypt/live/petsfort.in/privkey.pem"]
+CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
 
 # --- New approach using pattern matching ---
 # Pattern to find the process for status and stopping.
 # Make this AS SPECIFIC AS POSSIBLE to avoid matching other processes.
 # Including arguments like host/port makes it safer.
 # PROCESS_PATTERN = "uvicorn main:app --host 0.0.0.0 --port 8000"
-PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/petsfort.in/privkey.pem"
+# PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/petsfort.in/privkey.pem"
+PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 80"
 
 # Command to find the process (using pgrep). -a lists PID and full command.
 CMD_PGREP = ["pgrep", "-af", PROCESS_PATTERN]
