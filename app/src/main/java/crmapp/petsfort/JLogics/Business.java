@@ -717,6 +717,8 @@ public class Business {
                 Product product = new Product();
                 product.setProductId(jsonObject.optString("product_id"));
                 product.setProductName(jsonObject.optString("product_name"));
+                product.setProductCid(jsonObject.optString("product_cid"));
+                product.setProductHsn(jsonObject.optString("product_hsn"));
                 product.setProductDesc(jsonObject.optString("product_desc"));
                 product.setProductImg(parseJsonArrayToList(jsonObject.optJSONArray("product_img")));
                 product.setCatId(jsonObject.optString("cat_id"));
@@ -804,6 +806,8 @@ public class Business {
                     Product product = new Product();
                     product.setProductId(productJson.optString("product_id"));
                     product.setProductName(productJson.optString("product_name"));
+                    product.setProductCid(jsonObject.optString("product_cid"));
+                    product.setProductHsn(jsonObject.optString("product_hsn"));
                     product.setProductDesc(productJson.optString("product_desc"));
                     product.setProductImg(parseJsonArrayToList(productJson.optJSONArray("product_img")));
                     product.setCatId(productJson.optString("cat_id"));
@@ -926,9 +930,10 @@ public class Business {
                     // We need to parse the body regardless of statusCode to get the "status" field.
                     String parsedStatus = null;
                     String errorMessage = null; // Store potential error message
-
+                    String order_id = "";
                     try {
                         JSONObject responseObject = new JSONObject(responseBody);
+                        order_id = responseObject.optString("order_id", "");
                         String msg = responseObject.optString("message", "");
                         if(msg.equals("OutOfStock")) {
                             errorMessage = "OutOfStock,"+responseObject.optString("product_available_stock", "0")+","+responseObject.optString("product_id", "0")+","+responseObject.optString("product_name","product");
@@ -952,7 +957,7 @@ public class Business {
                     }
 
                     // Create the response object using the parsed status and original HTTP code
-                    apiResponse = new OrderCheckoutApiResponse(statusCode, parsedStatus, errorMessage);
+                    apiResponse = new OrderCheckoutApiResponse(order_id, statusCode, parsedStatus, errorMessage);
 
 
                     // Post result back to the main thread
@@ -967,7 +972,7 @@ public class Business {
                     System.err.println("Order Checkout API - Network Error: " + e.getMessage());
                     e.printStackTrace();
                     // Create error response for client-side network issue
-                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(503, "failed", "Network Error: " + e.getMessage()); // 503 Service Unavailable might fit
+                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse("",503, "failed", "Network Error: " + e.getMessage()); // 503 Service Unavailable might fit
 //                    callback.onReceived(errorResponse);
                     new Handler(Looper.getMainLooper()).post(() -> {
                         callback.onReceived(errorResponse);
@@ -977,7 +982,7 @@ public class Business {
                     // Handle exceptions during JSON conversion of the *request* body
                     System.err.println("Order Checkout API - Request JSON Error: " + e.getMessage());
                     e.printStackTrace();
-                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse(400, "failed", "Invalid request data format."); // 400 Bad Request
+                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse("",400, "failed", "Invalid request data format."); // 400 Bad Request
 //                    callback.onReceived(errorResponse);
                     new Handler(Looper.getMainLooper()).post(() -> {
                         callback.onReceived(errorResponse);
@@ -991,6 +996,7 @@ public class Business {
          * Data class to hold the simplified response from the Order Checkout API.
          */
         public class OrderCheckoutApiResponse {
+            private final String orderId;
             private final int statusCode;
             private final String status; // "stored" or "failed" (or null if parsing fails)
             private final String errorMessage; // For client-side or parsing errors
@@ -1002,7 +1008,8 @@ public class Business {
              * @param status       The value of the "status" field from the response JSON ("stored", "failed", or null).
              * @param errorMessage An optional error message for client-side/parsing issues.
              */
-            public OrderCheckoutApiResponse(int statusCode, String status, String errorMessage) {
+            public OrderCheckoutApiResponse(String orderId,int statusCode, String status, String errorMessage) {
+                this.orderId = orderId;
                 this.statusCode = statusCode;
                 this.status = status;
                 this.errorMessage = errorMessage;
@@ -1013,6 +1020,9 @@ public class Business {
              */
             public int getStatusCode() {
                 return statusCode;
+            }
+            public String getOrderId() {
+                return orderId;
             }
 
             /**
@@ -1125,6 +1135,8 @@ public class Business {
                         product.setId(itemDetailJson.optString("id"));
                         product.setProductId(itemDetailJson.optString("product_id"));
                         product.setProductName(itemDetailJson.optString("product_name"));
+                        product.setProductCid(jsonObject.optString("product_cid"));
+                        product.setProductHsn(jsonObject.optString("product_hsn"));
                         product.setProductDesc(itemDetailJson.optString("product_desc"));
 
                         String productImgString = itemDetailJson.optString("product_img");

@@ -382,34 +382,12 @@ public class PrincipalActivity extends AppCompatActivity {
 			@Override
 			public void onReceived(Business.UserDataApiClient.UserDataApiResponse _data) {
 				if(_data.getStatusCode() == 200 && _data.getUser() != null) {
-					_drawer_textview1.setText(_data.getUser().name);
+					_drawer_textview1.setText(JHelpers.capitalize(_data.getUser().name));
 				} else {
 					_drawer_textview1.setText("Unknown User");
 				}
 			}
 		});
-
-
-//		_firebase.getReference("datas/users/details/".concat(userId)).addListenerForSingleValueEvent(new ValueEventListener() {
-//			@Override
-//			public void onDataChange(DataSnapshot snapshot) {
-//				if (snapshot.exists()) {
-//					if (snapshot.hasChild("name")) {
-//						String name = snapshot.child("name").getValue(String.class);
-//						_drawer_textview1.setText(name);
-//					} else {
-//						_drawer_textview1.setText("Unknown User");
-//					}
-//				} else {
-//					_drawer_textview1.setText("Unknown User");
-//				}
-//			}
-//
-//			@Override
-//			public void onCancelled(DatabaseError error) {
-//				// Handle error if needed
-//			}
-//		});
 
 
 		_drawer_linear1.setOnClickListener(new View.OnClickListener() {

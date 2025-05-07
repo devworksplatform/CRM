@@ -126,7 +126,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		product = (Product) getIntent().getSerializableExtra("product");
 		isViewOnly = getIntent().getBooleanExtra("isViewOnly",false);
 
-		productNameTextView.setText(product.getProductName());
+		productNameTextView.setText(JHelpers.capitalize(product.getProductName()));
 
 		String text = "";
 		if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
@@ -350,7 +350,7 @@ public class ProductviewActivity extends AppCompatActivity {
 							name = product.getProductId();
 						}
 
-						productSecondaryNameTextView.setText(String.format("%s > %s", name, product.getProductName()));
+						productSecondaryNameTextView.setText(JHelpers.capitalize(String.format("%s > %s", name, product.getProductName())));
 						JHelpers.TransitionManager(rootLinear,200);
 						productSecondaryNameTextView.setVisibility(View.VISIBLE);
 
@@ -359,7 +359,7 @@ public class ProductviewActivity extends AppCompatActivity {
 						_e.printStackTrace();
 					}
 				} else {
-					productSecondaryNameTextView.setText(String.format("%s", product.getProductName()));
+					productSecondaryNameTextView.setText(JHelpers.capitalize(String.format("%s", product.getProductName())));
 					JHelpers.TransitionManager(rootLinear,200);
 					productSecondaryNameTextView.setVisibility(View.VISIBLE);
 				}

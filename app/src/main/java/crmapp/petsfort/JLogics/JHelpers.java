@@ -10,7 +10,28 @@ import java.util.Locale;
 
 public class JHelpers {
 
+    public static String capitalize(String text) {
+        if (text == null) {
+            return null;
+        }
+        if (text.isEmpty()) {
+            return "";
+        }
 
+        StringBuilder result = new StringBuilder();
+        String[] words = text.split("\\s+"); // Split by any whitespace
+
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                // Capitalize the first letter, convert the rest to lowercase, and append.
+                String firstLetter = word.substring(0, 1).toUpperCase();
+                String restOfWord = word.substring(1).toLowerCase();
+                result.append(firstLetter).append(restOfWord).append(" ");
+            }
+        }
+        // Remove the trailing space and return the result.
+        return result.toString().trim();
+    }
     public static String convertUtcToIstAndFormat(String utcDateTimeString) {
         try {
             // Parse the UTC date-time string into an Instant

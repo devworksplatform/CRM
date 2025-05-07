@@ -465,7 +465,7 @@ public class CartFragmentActivity extends Fragment {
 			discountTotalTextView.setText("-".concat(df.format(discount * product.productCount)).concat(" ₹"));
 
 
-			name.setText(product.getProductName());
+			name.setText(JHelpers.capitalize(product.getProductName()));
 			if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
 				Glide.with(getContext().getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
 			}

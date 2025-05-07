@@ -84,6 +84,8 @@ TABLE_SCHEMAS = {
             id TEXT PRIMARY KEY,
             uid TEXT NOT NULL,
             name TEXT NOT NULL,
+            contact TEXT DEFAULT 'N/A',
+            gstin TEXT DEFAULT 'N/A',
             email TEXT NOT NULL,
             role TEXT NOT NULL,
             address TEXT NOT NULL,
@@ -107,7 +109,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     # allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -1128,11 +1130,11 @@ async def get_products_bulk(data: dict): # Made async
         response = {
             "product_details": product_details,
             "cost": {
-                "total_mrp": round(total_mrp, 3),
-                "total_rate": round(total_rate, 3),
-                "total_gst": round(total_gst, 3),
-                "total_discount": round(total_discount, 3),
-                "total": round(total, 3)
+                "total_mrp": round(total_mrp, 2),
+                "total_rate": round(total_rate, 2),
+                "total_gst": round(total_gst, 2),
+                "total_discount": round(total_discount, 2),
+                "total": round(total, 2)
             }
         }
         if not_found_ids:
@@ -1149,19 +1151,61 @@ async def get_products_bulk(data: dict): # Made async
 # from num2words import num2words
 # --- Helper function to convert amount to Indian currency words ---
 def amount_to_words_inr(amount: float) -> str:
-    """Converts a float amount to Indian Rupees and Paise in words."""
-    # rupees = int(amount)
-    # paise = round((amount - rupees) * 100)
+    """Converts a float amount to Indian Rupees and Paise in words without external libraries."""
+    
+    ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine",
+            "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+            "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    
+    tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
 
-    # rupees_words = num2words(rupees, lang='en_IN').title()
-    # paise_words = num2words(paise, lang='en_IN').title() if paise > 0 else ""
+    def two_digit_word(n):
+        if n < 20:
+            return ones[n]
+        else:
+            return tens[n // 10] + (" " + ones[n % 10] if (n % 10) != 0 else "")
 
-    # result = f"INR {rupees_words} Rupees"
-    # if paise > 0:
-    #     result += f" and {paise_words} Paise"
-    # result += " Only"
-    # return result
-    return str(amount)
+    def convert_to_words(n):
+        if n == 0:
+            return "Zero"
+        parts = []
+        if n >= 10000000:
+            parts.append(convert_to_words(n // 10000000) + " Crore")
+            n %= 10000000
+        if n >= 100000:
+            parts.append(convert_to_words(n // 100000) + " Lakh")
+            n %= 100000
+        if n >= 1000:
+            parts.append(convert_to_words(n // 1000) + " Thousand")
+            n %= 1000
+        if n >= 100:
+            parts.append(convert_to_words(n // 100) + " Hundred")
+            n %= 100
+        if n > 0:
+            if parts:
+                parts.append("and " + two_digit_word(n))
+            else:
+                parts.append(two_digit_word(n))
+        return " ".join(parts)
+
+    rupees = int(amount)
+
+    # Truncate paise to 2 digits without rounding
+    if('.' in str(amount)):
+        paise_str = str(amount).split('.')[-1][:2]
+    else:
+        paise_str = str(amount)
+    
+    paise = int(paise_str) if paise_str else 0
+
+    rupees_words = convert_to_words(rupees)
+    paise_words = convert_to_words(paise) if paise > 0 else ""
+
+    result = f"INR {rupees_words} Rupees"
+    if paise > 0:
+        result += f" and {paise_words} Paise"
+    result += " Only"
+    return result
 
 
 def generate_invoice_data(
@@ -1169,6 +1213,7 @@ def generate_invoice_data(
     creation_time_str: str, # UTC ISO format string like '2023-10-27T10:00:00Z'
     user_id: str,
     product_details_for_order: List[Dict[str, Any]], # List of product dicts
+    user_data_get,
     order_values: Dict[str, Any] # Corresponds to 'value' in store_order
 ) -> Dict[str, Any]:
     """
@@ -1197,22 +1242,26 @@ def generate_invoice_data(
         'invoiceNo': f"INV-{order_id}", # Use order_id for uniqueness
         'dated': formatted_date,
         'deliveryNote': f"DN-{order_id}", # Placeholder using order_id
-        'refNoDate': f"REF-{user_id}/{formatted_date}", # Placeholder
-        'otherRef': order_values.get("notes", ""), # Use notes if available
+        'refNoDate': f"REF-{user_id}", # Placeholder
+        'otherRef': order_values.get("notes", "N/A"), # Use notes if available
         'checkedBy': "System Generated" # Placeholder
     }
 
     # --- 3. Populate 'consignee' and 'buyer' ---
     # Assuming the address in 'value' is the consignee (shipping address)
     invoice_data['consignee'] = {
+        'name': user_data_get("name", "N/A"),
         'address': order_values.get("address", "N/A"),
-        'contactNo': "N/A" # Placeholder - Not available in store_order data
+        # 'contactNo': order_values.get("contactNoConsignee", "N/A") # Placeholder - Not available in store_order data
     }
+
     # Buyer details are not directly available in store_order
     # You might need to fetch these based on user_id separately
     invoice_data['buyer'] = {
-        'address': order_values.get("address", "N/A"),
-        'contactNo': "N/A" # Placeholder
+        'name': user_data_get("name", "N/A"),
+        'address': user_data_get("address", "N/A"),
+        'contactNo': user_data_get("contact", "N/A"),
+        'gstin': user_data_get("gstin", "N/A")
     }
 
     # --- 4. Process Items and Calculate Totals ---
@@ -1223,6 +1272,7 @@ def generate_invoice_data(
 
     for index, prod in enumerate(product_details_for_order):
         s_no = index + 1
+        mrp = prod.get("cost_mrp", 0.0)
         rate = prod.get("cost_rate", 0.0)
         count = prod.get("count", 0)
         discount_percent = prod.get("cost_dis", 0.0)
@@ -1242,21 +1292,23 @@ def generate_invoice_data(
         total_tax_item = cgst_amount_item + sgst_amount_item
 
         # Append to 'items' list
+        prod_cid = prod.get("product_cid", "N/A")
         invoice_data['items'].append({
             'sNo': s_no,
             'description': prod.get("product_name", "N/A"),
             'hsnSac': hsn_sac,
-            'partNo': prod.get("product_cid", "N/A"),
+            'partNo': prod_cid,
             'quantityShipped': f'{count} No',
             'quantityBilled': f'{count} No',
-            'rate': round(rate, 2),
+            'mrp': round(mrp, 2),
             'discount': f'{discount_percent} %',
+            'rate': round(rate, 2),
             'amount': round(taxable_value_item, 2) # Amount after discount
         })
 
         # Aggregate GST details by HSN
-        if hsn_sac not in gst_summary:
-            gst_summary[hsn_sac] = {
+        if prod_cid not in gst_summary:
+            gst_summary[prod_cid] = {
                 'taxableValue': 0.0,
                 'cgstRate': f'{cgst_rate_item}%', # Assuming same rate for all items with same HSN
                 'cgstAmount': 0.0,
@@ -1264,10 +1316,10 @@ def generate_invoice_data(
                 'sgstUtgstAmount': 0.0,
                 'totalTaxAmount': 0.0
             }
-        gst_summary[hsn_sac]['taxableValue'] += taxable_value_item
-        gst_summary[hsn_sac]['cgstAmount'] += cgst_amount_item
-        gst_summary[hsn_sac]['sgstUtgstAmount'] += sgst_amount_item
-        gst_summary[hsn_sac]['totalTaxAmount'] += total_tax_item
+        gst_summary[prod_cid]['taxableValue'] += taxable_value_item
+        gst_summary[prod_cid]['cgstAmount'] += cgst_amount_item
+        gst_summary[prod_cid]['sgstUtgstAmount'] += sgst_amount_item
+        gst_summary[prod_cid]['totalTaxAmount'] += total_tax_item
 
         # Add to overall totals
         sub_total += taxable_value_item
@@ -1275,9 +1327,9 @@ def generate_invoice_data(
         total_sgst_amount += sgst_amount_item
 
     # --- 5. Populate 'gstDetails' from summary ---
-    for hsn, details in gst_summary.items():
+    for prod_cid, details in gst_summary.items():
          invoice_data['gstDetails'].append({
-            'hsnSac': hsn,
+            'hsnSac': prod_cid,
             'taxableValue': round(details['taxableValue'], 2),
             'cgstRate': details['cgstRate'],
             'cgstAmount': round(details['cgstAmount'], 2),
@@ -1311,9 +1363,10 @@ def generate_invoice_data(
     }
 
     invoice_data["company"] = {
+        'name': 'Petsfort',
         'address': 'Your Company Address, City, Postal Code',
         'gstNo': 'YOUR_GST_NUMBER',
-        'email': 'your.email@example.com'
+        'email': 'petsfort.in@gamil.com'
     }
 
 
@@ -1441,16 +1494,38 @@ async def store_order(user_id: str, data: dict): # Made async
                 if not order_items_payload:
                     raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
 
-                await cur.execute("SELECT name,isblocked FROM userdata WHERE id=? OR uid=?", (user_id, user_id))
-                user_row = await cur.fetchone()
-                user_name = "A User"
-                if user_row:
-                    user_name = user_row[0]
-                    user_blocked = user_row[1]
-                    if(int(user_blocked) != 0):
-                        raise HTTPException(status_code=400, detail="User is Blocked")
-                else:
+                # await cur.execute("SELECT * FROM userdata WHERE id=? OR uid=?", (user_id, user_id))
+                # user_row = await cur.fetchone()
+                # user_name = "A User"
+                # if user_row:
+                #     user_name = user_row[0]
+                #     user_blocked = user_row[1]
+                #     if(int(user_blocked) != 0):
+                #         raise HTTPException(status_code=400, detail="User is Blocked")
+                # else:
+                #     raise HTTPException(status_code=400, detail="User Not found.")
+                await cur.execute("SELECT * FROM userdata WHERE id=? OR uid=?", (user_id, user_id))
+                user_detail = await cur.fetchone()
+
+                if not user_detail:
                     raise HTTPException(status_code=400, detail="User Not found.")
+
+                # Get column names from cursor description
+                column_names = [desc[0] for desc in cur.description]
+
+                def user_data(key, default):
+                    # Find the indexes of 'name' and 'isblocked' dynamically
+                    try:
+                        index = column_names.index(key)
+                        return user_detail[index]
+                    except:
+                        return default
+
+                user_name = user_data("name","Not Found")
+                user_blocked = user_data("isblocked", 1)
+
+                if int(user_blocked) != 0:
+                    raise HTTPException(status_code=400, detail="User is Blocked")
 
 
                 for product_id_t, new_stock_count_t in products_to_update_stock:
@@ -1491,6 +1566,7 @@ async def store_order(user_id: str, data: dict): # Made async
                         creation_time_str=now,
                         user_id=user_id,
                         product_details_for_order=product_details_for_order,
+                        user_data_get=user_data,
                         order_values=value # Pass the 'otherData' dict
                     )
 
@@ -1859,6 +1935,8 @@ class UserData(BaseModel):
     uid: str
     id: str
     name: str
+    contact: str
+    gstin: str
     email: str
     role: str
     address: str
@@ -1869,6 +1947,8 @@ class UserData(BaseModel):
 class UserDataCreate(BaseModel):
     id: str
     name: str
+    contact: str
+    gstin: str
     email: str
     role: str
     address: str
@@ -1879,6 +1959,8 @@ class UserDataCreate(BaseModel):
 
 class UserDataUpdate(BaseModel):
     name: str
+    contact: str
+    gstin: str
     email: str
     role: str
     address: str
@@ -1893,7 +1975,7 @@ async def get_userdata_list():
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT uid, id, name, email, role, address, credits, creditse, isblocked FROM userdata")
+            await cursor.execute("SELECT uid, id, name, contact, gstin, email, role, address, credits, creditse, isblocked FROM userdata")
             rows = await cursor.fetchall()
             categories = [UserData(**row) for row in rows]
             return categories
@@ -1909,10 +1991,10 @@ async def get_userdata(user_id: str):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
-            await cursor.execute("SELECT uid, id, name, email, role, address, credits, creditse, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
+            await cursor.execute("SELECT uid, id, name, contact, gstin, email, role, address, credits, creditse, isblocked FROM userdata WHERE id=? or uid=?", (user_id, user_id))
             row = await cursor.fetchone()
             if row:
-                return UserData(**dict(zip(("uid", "id", "name", "email", "role", "address", "credits", "creditse", "isblocked"), row)))
+                return UserData(**dict(zip(("uid", "id", "name", "contact", "gstin", "email", "role", "address", "credits", "creditse", "isblocked"), row)))
             else:
                 raise HTTPException(status_code=404, detail=f"User with ID '{user_id}' not found")
     except Exception as e:
@@ -1931,8 +2013,8 @@ async def add_userdata(data: UserDataCreate):
 
         async with conn.cursor() as cursor:
             await cursor.execute(
-                "INSERT OR REPLACE INTO userdata (id, uid, name, email, role, address, credits, creditse, isblocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (data.id, uid, data.name, data.email, data.role, data.address, data.credits, data.creditse, data.isblocked),
+                "INSERT OR REPLACE INTO userdata (id, uid, name, contact, gstin, email, role, address, credits, creditse, isblocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (data.id, uid, data.name, data.contact, data.gstin, data.email, data.role, data.address, data.credits, data.creditse, data.isblocked),
             )
             await conn.commit()
         return {"message": "User added successfully", "uid":uid}
@@ -1953,7 +2035,7 @@ async def put_userdata(user_id: str,data: UserDataUpdate):
             if errStr is not None:
                 raise Exception("Failed to Update Password: "+str(errStr))        
         async with conn.cursor() as cursor:
-            await cursor.execute("UPDATE userdata SET name=?, email=?, role=?, address=?, credits=?, creditse=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.role, data.address, data.credits, data.creditse, data.isblocked, user_id, user_id))
+            await cursor.execute("UPDATE userdata SET name=?, email=?, contact=?, gstin=?, role=?, address=?, credits=?, creditse=?, isblocked=? WHERE uid=? or id=?", (data.name, data.email, data.contact, data.gstin, data.role, data.address, data.credits, data.creditse, data.isblocked, user_id, user_id))
             await conn.commit()
         return {"message": "User updated successfully", "uid":"0"}
     except Exception as e:

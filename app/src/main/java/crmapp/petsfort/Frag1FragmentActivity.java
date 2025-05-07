@@ -31,6 +31,7 @@ import java.util.HashMap;
 
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
+import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.Category;
 
 public class Frag1FragmentActivity extends Fragment {
@@ -174,7 +175,7 @@ public class Frag1FragmentActivity extends Fragment {
 			final TextView textview2 = _view.findViewById(R.id.textview2);
 
 			if (listmap.get((int)_position).containsKey("name")) {
-				textview2.setText(listmap.get((int)_position).get("name").toString());
+				textview2.setText(JHelpers.capitalize(listmap.get((int)_position).get("name").toString()));
 			}
 			if (listmap.get((int)_position).containsKey("img")) {
 				Glide.with(getContext().getApplicationContext()).load(Uri.parse(listmap.get((int)_position).get("img").toString())).into(imageview1);

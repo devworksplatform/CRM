@@ -4,6 +4,7 @@ import android.app.*;
 import android.content.*;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.*;
 import android.view.View;
 import android.view.View.*;
@@ -160,7 +161,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 						isCreditsLoaded = true;
 						JHelpers.TransitionManager(rootLinear, 300);
 						addressEditText.setText(addressStr);
-						addressEditText.setEnabled(false);
+//						addressEditText.setEnabled(false);
 						creditTextView.setText("₹ ".concat(JHelpers.formatDoubleToRupeesString(credits)));
 					}
 				});
@@ -291,14 +292,25 @@ public class OrderreviewActivity extends AppCompatActivity {
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
 						if(response.getStatusCode() == 200) {
+							Business.localDB_SharedPref.clearCart(localDB);
+
 							progressDialog.hide();
 							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
 									.setMessage("Order Has been created successfully, Thank you for shopping with us.")
 									.setCancelable(false)
+									.setNegativeButton("View Bill", new DialogInterface.OnClickListener() {
+										@Override
+										public void onClick(DialogInterface dialog, int which) {
+											Intent intent = new Intent();
+											intent.setClass(OrderreviewActivity.this, OrderActivity.class);
+											intent.putExtra("orderid",response.getOrderId());
+											startActivity(intent);
+											finish();
+										}
+									})
 									.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 										@Override
 										public void onClick(DialogInterface dialog, int which) {
-											Business.localDB_SharedPref.clearCart(localDB);
 											Intent intent = new Intent();
 											intent.setClass(OrderreviewActivity.this, MainActivity.class);
 											startActivity(intent);

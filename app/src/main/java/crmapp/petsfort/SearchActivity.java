@@ -43,6 +43,7 @@ import java.util.HashMap;
 
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
+import crmapp.petsfort.JLogics.JHelpers;
 import crmapp.petsfort.JLogics.Models.CartProduct;
 import crmapp.petsfort.JLogics.Models.Product;
 import crmapp.petsfort.JLogics.Models.SubCategory;
@@ -284,7 +285,7 @@ public class SearchActivity extends AppCompatActivity {
 			}
 			textviewRefId.setText(text);
 //			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
-			textviewName.setText(product.getProductName());
+			textviewName.setText(JHelpers.capitalize(product.getProductName()));
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
@@ -372,15 +373,22 @@ public class SearchActivity extends AppCompatActivity {
 
 		if (getIntent().hasExtra("category") && !getIntent().getStringExtra("category").equals("")) {
 			//Main Category
-			HashMap<String, String> filter1 = new HashMap<>();
-			filter1.put("field", "cat_id");
-			filter1.put("operator", "eq");
-			filter1.put("value", getIntent().getStringExtra("category"));
-			filters.add(filter1);
+			HashMap<String, String> filterAND = new HashMap<>();
+			filterAND.put("field", "cat_id");
+			filterAND.put("operator", "eq");
+			filterAND.put("value", getIntent().getStringExtra("category"));
+			filters.add(filterAND);
 
 			if(filtersSubCats != null) {
 				filters.addAll(filtersSubCats);
 			}
+		} else {
+			//Main Category
+			HashMap<String, String> filterAND = new HashMap<>();
+			filterAND.put("field", "cat_id");
+			filterAND.put("operator", "neq");
+			filterAND.put("value", "PLACE_HOLDER");
+			filters.add(filterAND);
 		}
 
 		if(!product_name.equals("")) {
@@ -427,7 +435,7 @@ public class SearchActivity extends AppCompatActivity {
 					main.setVisibility(View.GONE);
 				}
 
-//				System.out.println(listmap);
+				System.out.println(listmap);
 
 				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);

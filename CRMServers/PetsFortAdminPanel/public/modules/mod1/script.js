@@ -9,6 +9,9 @@ async function initMod1() {
     const userIdInput = document.getElementById('user-id');
     const userUIdInput = document.getElementById('user-uid');
     const usernameInput = document.getElementById('user-username');
+    const userContactInput = document.getElementById('user-contact');
+    const userGstinInput = document.getElementById('user-gstin');
+    
     const emailInput = document.getElementById('user-email');
     const roleInput = document.getElementById('user-role');
     const addressInput = document.getElementById('user-address');
@@ -36,6 +39,17 @@ async function initMod1() {
         minDate: new Date().fp_incr(1), // Tomorrow
         defaultDate: new Date().fp_incr(1), // Default value: tomorrow
     });
+
+
+    function setExpiryDate(days) {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + days);
+    
+        expiryPicker.setDate(futureDate, true); // true to trigger the change event
+    }
+
+    window.setExpiryDate = setExpiryDate
+    
 
     // console.log(expiryInput.min)
 
@@ -95,9 +109,12 @@ async function initMod1() {
         const user = getUsers().find(u => u.id === userId);
         if (!user) return;
 
+        console.log(user)
         userIdInput.value = user.id;
         userUIdInput.value = user.uid;
         usernameInput.value = user.username;
+        userContactInput.value = user.contact;
+        userGstinInput.value = user.gstin;
         emailInput.value = user.email;
         roleInput.value = user.role;
         addressInput.value = user.address;
@@ -126,6 +143,8 @@ async function initMod1() {
             id: userId || generateId(),
             uid: userUid,
             username: usernameInput.value.trim(),
+            contact: userContactInput.value.trim(),
+            gstin: userGstinInput.value.trim(),
             email: emailInput.value.trim(),
             role: roleInput.value,
             address: addressInput.value.trim(),
@@ -186,10 +205,10 @@ async function initMod1() {
         if (isUpdating) {
             originalUser = users.find(u => u.id === userId || u.uid === userUid);
             if (originalUser) {
-                if (usernameInput.value.trim() !== originalUser.username.trim()) {
-                    showToast('Username cannot be modified during update.', 'error');return;
-                }
-                if (emailInput.value.trim() !== originalUser.email.trim()) {
+                // if (usernameInput.value.trim() !== originalUser.username.trim()) {
+                //     showToast('Username cannot be modified during update.', 'error');return;
+                // }
+                if (emailInput.value.trim().toLowerCase() !== originalUser.email.trim().toLowerCase()) {
                     showToast('Email cannot be modified during update.', 'error');
                     return;
                 }
@@ -217,6 +236,8 @@ async function initMod1() {
             console.log("userdata/"+user.uid)
             callApi("PUT","userdata/"+user.uid,{
                 name: user.username,
+                contact: user.contact,
+                gstin: user.gstin,
                 email: user.email,
                 role: user.role,
                 address: user.address,
@@ -241,6 +262,8 @@ async function initMod1() {
             callApi("POST","userdata/",{
                 id: user.id,
                 name: user.username,
+                contact: user.contact,
+                gstin: user.gstin,
                 email: user.email,
                 role: user.role,
                 address: user.address,
@@ -308,6 +331,8 @@ async function initMod1() {
         uid: u.uid,
         id: u.id,
         username: u.name,
+        contact: u.contact,
+        gstin: u.gstin,
         email: u.email,
         role: u.role,
         address: u.address,

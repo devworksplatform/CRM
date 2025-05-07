@@ -276,7 +276,7 @@ public class LoginActivity extends AppCompatActivity {
 			@Override
 			public void onClick(View v) {
 //				String url = "https://petsfort.in/privacy_policy"; // Replace with the desired URL
-				String url = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/privacy_policy"; // Replace with the desired URL
+				String url = "https://pets-fort.web.app/privacypolicy.html"; // Replace with the desired URL
 				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
 				startActivity(intent);
 			}

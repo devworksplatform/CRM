@@ -9,339 +9,368 @@
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f4f4f4;
+            background-color: #f0f0f0; /* Slightly different background for contrast */
             display: flex;
             justify-content: center;
+            align-items: flex-start; /* Align sheet to top */
+            min-height: 100vh; /* Ensure body takes full viewport height */
         }
+
         .container {
             width: 210mm; /* A4 width */
-            min-height: 297mm; /* A4 height */
+            min-height: 297mm; /* A4 height, will expand if content is more */
             background-color: #fff;
-            padding: 20mm;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 15mm; /* Standard A4 margin */
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
             box-sizing: border-box;
-        }
-        .header {
             display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #eee;
+            flex-direction: column;
+        }
+
+        .header-section, .parties-section, .items-section, .summary-section, .footer-section {
+            margin-bottom: 15px;
+        }
+
+        .document-title {
+            text-align: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .company-details-top {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #ccc;
             padding-bottom: 10px;
         }
-        .company-info {
-            flex: 1;
-            margin-right: 20px;
-        }
-        .company-info h1 {
-            font-size: 1.2em;
+
+        .company-details-top h2 {
+            font-size: 1.4em;
             margin: 0 0 5px 0;
-        }
-        .company-info p {
-            font-size: 0.8em;
-            margin: 2px 0;
-            line-height: 1.4; /* Improve readability */
+            color: #222;
         }
 
-
-        
-
-        .items-table td:nth-child(9) { width: 15%; text-align: right;}
-        .items-table2 td:nth-child(7) { width: 15%; text-align: right;}
-
-        .details-grid {
-            display: grid;
-            /* Define columns based on the image structure */
-            grid-template-columns: auto 1fr;
-            /* Define rows based on the image structure */
-            grid-template-rows: repeat(4, auto);
-            gap: 5px 10px; /* Gap between rows and columns */
+        .company-details-top p {
             font-size: 0.9em;
-            line-height: 1.4; /* Improve readability */
-            width: 300px; /* Adjust width as needed to match image */
-            border: 1px solid #eee; /* Add border to make the grid structure clearer */
-            padding: 10px; /* Add padding inside the grid */
-            box-sizing: border-box; /* Include padding and border in the element's total width and height */
+            margin: 3px 0;
+            line-height: 1.5;
+            color: #555;
         }
 
-        .details-grid .label {
+        .invoice-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive columns */
+            gap: 10px 20px;
+            padding: 10px;
+            border: 1px solid #eee;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .invoice-details-grid .detail-item {
+            display: flex;
+            font-size: 0.9em;
+        }
+
+        .invoice-details-grid .label {
             font-weight: bold;
-            text-align: left;
-             /* Ensure labels don't wrap unnecessarily */
+            color: #444;
+            margin-right: 8px;
             white-space: nowrap;
         }
 
-        .details-grid .value {
-            text-align: left; /* Align values to the left */
-            /* Allow values to wrap if needed */
-            word-wrap: break-word;
+        .invoice-details-grid .value {
+            color: #666;
+            word-break: break-all;
         }
 
-        /* Specific grid placement for each item based on the desired structure */
-        /* Row 1: Invoice No., Dated */
-        .details-grid .invoice-no-label { grid-row: 1; grid-column: 1; }
-        .details-grid .invoice-no-value { grid-row: 1; grid-column: 2; }
-        .details-grid .dated-label { grid-row: 2; grid-column: 1; }
-        .details-grid .dated-value { grid-row: 2; grid-column: 2; }
 
-
-        /* Row 2: Delivery Note (label), Empty */
-        .details-grid .delivery-note-label-row2 { grid-row: 3; grid-column: 1; }
-        .details-grid .delivery-note-empty-row2 { grid-row: 3; grid-column: 2; } /* Empty cell */
-
-
-        /* Row 3: Reference No. & Date., Other References */
-        .details-grid .reference-no-label { grid-row: 4; grid-column: 1; }
-        .details-grid .reference-no-value { grid-row: 4; grid-column: 2; }
-
-
-        /* Row 4: Checked by (label), Value */
-         .details-grid .checked-by-label { grid-row: 5; grid-column: 1; }
-         .details-grid .checked-by-value { grid-row: 5; grid-column: 2; }
-
-
-        .delivery-note-title {
-            text-align: center;
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-
-        .parties {
+        .parties-container {
             display: flex;
             justify-content: space-between;
-            border: 2px solid #eee;
+            gap: 20px; /* Gap between consignee and buyer */
             padding: 10px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+             background-color: #f9f9f9;
         }
-        .consignee,
-        .buyer {
+
+        .consignee-details, .buyer-details {
             flex: 1;
-            padding: 0 10px;
+            padding: 10px;
             font-size: 0.9em;
-            line-height: 1.4; /* Improve readability */
+            line-height: 1.5;
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            background-color: #fff;
         }
-         .consignee {
-             border-right: 1px solid #eee;
-         }
-        .parties h3 {
-            font-size: 1em;
+        .parties-container h3 {
+            font-size: 1.1em;
             margin: 0 0 10px 0;
-            text-align: center;
+            color: #333;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 5px;
         }
-        .parties p {
-            margin: 2px 0;
+
+        .parties-container p {
+            margin: 4px 0;
+            color: #555;
         }
-         .parties .state-info {
-             margin-top: 10px;
-         }
-         .parties .state-info span {
-             font-weight: bold;
-         }
+        .parties-container .label {
+            font-weight: normal; /* Using span for bolding specific parts if needed */
+            color: #444;
+        }
+         .parties-container .value {
+            font-weight: bold;
+            color: #222;
+        }
 
 
-        .items-table {
+        .items-table, .gst-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 0.8em;
+            font-size: 0.85em; /* Slightly increased for readability */
         }
-        .items-table th,
-        .items-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
+
+        .items-table th, .items-table td,
+        .gst-table th, .gst-table td {
+            border: 1px solid #ccc; /* Clearer borders */
+            padding: 8px 10px; /* More padding */
+            text-align: left;
+            vertical-align: top; /* Align content to top */
+        }
+
+        .items-table th, .gst-table th {
+            background-color: #e9e9e9; /* Lighter header */
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+        }
+        .items-table thead th:nth-child(2), /* Description column */
+        .gst-table thead th:nth-child(1) /* HSN/SAC column in GST table */
+         {
             text-align: left;
         }
-        .items-table th {
-            background-color: #f2f2f2;
+
+
+        .items-table td:nth-child(1), /* S.No */
+        .items-table td:nth-child(3), /* HSN */
+        .items-table td:nth-child(4), /* Part No. */
+        .items-table td:nth-child(5), /* Qty Shipped */
+        .items-table td:nth-child(6), /* Qty Billed */
+        .gst-table td:nth-child(1) /* HSN/SAC */
+        {
+            text-align: center;
+        }
+        .items-table td:nth-child(7), /* MRP % */
+        .items-table td:nth-child(8), /* Disc % */
+        .items-table td:nth-child(9), /* Rate */
+        .items-table td:nth-child(10), /* Amount */
+        .gst-table td:nth-child(2), /* Taxable Value */
+        .gst-table td:nth-child(3), /* CGST Rate */
+        .gst-table td:nth-child(4), /* CGST Amount */
+        .gst-table td:nth-child(5), /* SGST Rate */
+        .gst-table td:nth-child(6), /* SGST Amount */
+        .gst-table td:nth-child(7) /* Total Tax */
+        {
+            text-align: right;
+        }
+
+        .summary-section .totals-summary td:nth-child(1) { text-align: right; font-weight: bold; padding-right: 20px;}
+        .summary-section .totals-summary td:nth-child(2) { text-align: right; }
+
+
+        .amounts-in-words p, .tax-amount-in-words p {
+            font-size: 0.9em;
+            margin: 10px 0;
+            color: #444;
+        }
+        .amounts-in-words strong, .tax-amount-in-words strong {
+            color: #222;
+        }
+
+        .declaration-returns {
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.85em;
+            background-color: #fdfdfd;
+            border-radius: 4px;
+        }
+        .declaration-returns .heading {
             font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .declaration-returns ul {
+            padding-left: 20px;
+            margin: 5px 0 10px 0;
+        }
+        .declaration-returns li, .declaration-returns .text {
+            line-height: 1.6;
+            color: #555;
         }
 
-        .items-table thead th {
-            text-align: center;
+        .bank-details-section {
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+            margin-top: 20px;
         }
-        .items-table thead th:nth-child(2) { text-align: left; } /* Description */
-
-        .footer {
-            text-align: center;
-            font-size: 0.8em;
-            margin-top: 30px;
+        .bank-details {
+            font-size: 0.9em;
+        }
+        .bank-details .heading {
+            font-weight: bold;
+            font-size: 1em;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        .bank-details table {
+            width: auto; /* Don't force full width */
+            font-size: 0.9em;
+        }
+        .bank-details td {
+            padding: 4px 0;
+            color: #555;
+        }
+        .bank-details .bank-label {
+            font-weight: normal;
+            padding-right: 10px;
+            color: #444;
+        }
+        .bank-details .bank-value {
+            font-weight: bold;
+            color: #222;
         }
 
-        /* Basic responsiveness - adjust padding for smaller screens */
-        @media (max-width: 768px) {
+        .signature-section {
+            margin-top: 40px; /* More space before signature */
+            text-align: right;
+            font-size: 0.9em;
+            color: #444;
+        }
+        .signature-section p { margin: 5px 0; }
+        .signature-placeholder {
+            height: 50px; /* Space for signature */
+            border-bottom: 1px solid #aaa;
+            width: 200px;
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+
+        /* Print specific styles */
+        @media print {
+            body {
+                background-color: #fff;
+                padding: 0;
+                -webkit-print-color-adjust: exact; /* Chrome, Safari */
+                print-color-adjust: exact; /* Firefox, Edge */
+            }
             .container {
-                width: 100%;
-                padding: 10mm;
+                width: 100%; /* Use full printable area */
+                min-height: 0; /* Height will be determined by content */
+                box-shadow: none;
+                padding: 10mm; /* Adjust print margins if needed */
+                border: none;
             }
-            .header, .parties {
-                flex-direction: column;
+            .header-section, .parties-section, .items-section, .summary-section, .footer-section {
+                margin-bottom: 10px; /* Reduce margins for print */
             }
-            .company-info, .consignee, .buyer {
-                width: 100%;
-                margin-right: 0;
-                text-align: left;
+            .document-title {
+                font-size: 1.6em; /* Slightly smaller for print */
             }
-             .parties .consignee {
-                 border-right: none;
-                 padding-bottom: 10px;
-                 border-bottom: 1px solid #eee;
-                 margin-bottom: 10px;
-             }
-             .parties .consignee, .parties .buyer {
-                 padding: 0;
-             }
-             .items-table th, .items-table td {
-                 padding: 5px;
-             }
-             .items-table td:nth-child(1),
-             .items-table td:nth-child(3),
-             .items-table td:nth-child(4),
-             .items-table td:nth-child(5),
-             .items-table td:nth-child(6),
-             .items-table td:nth-child(7),
-             .items-table td:nth-child(8),
-             .items-table td:nth-child(9) {
-                 text-align: left; /* Adjust alignment for small screens */
-             }
-             .details-grid {
-                 width: 100%; /* Full width on small screens */
-                 grid-template-columns: auto 1fr; /* Maintain two columns */
-                 padding: 5px; /* Adjust padding for small screens */
-                 grid-template-rows: repeat(6, auto); /* Adjust rows for all items */
-             }
-             .details-grid .label {
-                 white-space: normal; /* Allow wrapping on small screens */
-             }
-             /* Reset specific grid placement for smaller screens */
-             .details-grid .invoice-no-label, .details-grid .invoice-no-value,
-             .details-grid .dated-label, .details-grid .dated-value,
-             .details-grid .delivery-note-label-row2, .details-grid .delivery-note-empty-row2,
-             .details-grid .reference-no-label, .details-grid .reference-no-value,
-             .details-grid .other-references-label, .details-grid .other-references-value,
-             .details-grid .checked-by-label, .details-grid .checked-by-value {
-                 grid-row: auto !important;
-                 grid-column: auto !important;
-             }
+            .items-table, .gst-table {
+                font-size: 0.8em; /* Smaller font for tables in print */
+            }
+            .items-table th, .items-table td,
+            .gst-table th, .gst-table td {
+                padding: 5px; /* Reduce padding for print */
+            }
+            .signature-section {
+                page-break-inside: avoid;
+            }
+            /* Hide elements not needed for print if any */
+            /* .no-print { display: none; } */
         }
 
     </style>
 </head>
-<body>
+<body id="invoiceRoot">
     <div class="container">
-        <div class="delivery-note-title">
-            Delivery Note
-        </div>
-
-        <div class="parties">
-            <div class="consignee">
-                <h3>Europet Products Private Limited</h3>
-                <p id="Address"></p>
-                <p>GST : <span id="GstNo"></span></p>
-                <p>E-Mail : <span id="Email"></span></p>
+        <header class="header-section">
+            <div class="document-title" id="docTitle">
+                TAX INVOICE / DELIVERY NOTE
             </div>
-            <div class="buyer">
-                <table class="items-table">
-                    <tr><th>Invoice No<div id="InvoiceNo"></div></th><th>Dated<div id="Dated"></div></th></tr>
-                    <tr><th>Delivery Note</th><th id="DeliveryNote"></th></tr>
-                    <tr><th>Reference No. & Date<div id="RefNoDate"></div></th><th>Other References<div id="OtherRef"></div></th></tr>
-                    <tr><th>Checked By</th><th id="CheckedBy"></th></tr>
-                </table>
+            <div class="company-details-top">
+                <h2 id="companyName"></h2>
+                <p id="companyAddress"></p>
+                <p>GSTIN: <span id="companyGstNo"></span> | E-Mail: <span id="companyEmail"></span></p>
             </div>
-        </div>
-        <div class="parties">
-            <div class="consignee">
-                <h3>Consignee (Ship to)</h3>
-                <p id="Caddress1"></p>
-                <p>Contact No.<span id="Ccontact1"></span></p>
+             <div class="invoice-details-grid">
+                <div class="detail-item"><span class="label">Invoice No:</span><span class="value" id="invoiceNo"></span></div>
+                <div class="detail-item"><span class="label">Dated:</span><span class="value" id="invoiceDate"></span></div>
+                <div class="detail-item"><span class="label">Delivery Note:</span><span class="value" id="deliveryNote"></span></div>
+                <div class="detail-item"><span class="label">RefNo:</span><span class="value" id="refNoDate"></span></div>
+                <div class="detail-item"><span class="label">Notes:</span><span class="value" id="otherRef"></span></div>
+                <div class="detail-item"><span class="label">Checked By:</span><span class="value" id="checkedBy"></span></div>
             </div>
-            <div class="buyer">
-                 <h3>Buyer (Bill to)</h3>
-                 <p id="Caddress2"></p>
-                 <p>Contact No.<span id="Ccontact2"></span></p>
+        </header>
+
+        <section class="parties-section">
+            <div class="parties-container">
+                <div class="consignee-details">
+                    <h3>Consignee (Ship To)</h3>
+                    <p id="consigneeName">Consignee Name</p>
+                    <p id="consigneeAddress">Consignee Address line 1, Line 2, City, State, Pin</p>
+                    <!-- <p><span class="label">Contact No:</span> <span class="value" id="consigneeContact">N/A</span></p> -->
+                    <!-- <p><span class="label">GSTIN/UIN:</span> <span class="value" id="consigneeGstin">N/A</span></p> -->
+                </div>
+                <div class="buyer-details">
+                    <h3>Buyer (Bill To)</h3>
+                    <p id="buyerName">Buyer Name</p>
+                    <p id="buyerAddress">Buyer Address line 1, Line 2, City, State, Pin</p>
+                    <p><span class="label">Contact No:</span> <span class="value" id="buyerContact">N/A</span></p>
+                    <p><span class="label">GSTIN/UIN:</span> <span class="value" id="buyerGstin">N/A</span></p>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th rowspan="2">S No.</th>
-                    <th rowspan="2">Description of Goods</th>
-                    <th rowspan="2">HSN / SAC</th>
-                    <th rowspan="2">Part No.</th>
-                    <th colspan="2">Quantity</th>
-                    <th rowspan="2">Rate</th>
-                    <th rowspan="2">per Disc. %</th>
-                    <th rowspan="2">Amount</th>
-                </tr>
-                <tr>
-                    <th>Shipped</th>
-                    <th>Billed</th>
-                </tr>
-            </thead>
-            <tbody id="productTableEditable">
-            </tbody>
-        </table>
+        <section class="items-section">
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">S.No.</th>
+                        <th rowspan="2">Description of Goods</th>
+                        <th rowspan="2">HSN/SAC</th>
+                        <th rowspan="2">Product Code</th>
+                        <th colspan="2">Quantity</th>
+                        <th rowspan="2">MRP</th>
+                        <th rowspan="2">Disc. %</th>
+                        <th rowspan="2">Rate</th>
+                        <th rowspan="2">Amount</th>
+                    </tr>
+                    <tr>
+                        <th>Shipped</th>
+                        <th>Billed</th>
+                    </tr>
+                </thead>
+                <tbody id="itemsTableBody">
+                    </tbody>
+                <tfoot id="itemsTableFooter" class="totals-summary">
+                    </tfoot>
+            </table>
+        </section>
 
-        <table class="items-table">
-            <tbody>
-                <tr>
-                    <td>
-                        <p class="label">Amount Chargeable (in words)</p>
-                        <b><p class="value" id="AmountChargeableInWords">INR Eighteen Thousand Seven Hundred Eighteen Only</p></b>
-                    </td>
-                </tr>
+        <section class="summary-section">
+             <div class="amounts-in-words">
+                <p>Amount Chargeable (in words): <strong id="amountChargeableInWords"></strong></p>
+            </div>
 
-                <tr>
-                    <td>
-                        <div class="declaration">
-                            <p class="heading">Declaration</p>
-                            <p class="text">
-                                We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
-                            </p>
-                        </div>
-    
-                        <div class="return-policy">
-                            <p class="heading">Return Policy :</p>
-                            <ul>
-                                <li>1. Food Products: Returns are accepted within 30 days of purchase.</li>
-                                <li>2. Non-Food Products: Returns are accepted within 60 days of purchase.</li>
-                                <li>3. Damages or Expired: Any damages or shortages must be reported within 3 days of receipt.</li>
-                            </ul>
-                        </div>
-    
-                        <div class="retention-note">
-                            <p class="text">
-                                Please retain your receipt as proof of purchase. Items must be in their original condition and packaging.
-                            </p>
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td class="right-section-cell">
-                        <div class="bank-details">
-                           <p class="heading">Company's Bank Details</p>
-                           <table>
-                               <tr>
-                                   <td class="bank-label">Bank Name</td>
-                                   <td class="bank-value">ICICI Bank</td>
-                               </tr>
-                                <tr>
-                                   <td class="bank-label">A/c No</td>
-                                   <td class="bank-value">060705500663</td>
-                               </tr>
-                                <tr>
-                                   <td class="bank-label">Branch &amp; IFS Code</td>
-                                   <td class="bank-value">Ambattur &amp; ICIC0001901</td>
-                               </tr>
-                           </table>
-                       </div>
-                   </td>
-
-                </tr>
-            </tbody>
-        </table>
-
-
-            <table class="items-table items-table2">
+            <table class="gst-table">
                 <thead>
                     <tr>
                         <th rowspan="2">HSN/SAC</th>
@@ -357,13 +386,265 @@
                         <th>Amount</th>
                     </tr>
                 </thead>
-                <tbody id="gstTableEditable">
-                </tbody>
+                <tbody id="gstTableBody">
+                    </tbody>
+                <tfoot id="gstTableFooter" class="totals-summary">
+                     </tfoot>
             </table>
-    
-        <div class="tax-amount-in-words">
-            <p>Tax Amount (in words) : <strong id="taxAmountInWords">INR Three Thousand Four Hundred Seventy Nine and Twelve paise Only</strong></p>
-        </div>
+            <div class="tax-amount-in-words">
+                <p>Tax Amount (in words): <strong id="taxAmountInWords"></strong></p>
+            </div>
+        </section>
+
+        <footer class="footer-section">
+            <div class="declaration-returns">
+                <p class="heading">Declaration</p>
+                <p class="text">We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.</p>
+                <p class="heading" style="margin-top:10px;">Return Policy:</p>
+                <ul>
+                    <li>Food Products: Returns are accepted within 30 days of purchase.</li>
+                    <li>Non-Food Products: Returns are accepted within 60 days of purchase.</li>
+                    <li>Damages or Expired: Any damages or shortages must be reported within 3 days of receipt.</li>
+                </ul>
+                <p class="text">Please retain your receipt as proof of purchase. Items must be in their original condition and packaging.</p>
+            </div>
+
+            <div class="bank-details-section">
+                 <div class="bank-details">
+                    <p class="heading">Company's Bank Details</p>
+                    <table>
+                        <tr><td class="bank-label">Bank Name:</td><td class="bank-value">ICICI Bank</td></tr>
+                        <tr><td class="bank-label">A/c No.:</td><td class="bank-value">060705500663</td></tr>
+                        <tr><td class="bank-label">Branch & IFS Code:</td><td class="bank-value">Ambattur & ICIC0001901</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <p>For <strong>YOUR COMPANY NAME</strong></p>
+                <div class="signature-placeholder"></div>
+                <p>Authorised Signatory</p>
+            </div>
+        </footer>
     </div>
+
+    <script>
+        function populateText(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = value !== undefined && value !== null ? String(value) : 'N/A';
+            }
+        }
+
+        function formatCurrency(value) {
+            return Number(value).toFixed(2);
+        }
+
+        function renderInvoice(data) {
+            // Document Title
+            populateText('docTitle', data.documentTitle || 'TAX INVOICE / DELIVERY NOTE');
+
+            // Company Details
+            populateText('companyName', data.company.name);
+            populateText('companyAddress', data.company.address);
+            populateText('companyGstNo', data.company.gstNo);
+            populateText('companyEmail', data.company.email);
+
+            // Invoice Details
+            populateText('invoiceNo', data.details.invoiceNo);
+            populateText('invoiceDate', data.details.dated);
+            populateText('deliveryNote', data.details.deliveryNote);
+            populateText('refNoDate', data.details.refNoDate);
+            populateText('otherRef', data.details.otherRef);
+            populateText('checkedBy', data.details.checkedBy);
+
+            // Parties
+            populateText('consigneeName', data.consignee.name);
+            populateText('consigneeAddress', data.consignee.address);
+            // populateText('consigneeContact', data.consignee.contactNo);
+            // populateText('consigneeGstin', data.consignee.gstin);
+
+            populateText('buyerName', data.buyer.name);
+            populateText('buyerAddress', data.buyer.address);
+            populateText('buyerContact', data.buyer.contactNo);
+            populateText('buyerGstin', data.buyer.gstin);
+
+            // Items Table
+            const itemsTableBody = document.getElementById('itemsTableBody');
+            itemsTableBody.innerHTML = ''; // Clear existing rows
+            data.items.forEach(item => {
+                const row = itemsTableBody.insertRow();
+                row.insertCell().textContent = item.sNo;
+                row.insertCell().textContent = item.description;
+                row.insertCell().textContent = item.hsnSac;
+                row.insertCell().textContent = item.partNo;
+                row.insertCell().textContent = item.quantityShipped;
+                row.insertCell().textContent = item.quantityBilled;
+                row.insertCell().textContent = formatCurrency(item.mrp);
+                row.insertCell().textContent = item.discount;
+                row.insertCell().textContent = formatCurrency(item.rate);
+                row.insertCell().textContent = formatCurrency(item.amount);
+            });
+
+            // Items Table Footer (Totals)
+            const itemsTableFooter = document.getElementById('itemsTableFooter');
+            itemsTableFooter.innerHTML = ''; // Clear existing
+            function addSummaryRow(label, value, colSpanFirst = 9) {
+                const row = itemsTableFooter.insertRow();
+                const labelCell = row.insertCell();
+                labelCell.colSpan = colSpanFirst;
+                labelCell.textContent = label;
+
+                labelCell.style.textAlign = "left"; // Align label text to the right for better pairing with value
+                labelCell.style.fontWeight = "bold"; // Make label bold
+                labelCell.style.paddingRight = "10px"; // Add some padding to separate label from value
+
+                const valueCell = row.insertCell();
+                valueCell.colSpan = 9 - colSpanFirst; // Remaining columns
+                valueCell.textContent = formatCurrency(value);
+                valueCell.style.textAlign = "right";
+            }
+
+            addSummaryRow('Sub Total', data.totals.subTotal);
+            if (data.totals.cgstAmount !== undefined) addSummaryRow('Output CGST', data.totals.cgstAmount);
+            if (data.totals.sgstAmount !== undefined) addSummaryRow('Output SGST', data.totals.sgstAmount);
+            if (data.totals.igstAmount !== undefined) addSummaryRow('Output IGST', data.totals.igstAmount); // If applicable
+            if (data.totals.specialDiscount !== undefined && data.totals.specialDiscount !== 0) {
+                 addSummaryRow('Special Discount:', data.totals.specialDiscount > 0 ? -data.totals.specialDiscount : data.totals.specialDiscount);
+            }
+            if (data.totals.roundOff !== undefined && data.totals.roundOff !== 0) {
+                addSummaryRow('Round Off:', data.totals.roundOff);
+            }
+            const totalRow = itemsTableFooter.insertRow();
+            const totalLabelCell = totalRow.insertCell();
+            totalLabelCell.colSpan = 9;
+            totalLabelCell.style.textAlign = "left"; // Align label text to the right for better pairing with value
+            totalLabelCell.style.fontWeight = "bold"; // Make label bold
+            totalLabelCell.style.paddingRight = "10px"; // Add some padding to separate label from value
+            totalLabelCell.innerHTML = '<strong>Total</strong>';
+            const totalValueCell = totalRow.insertCell();
+            totalValueCell.colSpan = 2;
+            totalValueCell.style.textAlign = "right";
+            totalValueCell.innerHTML = `<strong>${formatCurrency(data.totals.total)}</strong>`;
+
+
+            // Amounts in Words
+            populateText('amountChargeableInWords', data.amountsInWords.amountChargeable);
+
+            // GST Details Table
+            const gstTableBody = document.getElementById('gstTableBody');
+            gstTableBody.innerHTML = ''; // Clear existing rows
+            let totalGstTaxableValue = 0;
+            let totalGstCgstAmount = 0;
+            let totalGstSgstAmount = 0;
+            let totalGstTotalTax = 0;
+
+            data.gstDetails.forEach(gst => {
+                const row = gstTableBody.insertRow();
+                row.insertCell().textContent = gst.hsnSac;
+                row.insertCell().textContent = formatCurrency(gst.taxableValue);
+                row.insertCell().textContent = gst.cgstRate;
+                row.insertCell().textContent = formatCurrency(gst.cgstAmount);
+                row.insertCell().textContent = gst.sgstUtgstRate;
+                row.insertCell().textContent = formatCurrency(gst.sgstUtgstAmount);
+                row.insertCell().textContent = formatCurrency(gst.totalTaxAmount);
+
+                totalGstTaxableValue += parseFloat(gst.taxableValue) || 0;
+                totalGstCgstAmount += parseFloat(gst.cgstAmount) || 0;
+                totalGstSgstAmount += parseFloat(gst.sgstUtgstAmount) || 0;
+                totalGstTotalTax += parseFloat(gst.totalTaxAmount) || 0;
+            });
+
+            // GST Table Footer (Totals)
+            const gstTableFooter = document.getElementById('gstTableFooter');
+            gstTableFooter.innerHTML = ''; // Clear existing
+            const gstTotalRow = gstTableFooter.insertRow();
+            totalCell = gstTotalRow.insertCell();
+            totalCell.innerHTML = '<strong>Total</strong>';
+            totalCell.style.textAlign = "center";
+
+            gstTotalRow.insertCell().innerHTML = `<strong>${formatCurrency(totalGstTaxableValue)}</strong>`;
+            gstTotalRow.insertCell().textContent = ''; // Empty for CGST Rate
+            gstTotalRow.insertCell().innerHTML = `<strong>${formatCurrency(totalGstCgstAmount)}</strong>`;
+            gstTotalRow.insertCell().textContent = ''; // Empty for SGST Rate
+            gstTotalRow.insertCell().innerHTML = `<strong>${formatCurrency(totalGstSgstAmount)}</strong>`;
+            gstTotalRow.insertCell().innerHTML = `<strong>${formatCurrency(totalGstTotalTax)}</strong>`;
+
+
+            // Tax Amount in Words
+            populateText('taxAmountInWords', data.amountsInWords.taxAmount);
+
+            // Update company name in signature
+            const companyNameSignature = document.querySelector('.signature-section strong');
+            if (companyNameSignature) companyNameSignature.textContent = data.company.name;
+        }
+
+        // This function would replace your existing start() and callApi()
+        // For this example, we'll directly use the `invoiceData` object.
+        // In a real scenario, you would fetch this data.
+        document.addEventListener('DOMContentLoaded', async () => {
+            
+            function getQueryParam(paramName) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(paramName);
+            }
+            // To use with URL parameters:
+            const orderId = new URLSearchParams(window.location.search).get('orderid');
+            if (orderId) {
+                if(getQueryParam("orderid") != null){
+                    var bill = await callApi("GET", "bills/"+getQueryParam("orderid"))
+
+                    if (Object.keys(bill).length === 0 || Object.keys(bill).length === 2) {
+                        document.getElementById("invoiceRoot").innerHTML = "";
+                    } else {
+                        document.getElementById("invoiceRoot").hidden = "";
+                        renderInvoice(bill);
+                    }
+                } else {
+                    document.getElementById("invoiceRoot").innerHTML = "";
+                }
+            } else {
+                document.getElementById("invoiceRoot").innerHTML = "";
+            }
+        });
+
+        async function callApi(method, url, body = null) {
+            const options = {
+                method: method.toUpperCase(),
+                headers: {
+                'Content-Type': 'application/json'
+                }
+            };
+
+            if (body && ['POST', 'PUT'].includes(options.method)) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+            // const response = await fetch("https://server.petsfort.in/"+url, options);
+            const response = await fetch("https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/"+url, options);
+
+                if (!response.ok) {
+                throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (err) {
+                console.error('API call error:', err.message);
+                throw err;
+            }
+        }
+
+
+    </script>
+
+    <!-- <style>
+         @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style> -->
 </body>
+<!-- <button class="no-print" onclick="window.print()">Print</button> -->
 </html>

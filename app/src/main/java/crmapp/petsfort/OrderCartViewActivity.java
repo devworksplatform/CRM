@@ -23,6 +23,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -64,6 +65,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 	private LinearLayout costLinear,progress_overlay,linearDrag,confirmOrderLinear,linearNoData,statusLinear;
 	private LinearLayout linear10,linear11,linear15,linear16,circle,circle2,linear5;
 	private ImageView bottomDragImage;
+	private CardView viewBill;
 	DecimalFormat df = new DecimalFormat("#.###");
 
 	private boolean isOpen = false;
@@ -104,6 +106,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 		recyclerview1 = findViewById(R.id.recyclerview1);
 		progressbar1 = findViewById(R.id.progressbar1);
 		bottomDragImage = findViewById(R.id.bottomDragImage);
+		viewBill = findViewById(R.id.viewBill);
 
 		productSecondaryNameTextView = findViewById(R.id.productSecondaryNameTextView);
 		productSecondaryNameTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
@@ -159,6 +162,14 @@ public class OrderCartViewActivity extends AppCompatActivity {
 
 		order = (Business.OrderQueryApiClient.Order) getIntent().getSerializableExtra("order");
 
+		viewBill.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				String url = "https://pets-fort.web.app/bill.html?orderid="+order.getOrderId(); // Replace with the desired URL
+				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+				startActivity(intent);
+			}
+		});
 
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 		recyclerview1.setLayoutManager(gridlayoutManager);
@@ -397,7 +408,7 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			discountTotalTextView.setText("-".concat(df.format(discount * product.productCount)).concat(" ₹"));
 
 
-			name.setText(product.getProductName());
+			name.setText(JHelpers.capitalize(JHelpers.capitalize(product.getProductName())));
 			if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
 				Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
 			}

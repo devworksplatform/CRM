@@ -914,8 +914,7 @@ async function initMod3() {
      cancelButton.addEventListener('click', resetForm); // Listener for manual cancel
 
     addImageBtn.addEventListener('click', () => {
-        const fileInput = document.getElementById('fileInput'); // Get the hidden file input
-        if (fileInput) fileInput.click(); // Trigger click on the file input
+        addImage();
     }); // Assuming addImageBtn triggers the file input
 
 

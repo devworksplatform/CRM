@@ -140,6 +140,27 @@ public class OrderActivity extends AppCompatActivity {
 					recyclerview1.setVisibility(View.GONE);
 					noDataLinear.setVisibility(View.VISIBLE);
 				} else {
+					if(getIntent().hasExtra("orderid")){
+						String orderid = getIntent().getStringExtra("orderid");
+
+						int _position = -1;
+						for(int i = 0; i < listmap.size(); i++) {
+							if (listmap.get(i).getOrderId().equals(orderid)) {
+								_position = i;
+								break;
+							}
+						}
+
+						if(_position != -1){
+							Business.OrderQueryApiClient.Order order = listmap.get(_position);
+
+							Intent intent = new Intent();
+							intent.putExtra("order",order);
+							intent.setClass(getApplicationContext(), OrderCartViewActivity.class);
+							startActivity(intent);
+							finish();
+						}
+					}
 					linear1.setVisibility(View.VISIBLE);
 					progressbar1.setVisibility(View.GONE);
 					recyclerview1.setVisibility(View.VISIBLE);
