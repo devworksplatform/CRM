@@ -485,6 +485,20 @@ body {
 .text-success { color: var(--success-color); } .text-danger { color: var(--error-color); } .text-warning { color: var(--warning-color); } .text-info { color: var(--info-color); } /* NEW: info color */ .text-muted { color: var(--text-muted); } .text-center { text-align: center; } .text-right { text-align: right; } .font-bold { font-weight: bold; } .mt-1 { margin-top: 0.5em; } .mt-2 { margin-top: 1em; } .mt-3 { margin-top: 1.5em; } .mb-1 { margin-bottom: 0.5em; } .mb-2 { margin-bottom: 1em; } .mb-3 { margin-bottom: 1.5em; } /* NEW: Margins */ .d-flex { display: flex; } .justify-between { justify-content: space-between; } .align-center { align-items: center; } .gap-1 { gap: 0.5em; } .gap-2 { gap: 1em; } .gap-3 { gap: 1.5em; } /* NEW: Gaps */ .w-100 { width: 100%; }
 
 /* Image preview styles */
+.img-preview-list-banner {
+    display: flex;
+    gap: 12px; /* Spacing between preview items */
+    padding: 16px; /* Padding around the banner content */
+    background-color: #f8f9fa; /* Very light gray background */
+    border-radius: 6px; /* Slightly rounded corners */
+}  
+  /* Optional styling for images within the banner */
+.img-preview-list-banner img {
+    max-width: 80px; /* Adjust as needed */
+    height: auto;
+    border: 1px solid #dee2e6; /* Light gray border around images */
+    border-radius: 4px; /* Optional rounded corners for images */
+}
 .img-preview-list { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; padding: 12px; border: 1px dashed var(--border-color); /* NEW: Dashed border */ border-radius: var(--border-radius); min-height: 60px; background-color: var(--background-color); /* UPDATED */ }
 .img-preview-item { position: relative; display: inline-block; text-align: center; }
 .img-preview { display: block; width: 80px; height: 80px; border-radius: var(--border-radius); border: 1px solid var(--border-color-light); object-fit: cover; background-color: #fff; margin-bottom: 5px; /* Space for name */ }

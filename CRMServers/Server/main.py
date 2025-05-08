@@ -1289,16 +1289,12 @@ def generate_invoice_data(
         gst_percent = prod.get("cost_gst", 0.0)
         hsn_sac = prod.get("product_hsn", "N/A")
 
-        # Calculate amount *after* discount (Taxable Value for this item)
-        amount_before_discount = rate * count
-        discount_amount_item = (amount_before_discount * discount_percent) / 100.0
-        taxable_value_item = amount_before_discount - discount_amount_item
-
+        taxable_rate = rate * count
         # Calculate GST amounts for this item (assuming CGST = SGST = GST/2)
         cgst_rate_item = gst_percent / 2.0
         sgst_rate_item = gst_percent / 2.0
-        cgst_amount_item = (taxable_value_item * cgst_rate_item) / 100.0
-        sgst_amount_item = (taxable_value_item * sgst_rate_item) / 100.0
+        cgst_amount_item = ((rate * cgst_rate_item) / 100.0) * count
+        sgst_amount_item = ((rate * sgst_rate_item) / 100.0) * count
         total_tax_item = cgst_amount_item + sgst_amount_item
 
         # Append to 'items' list
@@ -1313,7 +1309,7 @@ def generate_invoice_data(
             'mrp': round(mrp, 2),
             'discount': f'{discount_percent} %',
             'rate': round(rate, 2),
-            'amount': round(taxable_value_item, 2) # Amount after discount
+            'amount': round(taxable_rate, 2) # Amount after discount
         })
 
         # Aggregate GST details by HSN
@@ -1326,13 +1322,13 @@ def generate_invoice_data(
                 'sgstUtgstAmount': 0.0,
                 'totalTaxAmount': 0.0
             }
-        gst_summary[prod_cid]['taxableValue'] += taxable_value_item
+        gst_summary[prod_cid]['taxableValue'] += taxable_rate
         gst_summary[prod_cid]['cgstAmount'] += cgst_amount_item
         gst_summary[prod_cid]['sgstUtgstAmount'] += sgst_amount_item
         gst_summary[prod_cid]['totalTaxAmount'] += total_tax_item
 
         # Add to overall totals
-        sub_total += taxable_value_item
+        sub_total += taxable_rate
         total_cgst_amount += cgst_amount_item
         total_sgst_amount += sgst_amount_item
 

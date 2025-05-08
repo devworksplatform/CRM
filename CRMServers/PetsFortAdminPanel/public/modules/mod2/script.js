@@ -302,7 +302,7 @@ async function initMod2() {
         const subToDelete = subcategories.find(s => s.id === subId);
         subcategories = subcategories.filter(s => s.id !== subId);
 
-        callApi('DELETE', 'categories'+subId);
+        callApi('DELETE', 'categories/'+subId);
 
         saveSubcategories(subcategories);
         renderSubcategoryTable(subToDelete ? subToDelete.parentId : selectedParentCategoryId); // Re-render

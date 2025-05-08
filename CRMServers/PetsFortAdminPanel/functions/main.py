@@ -1,5 +1,5 @@
 # Import necessary libraries
-from firebase_functions import https_fn
+from firebase_functions import https_fn, scheduler_fn
 from firebase_admin import initialize_app
 import requests
 import json
@@ -11,7 +11,6 @@ initialize_app()
 # TODO: Replace with your actual target URL
 TARGET_URL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
 
-# @https_fn.on_request()
 @https_fn.on_request(region="asia-south1")
 def proxy_request(req: https_fn.Request):
     """
@@ -80,4 +79,67 @@ def proxy_request(req: https_fn.Request):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return https_fn.Response(f"Proxy Error: An internal error occurred. {e}", status=500)
+
+
+
+def perform_backup():
+    """
+    Performs the core backup logic by making a GET request to the backup endpoint.
+    """
+    full_target_url = f"{TARGET_URL}/backup"
+    print(f"Attempting backup request to {full_target_url}")
+    try:
+        response = requests.request(
+            method="GET",
+            url=full_target_url,
+            verify=False # Set to False if you need to ignore SSL certificate errors (not recommended for production)
+        )
+        print(f"Backup target response status: {response.status_code}")
+
+        # You might want to add logging or error handling based on the response status
+        if response.status_code == 200:
+            print("Backup request successful.")
+        else:
+            print(f"Backup request failed with status code: {response.status_code}")
+            # Log response content for debugging if needed
+            # print(f"Backup response content: {response.text}")
+
+        return response.content, response.status_code, dict(response.headers)
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error making backup request to target URL: {e}")
+        # Depending on your needs, you might want to re-raise the exception
+        # or handle it differently for scheduled vs. HTTP triggers.
+        raise e # Re-raise the exception for the scheduler to potentially retry
+
+@https_fn.on_request(region="asia-south1")
+def backup_request(req: https_fn.Request):
+    """
+    Firebase HTTPS function to trigger a backup manually via HTTP.
+    Calls the core perform_backup logic.
+    """
+    try:
+        content, status, headers = perform_backup()
+        return https_fn.Response(content, status=status, headers=headers)
+    except Exception as e:
+        print(f"Error in backup_request (HTTP trigger): {e}")
+        return https_fn.Response(f"Backup Error: {e}", status=500)
+
+
+# @scheduler_fn.on_schedule(schedule="0 * * * *", region="asia-south1")
+@scheduler_fn.on_schedule(schedule="0 */8 * * *", region="asia-south1")
+def scheduled_backup(event: scheduler_fn.ScheduledEvent):
+    """
+    Firebase Scheduled function to trigger a backup every hour.
+    Calls the core perform_backup logic.
+    The schedule "0 * * * *" means at minute 0 of every hour.
+    """
+    print("Scheduled backup function triggered.")
+    try:
+        perform_backup()
+        print("Scheduled backup completed successfully.")
+    except Exception as e:
+        print(f"Error during scheduled backup: {e}")
+        # The scheduler will handle retries based on function execution results
+        # You might want to log this error to a monitoring system like Cloud Logging
 

@@ -108,6 +108,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const storage = firebase.storage();
+const database = firebase.database();
 
 console.log("Firebase loaded and ready");
 
@@ -196,8 +197,23 @@ async function uploadBlobToFirebase(blob, path) {
       console.error('Upload failed:', error);
       throw error;
     }
-  }
+}
 
+async function deleteFileFromFirebase(url) {
+    try {
+      // Create a reference from the file URL
+      const storageRef = firebase.storage().refFromURL(url);
+  
+      // Delete the file
+      await storageRef.delete();
+  
+      console.log('File deleted successfully');
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+}
+  
 
 
 function showLoading() {

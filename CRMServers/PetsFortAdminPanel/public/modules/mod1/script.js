@@ -259,7 +259,7 @@ async function initMod1() {
 
             showToast(`Creating User Account... "${user.email}".`, 'success');
 
-            callApi("POST","userdata/",{
+            callApi("POST","userdata",{
                 id: user.id,
                 name: user.username,
                 contact: user.contact,
