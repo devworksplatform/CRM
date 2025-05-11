@@ -7,6 +7,8 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
+import crmapp.petsfort.R;
+
 public class NotificationHelper {
 
     private static final String CHANNEL_ID = "simple_notification_channel";
@@ -29,7 +31,7 @@ public class NotificationHelper {
 
     public void showSimpleNotification(String title, String message) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_info) // Replace with your app's icon
+                .setSmallIcon(R.drawable.app_icon) // Replace with your app's icon
                 .setContentTitle(title)
                 .setContentText(message)
                 .setPriority(NotificationCompat.PRIORITY_HIGH);

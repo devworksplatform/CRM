@@ -1875,7 +1875,7 @@ async def get_subcategory_list():
 #     finally:
 #         await conn.close()
 
-@app.get("/subcats/{category_id}", response_model=List[Subcategory])
+@app.get("/subcats_v0/{category_id}", response_model=List[Subcategory])
 async def get_available_subcategory_list(category_id: str):
     conn = await get_db_connection()
     try:
@@ -1894,6 +1894,63 @@ async def get_available_subcategory_list(category_id: str):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     finally:
         await conn.close()
+import json
+
+@app.get("/subcats/{category_id}", response_model=List[Subcategory])
+async def get_available_subcategory_list(category_id: str):
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            # Fetch subcategories and fallback product_img if subcat image is missing
+            await cursor.execute("""
+                SELECT DISTINCT 
+                    s.id, 
+                    s.parentid, 
+                    s.name,
+                    s.image,
+                    (
+                        SELECT p1.product_img 
+                        FROM products p1 
+                        WHERE p1.cat_sub = s.id
+                        LIMIT 1
+                    ) AS fallback_img
+                FROM subcategory s
+                JOIN products p ON s.id = p.cat_sub
+                WHERE s.parentid = ?
+            """, (category_id,))
+            
+            columns = [column[0] for column in cursor.description]
+            rows = await cursor.fetchall()
+
+            subcategories = []
+            for row in rows:
+                row_data = dict(zip(columns, row))
+                image = row_data["image"]
+                
+                # If subcategory image is empty or null, use the first image from product_img
+                if not image or image.strip() == "":
+                    try:
+                        product_img_list = json.loads(row_data["fallback_img"])
+                        if isinstance(product_img_list, list) and product_img_list:
+                            image = product_img_list[0]
+                    except Exception as e:
+                        print(f"Error parsing product_img JSON: {e}")
+                
+                subcategories.append(Subcategory(
+                    id=row_data["id"],
+                    parentid=row_data["parentid"],
+                    name=row_data["name"],
+                    image=image
+                ))
+
+            return subcategories
+
+    except Exception as e:
+        print(f"Error in get_available_subcategory_list: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    finally:
+        await conn.close()
+
 
 @app.post("/subcategories")
 async def add_subcategory(category: Subcategory):

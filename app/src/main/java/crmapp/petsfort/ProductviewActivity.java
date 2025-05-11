@@ -129,16 +129,16 @@ public class ProductviewActivity extends AppCompatActivity {
 		productNameTextView.setText(JHelpers.capitalize(product.getProductName()));
 
 		String text = "";
-		if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
-			text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
-		} else {
-			text += "HSN-(NONE)";
-		}
+//		if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
+//			text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
+//		} else {
+//			text += "HSN-(NONE)";
+//		}
 
 		if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
-			text += " Code-(".concat(product.getProductCid()).concat(")");
+			text += "Code-(".concat(product.getProductCid()).concat(")");
 		} else {
-			text += " Code-(NONE)";
+			text += "Code-(NONE)";
 		}
 
 		productImageView.setOnClickListener(new OnClickListener() {

@@ -162,14 +162,19 @@ public class OrderCartViewActivity extends AppCompatActivity {
 
 		order = (Business.OrderQueryApiClient.Order) getIntent().getSerializableExtra("order");
 
-		viewBill.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				String url = "https://pets-fort.web.app/bill.html?orderid="+order.getOrderId(); // Replace with the desired URL
-				Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-				startActivity(intent);
-			}
-		});
+		String userRole = getSharedPreferences("logindata", Activity.MODE_PRIVATE).getString("role", "0");
+		if (userRole.equals("2") || userRole.equals("4")) {
+			viewBill.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					String url = "https://pets-fort.web.app/bill.html?orderid="+order.getOrderId(); // Replace with the desired URL
+					Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+					startActivity(intent);
+				}
+			});
+		} else {
+			viewBill.setVisibility(View.GONE);
+		}
 
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 1, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 		recyclerview1.setLayoutManager(gridlayoutManager);

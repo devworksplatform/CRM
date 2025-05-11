@@ -235,7 +235,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 				if(credits <= 0 || (credits<costDetails.getTotal())) {
 					new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Insufficient Credits ₹")
-							.setMessage("Contact our admin to recharge the credits to make orders. try again after credits added to you. current balance ₹ ".concat(String.valueOf(credits)).concat(". Required for the order is ₹ ").concat(String.valueOf(costDetails.getTotal())))
+							.setMessage("Contact our admin (Mobile:7092552211) to recharge the credits to make orders. try again after credits added to you. current balance ₹ ".concat(String.valueOf(credits)).concat(". Required for the order is ₹ ").concat(String.valueOf(costDetails.getTotal())))
 							.setCancelable(false)
 							.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 								@Override
@@ -260,7 +260,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 					if (daysToExpire < 0) {
 						dateStr = "Expired " + Math.abs(daysToExpire) + " days ago.";
 						new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Credits " + credits + "₹ "+ dateStr)
-								.setMessage("Contact our admin to increase the expiry date to use the credits to make orders. try again after credits expiry date is increased to you. current balance ₹ ".concat(String.valueOf(credits)))
+								.setMessage("Contact our admin (Mobile:7092552211) to increase the expiry date to use the credits to make orders. try again after credits expiry date is increased to you. current balance ₹ ".concat(String.valueOf(credits)))
 								.setCancelable(false)
 								.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 									@Override
@@ -295,20 +295,24 @@ public class OrderreviewActivity extends AppCompatActivity {
 							Business.localDB_SharedPref.clearCart(localDB);
 
 							progressDialog.hide();
-							new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
+							var d = new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
 									.setMessage("Order Has been created successfully, Thank you for shopping with us.")
-									.setCancelable(false)
-									.setNegativeButton("View Bill", new DialogInterface.OnClickListener() {
-										@Override
-										public void onClick(DialogInterface dialog, int which) {
-											Intent intent = new Intent();
-											intent.setClass(OrderreviewActivity.this, OrderActivity.class);
-											intent.putExtra("orderid",response.getOrderId());
-											startActivity(intent);
-											finish();
-										}
-									})
-									.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+									.setCancelable(false);
+
+							String userRole = getSharedPreferences("logindata", Activity.MODE_PRIVATE).getString("role", "0");
+							if (userRole.equals("2") || userRole.equals("4")) {
+								d.setNegativeButton("View Bill", new DialogInterface.OnClickListener() {
+									@Override
+									public void onClick(DialogInterface dialog, int which) {
+										Intent intent = new Intent();
+										intent.setClass(OrderreviewActivity.this, OrderActivity.class);
+										intent.putExtra("orderid",response.getOrderId());
+										startActivity(intent);
+										finish();
+									}
+								});
+							}
+									d.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 										@Override
 										public void onClick(DialogInterface dialog, int which) {
 											Intent intent = new Intent();
@@ -330,7 +334,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Out Of Stock!!!")
-										.setMessage("Order was failed to confirm, There is not enough stock for "+product_name+". Only "+product_available_stock+ " Left, please try again to confirm order.")
+										.setMessage("Order was failed to confirm, There is not enough stock for "+product_name+". Only "+product_available_stock+ " Left, please try again to confirm order. Contact Admin (Mobile:7092552211)")
 										.setCancelable(false)
 										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 											@Override
@@ -343,7 +347,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 							} else {
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-										.setMessage("Order was failed due to "+response.getErrorMessage()+", Please try again or Contact our admin team about the issue.")
+										.setMessage("Order was failed due to "+response.getErrorMessage()+", Please try again or Contact our admin (Mobile:7092552211) team about the issue.")
 										.setCancelable(false)
 										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 											@Override

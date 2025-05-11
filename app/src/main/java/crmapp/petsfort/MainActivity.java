@@ -65,13 +65,14 @@ public class MainActivity extends AppCompatActivity {
 
 		if(!AppVersionManager.isLoggedIn(getApplicationContext())) {
 			if(FirebaseAuth.getInstance().getCurrentUser() != null) {
-				Toast.makeText(this, "Sign In Again To Use New Features", Toast.LENGTH_SHORT).show();
-				SharedPreferences localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
-				Business.localDB_SharedPref.clearCart(localDB);
-				try{
-					Business.JFCM.unSubscribeAll();
-				} catch (Exception ignored) {}
-				FirebaseAuth.getInstance().signOut();
+				Toast.makeText(this, "Welcome To PetsFort", Toast.LENGTH_SHORT).show();
+//				Toast.makeText(this, "Sign In Again To Use New Features", Toast.LENGTH_SHORT).show();
+//				SharedPreferences localDB = getSharedPreferences("localDB", Context.MODE_PRIVATE);
+//				Business.localDB_SharedPref.clearCart(localDB);
+//				try{
+//					Business.JFCM.unSubscribeAll();
+//				} catch (Exception ignored) {}
+//				FirebaseAuth.getInstance().signOut();
 
 				startInit();
 			} else {

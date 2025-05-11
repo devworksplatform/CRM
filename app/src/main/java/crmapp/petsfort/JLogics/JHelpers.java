@@ -119,4 +119,65 @@ public class JHelpers {
         }
     }
 
+
+    public static class LoadingOverlay {
+
+        private android.widget.ProgressBar progressBar;
+
+        public void show(android.content.Context context) {
+            if (!(context instanceof android.app.Activity)) return;
+
+            android.app.Activity activity = (android.app.Activity) context;
+            android.widget.FrameLayout rootLayout = (android.widget.FrameLayout) activity.getWindow().getDecorView();
+
+            // Create full-screen overlay that blocks touches
+            android.widget.FrameLayout overlay = new android.widget.FrameLayout(context) {
+                @Override
+                public boolean onInterceptTouchEvent(android.view.MotionEvent ev) {
+                    return true; // Block all touch events from passing through
+                }
+            };
+
+            android.widget.FrameLayout.LayoutParams overlayParams =
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                    );
+            overlay.setLayoutParams(overlayParams);
+            overlay.setClickable(true); // Ensures it can intercept touch
+
+            // Create and center the ProgressBar
+            progressBar = new android.widget.ProgressBar(context, null, android.R.attr.progressBarStyleLarge);
+            android.widget.FrameLayout.LayoutParams progressParams =
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.FrameLayout.LayoutParams.WRAP_CONTENT
+                    );
+            progressParams.gravity = android.view.Gravity.CENTER;
+            progressBar.setLayoutParams(progressParams);
+
+            overlay.addView(progressBar);
+            rootLayout.addView(overlay);
+
+            // Tag overlay for removal
+            progressBar.setTag(overlay);
+
+            // Hide after 100ms
+            new android.os.Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    hide(context);
+                }
+            }, 100);
+        }
+
+        public void hide(android.content.Context context) {
+            if (!(context instanceof android.app.Activity)) return;
+            android.view.View overlay = (android.view.View) progressBar.getTag();
+            if (overlay != null && overlay.getParent() != null) {
+                ((android.view.ViewGroup) overlay.getParent()).removeView(overlay);
+            }
+        }
+    }
+
 }

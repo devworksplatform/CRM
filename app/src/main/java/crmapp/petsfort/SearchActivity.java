@@ -69,7 +69,7 @@ public class SearchActivity extends AppCompatActivity {
 	private EditText edittext1;
 	private ImageView imageview2;
 	private LinearLayout main;
-	private RecyclerView recyclerview1;
+	private RecyclerView recyclerview1, recyclerviewLeft;
 	private LinearLayout linear12;
 	private LinearLayout linear7;
 	private LinearLayout linear17;
@@ -90,8 +90,9 @@ public class SearchActivity extends AppCompatActivity {
 	private ChildEventListener _product_child_listener;
 
 	DecimalFormat df = new DecimalFormat("#.###");
+	JHelpers.LoadingOverlay loadingOverlay = new JHelpers.LoadingOverlay();
 
-	
+
 	@Override
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
@@ -128,6 +129,7 @@ public class SearchActivity extends AppCompatActivity {
 		imageview2 = findViewById(R.id.imageview2);
 		main = findViewById(R.id.main);
 		recyclerview1 = findViewById(R.id.recyclerview1);
+		recyclerviewLeft = findViewById(R.id.recyclerviewLeft);
 		linear12 = findViewById(R.id.linear12);
 		linear7 = findViewById(R.id.linear7);
 		linear17 = findViewById(R.id.linear17);
@@ -202,6 +204,7 @@ public class SearchActivity extends AppCompatActivity {
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
 		recyclerview1.setLayoutManager(gridlayoutManager);
 
+
 		searchForProductAndList("", null);
 	}
 	
@@ -272,16 +275,16 @@ public class SearchActivity extends AppCompatActivity {
 
 //			textviewRefId.setText(product.getProductId());
 			String text = "";
-			if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
-				text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
-			} else {
-				text += "HSN-(NONE)";
-			}
+//			if(product.getProductHsn() != null && !product.getProductHsn().isEmpty()) {
+//				text += "HSN-("+String.valueOf(product.getProductHsn()).concat(")");
+//			} else {
+//				text += "HSN-(NONE)";
+//			}
 
 			if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
-				text += " Code-(".concat(product.getProductCid()).concat(")");
+				text += "Code-(".concat(product.getProductCid()).concat(")");
 			} else {
-				text += " Code-(NONE)";
+				text += "Code-(NONE)";
 			}
 			textviewRefId.setText(text);
 //			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
@@ -401,13 +404,13 @@ public class SearchActivity extends AppCompatActivity {
 
 			filter3 = new HashMap<>();
 			filter3.put("field", "product_hsn");
-			filter3.put("operator", "eq");
+			filter3.put("operator", "contains");
 			filter3.put("value", product_name);
 			filters.add(filter3);
 
 			filter3 = new HashMap<>();
 			filter3.put("field", "product_cid");
-			filter3.put("operator", "eq");
+			filter3.put("operator", "contains");
 			filter3.put("value", product_name);
 			filters.add(filter3);
 		}
@@ -420,6 +423,9 @@ public class SearchActivity extends AppCompatActivity {
 		apiRequestData.put("order_by", "product_name");
 		apiRequestData.put("order_direction", "ASC");
 
+
+
+//		loadingOverlay.show(SearchActivity.this);
 		queryApiClient.callApi(apiRequestData, new Callbacker.ApiResponseWaiters.QueryApiCallback(){
 			@Override
 			public void onReceived(Business.QueryApiClient.QueryApiResponse response) {
@@ -435,11 +441,12 @@ public class SearchActivity extends AppCompatActivity {
 					main.setVisibility(View.GONE);
 				}
 
-				System.out.println(listmap);
+//				System.out.println(listmap);
 
 				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 				recyclerview1.setLayoutManager(gridlayoutManager);
+//				loadingOverlay.hide(SearchActivity.this);
 			}
 		});
 	}
@@ -449,13 +456,16 @@ public class SearchActivity extends AppCompatActivity {
 
 
 	void drawer() {
-		DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-		LinearLayout drawer = (LinearLayout) findViewById(R.id._nav_view);
-		LinearLayout rootLinear = (LinearLayout) drawer.findViewById(R.id.rootLinear);
+
+		RecyclerView staggeredRecyclerView = findViewById(R.id.recyclerviewLeft);
+
+//		DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+//		LinearLayout drawer = (LinearLayout) findViewById(R.id._nav_view);
+//		LinearLayout rootLinear = (LinearLayout) drawer.findViewById(R.id.rootLinear);
 
 
-		TextView textview1 = drawer.findViewById(R.id.textview1);
-		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+//		TextView textview1 = drawer.findViewById(R.id.textview1);
+//		textview1.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 
 
 
@@ -472,8 +482,7 @@ public class SearchActivity extends AppCompatActivity {
 					int unselectedColor = 0xFFE0E0E0; // Grey 300 (Material Design)
 
 					SelectableStaggeredGridAdapter adapter = new SelectableStaggeredGridAdapter(myDataList, selectedColor, unselectedColor);
-					RecyclerView staggeredRecyclerView = drawer.findViewById(R.id.staggeredRecyclerView);
-					StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL); // Same values as in XML
+					StaggeredGridLayoutManager layoutManager = new StaggeredGridLayoutManager(1, StaggeredGridLayoutManager.VERTICAL); // Same values as in XML
 					staggeredRecyclerView.setLayoutManager(layoutManager);
 					staggeredRecyclerView.setAdapter(adapter);
 //					ArrayList<Integer> selectedItems = adapter.getSelectedPositions();
@@ -483,23 +492,24 @@ public class SearchActivity extends AppCompatActivity {
 
 
 
-		rootLinear.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				//pass
-			}
-		});
+//		rootLinear.setOnClickListener(new OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				//pass
+//			}
+//		});
 
-		imageview2.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-					drawerLayout.closeDrawer(GravityCompat.START);
-				} else {
-					drawerLayout.openDrawer(GravityCompat.START);
-				}
-			}
-		});
+		imageview2.setVisibility(View.GONE);
+//		imageview2.setOnClickListener(new OnClickListener() {
+//			@Override
+//			public void onClick(View v) {
+//				if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+//					drawerLayout.closeDrawer(GravityCompat.START);
+//				} else {
+//					drawerLayout.openDrawer(GravityCompat.START);
+//				}
+//			}
+//		});
 
 
 	}
@@ -531,12 +541,20 @@ public class SearchActivity extends AppCompatActivity {
 			SubCategory subcat = dataList.get(position);
 			holder.itemText.setText(subcat.getName());
 
+
 			holder.itemText.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 
 			if (selectedPositions.contains(position)) {
 				holder.itemRootContainer.setBackgroundColor(selectedColor);
 			} else {
 				holder.itemRootContainer.setBackgroundColor(unselectedColor);
+			}
+
+			if(subcat.getImage() != null && subcat.getImage() != "null" && !subcat.getImage().isEmpty()) {
+				holder.item_image.setVisibility(View.VISIBLE);
+				Glide.with(getApplicationContext()).load(Uri.parse(subcat.getImage())).into(holder.item_image);
+			} else {
+				holder.item_image.setVisibility(View.GONE);
 			}
 
 			holder.itemView.setOnClickListener(v -> {
@@ -569,11 +587,13 @@ public class SearchActivity extends AppCompatActivity {
 		public static class ViewHolder extends RecyclerView.ViewHolder {
 			LinearLayout itemRootContainer;
 			TextView itemText;
+			ImageView item_image;
 
 			public ViewHolder(View itemView) {
 				super(itemView);
 				itemRootContainer = itemView.findViewById(R.id.item_root_container);
 				itemText = itemView.findViewById(R.id.item_text);
+				item_image = itemView.findViewById(R.id.item_image);
 			}
 		}
 
