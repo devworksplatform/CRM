@@ -106,6 +106,7 @@ public class SearchActivity extends AppCompatActivity {
 			drawer();
 		} else {
 			imageview2.setVisibility(View.GONE);
+			recyclerviewLeft.setVisibility(View.GONE);
 		}
 	}
 
