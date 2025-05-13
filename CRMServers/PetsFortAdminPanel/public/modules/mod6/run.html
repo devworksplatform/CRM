@@ -1,0 +1,137 @@
+<div class="container mx-auto p-4 md:p-8">
+    <style>
+        /* Inter Font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 320px;
+            width: 100%;
+        }
+        .kpi-card {
+            min-height: 120px;
+        }
+        .note-text {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 4px;
+            margin-bottom: 8px;
+        }
+         /* Added for Low Stock List */
+        .low-stock-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb; /* gray-200 */
+        }
+        .low-stock-item:last-child {
+            border-bottom: none;
+        }
+    </style>
+    <header class="mb-8">
+        <h1 class="text-4xl font-bold text-gray-700">Analytics Dashboard</h1>
+        <p class="text-gray-500">Comprehensive overview of your platform's performance.</p>
+    </header>
+
+    <section id="core-metrics" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-blue-500 text-white rounded-full"><i class="fas fa-dollar-sign fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Earnings (Overall)</p>
+                <p id="metric-total-earnings-overall" class="text-2xl font-semibold text-gray-700">$0.00</p>
+            </div>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-green-500 text-white rounded-full"><i class="fas fa-shopping-cart fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Orders (Overall)</p>
+                <p id="metric-total-orders-overall" class="text-2xl font-semibold text-gray-700">0</p>
+            </div>
+        </div>
+         <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-blue-500 text-white rounded-full"><i class="fas fa-dollar-sign fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Earnings (This Month)</p>
+                <p id="metric-total-earnings-this-month" class="text-2xl font-semibold text-gray-700">$0.00</p>
+            </div>
+        </div>
+         <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-blue-500 text-white rounded-full"><i class="fas fa-dollar-sign fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Earnings (Last Month)</p>
+                <p id="metric-total-earnings-last-month" class="text-2xl font-semibold text-gray-700">$0.00</p>
+            </div>
+        </div>
+        
+         <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-green-500 text-white rounded-full"><i class="fas fa-shopping-cart fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Orders (This Month)</p>
+                <p id="metric-total-orders-this-month" class="text-2xl font-semibold text-gray-700">0</p>
+            </div>
+        </div>
+         <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card">
+            <div class="p-3 bg-green-500 text-white rounded-full"><i class="fas fa-shopping-cart fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Total Orders (Last Month)</p>
+                <p id="metric-total-orders-last-month" class="text-2xl font-semibold text-gray-700">0</p>
+            </div>
+        </div>
+         <div class="bg-white p-6 rounded-xl shadow-lg flex items-center space-x-4 kpi-card col-span-full lg:col-span-1">
+            <div class="p-3 bg-orange-500 text-white rounded-full"><i class="fas fa-exclamation-circle fa-2x"></i></div>
+            <div>
+                <p class="text-sm text-gray-500">Low Stock Products</p>
+                <p id="metric-low-stock-products" class="text-2xl font-semibold text-gray-700">0</p>
+                <small id="metric-low-stock-threshold" class="text-xs text-gray-400"></small>
+            </div>
+        </div>
+    </section>
+
+    
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Top 10 Selling Products (by Revenue)</h2>
+            <p id="topSellingProductsNote" class="note-text"></p>
+            <div class="chart-container">
+                <canvas id="topSellingProductsChart"></canvas>
+            </div>
+        </div>
+         <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Top 5 Order Taking Users (by Value)</h2>
+             <p id="topOrderTakingUsersNote" class="note-text"></p>
+             <div class="p-4">
+                 <ul id="topOrderTakingUsersList">
+                      <li>Loading users...</li>
+                 </ul>
+             </div>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Orders Trend (Last 12 Months)</h2>
+            <p id="ordersTrend12MonthsNote" class="note-text"></p>
+            <div class="chart-container">
+                <canvas id="ordersTrend12MonthsChart"></canvas>
+            </div>
+        </div> -->
+         <div class="bg-white p-6 rounded-xl shadow-lg">
+            <h2 class="text-xl font-semibold text-gray-700 mb-2">Order Status Distribution</h2>
+             <p id="orderStatusNote" class="note-text"></p>
+            <div class="chart-container">
+                <canvas id="orderStatusChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+     <section class="bg-white p-6 rounded-xl shadow-lg mb-8">
+        <h2 class="text-xl font-semibold text-gray-700 mb-4">Low Stock Products (<span id="lowStockThresholdText"></span>)</h2>
+         <p id="lowStockProductsNote" class="note-text"></p>
+        <div id="lowStockProductsList" class="divide-y divide-gray-200">
+            <div class="low-stock-item text-gray-500">Loading low stock products...</div>
+        </div>
+    </section>
+
+</div>

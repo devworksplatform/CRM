@@ -888,7 +888,7 @@
                             deleteButton.title = 'Delete Row';
                              // Encode PK value for URL safety
                              const encodedPkValue = encodeURIComponent(String(pkValue));
-                            deleteButton.onclick = () => confirmDeleteRow(tableName, pkColumn, encodedPkValue, decodedPkValue); // Use confirmation modal
+                            deleteButton.onclick = () => confirmDeleteRow(tableName, pkColumn, encodedPkValue, String(pkValue)); // Use confirmation modal
                             tdAction.appendChild(deleteButton);
                         }
                     }

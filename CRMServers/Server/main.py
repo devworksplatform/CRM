@@ -2484,5 +2484,194 @@ async def FCM_notify_order_checkout(user_id, total_rate, user_name):
     except Exception as e:
         logger.error(f"Unexpected error fcm notify when FCM_notify_order_checkout in FCM: {e}", exc_info=True)
 
+
+# NEW: Analytics Page Route
+@app.get("/analytics", response_class=HTMLResponse)
+async def analytics_page(request: Request):
+    """Serves the analytics HTML page."""
+    html_file_path = "analytics.html" # New HTML file for analytics
+    try:
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return HTMLResponse(content=html_content)
+    except FileNotFoundError:
+        logger.error(f"HTML file not found at {html_file_path}", exc_info=True)
+        raise HTTPException(status_code=404, detail=f"{html_file_path} not found in the current directory.")
+    except Exception as e:
+        logger.error(f"Error reading HTML file {html_file_path}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Could not load analytics interface: {e}")
+
+
+from datetime import date, timedelta
+# --- Analytics Data API (NEW) ---
+@app.get("/analytics/summary")
+async def get_analytics_summary():
+    """Provides a comprehensive summary data for the analytics dashboard."""
+    conn = await get_db_connection()
+    summary_data = {}
+    # Helper to safely get value or default
+    def get_val(row, idx=0, default=0):
+        return row[idx] if row and row[idx] is not None else default
+
+    try:
+        async with conn.cursor() as cursor:
+            # --- Core Metrics ---
+            # Total Earnings Overall (from delivered orders, using precalculated total)
+            await cursor.execute("SELECT SUM(total) FROM orders WHERE order_status = 'ORDER_DELIVERED'")
+            summary_data["total_earnings_overall"] = round(get_val(await cursor.fetchone()), 2)
+
+            # Total Orders Overall
+            await cursor.execute("SELECT COUNT(order_id) FROM orders")
+            summary_data["total_orders_overall"] = get_val(await cursor.fetchone())
+
+            # Total Orders This Month
+            await cursor.execute("SELECT COUNT(order_id) FROM orders WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')")
+            summary_data["total_orders_this_month"] = get_val(await cursor.fetchone())
+
+            # Total Orders Last Month
+            await cursor.execute("SELECT COUNT(order_id) FROM orders WHERE strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', '-1 month')")
+            summary_data["total_orders_last_month"] = get_val(await cursor.fetchone())
+
+            # Total Earnings This Month (Delivered Orders)
+            await cursor.execute("SELECT SUM(total) FROM orders WHERE order_status = 'ORDER_DELIVERED' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now')")
+            summary_data["total_earnings_this_month"] = round(get_val(await cursor.fetchone()), 2)
+
+            # Total Earnings Last Month (Delivered Orders)
+            await cursor.execute("SELECT SUM(total) FROM orders WHERE order_status = 'ORDER_DELIVERED' AND strftime('%Y-%m', created_at) = strftime('%Y-%m', 'now', '-1 month')")
+            summary_data["total_earnings_last_month"] = round(get_val(await cursor.fetchone()), 2)
+
+
+            # Low Stock Products Count (< 5)
+            LOW_STOCK_THRESHOLD = 5
+            await cursor.execute("SELECT COUNT(id) FROM products WHERE stock < ?", (LOW_STOCK_THRESHOLD,))
+            summary_data["low_stock_products_count"] = get_val(await cursor.fetchone())
+            summary_data["low_stock_threshold"] = LOW_STOCK_THRESHOLD
+
+            # Low Stock Products List (< 5) - Details requested on click, but providing list in API for now
+            await cursor.execute("SELECT id, product_name, stock FROM products WHERE stock < ?", (LOW_STOCK_THRESHOLD,))
+            low_stock_rows = await cursor.fetchall()
+            summary_data["low_stock_products_list"] = [{"id": row[0], "name": row[1], "stock": row[2]} for row in low_stock_rows] if low_stock_rows else []
+
+
+            # Order Status Distribution
+            await cursor.execute("SELECT order_status, COUNT(order_id) FROM orders GROUP BY order_status")
+            order_status_rows = await cursor.fetchall()
+            summary_data["order_status_distribution"] = {row[0]: row[1] for row in order_status_rows} if order_status_rows else {}
+
+            # --- Product Insights ---
+
+            # Top 10 Selling Products (by total revenue from items_detail)
+            top_selling_products_list = []
+            try:
+                await cursor.execute("""
+                    SELECT
+                        p.product_name,
+                        SUM(CAST(json_extract(item.value, '$.count') AS INTEGER) * CAST(json_extract(item.value, '$.cost_mrp') AS REAL)) AS total_revenue
+                    FROM orders o,
+                         json_each(o.items_detail) AS item
+                    JOIN products p ON json_extract(item.value, '$.product_id') = p.product_id
+                    WHERE o.order_status = 'ORDER_DELIVERED'
+                    GROUP BY p.product_name
+                    ORDER BY total_revenue DESC
+                    LIMIT 10;
+                """)
+                top_products_rows = await cursor.fetchall()
+                if top_products_rows:
+                    top_selling_products_list = [{"name": row[0], "revenue": round(row[1], 2)} for row in top_products_rows]
+                else:
+                    top_selling_products_list = [{"note": "No product sales data found."}]
+            except Exception as e_tsp:
+                print(f"Warning: Could not query top selling products: {e_tsp}")
+                top_selling_products_list = [{"note": "Using mock data due to query error."}] # Keep mock structure
+            summary_data["top_selling_products_revenue"] = top_selling_products_list # Renamed key for clarity
+
+            # --- User Insights ---
+
+            # Top 5 Order Taking Users (by total order value from delivered orders)
+            top_order_users_list = []
+            try:
+                await cursor.execute("""
+                    SELECT
+                        u.name,
+                        SUM(o.total) AS total_order_value
+                    FROM orders o
+                    JOIN userdata u ON o.user_id = u.uid
+                    WHERE o.order_status = 'ORDER_DELIVERED'
+                    GROUP BY u.name
+                    ORDER BY total_order_value DESC
+                    LIMIT 5;
+                """)
+                top_users_rows = await cursor.fetchall()
+                if top_users_rows:
+                    top_order_users_list = [{"username": row[0], "total_value": round(row[1], 2)} for row in top_users_rows]
+                else:
+                    top_order_users_list = [{"note": "No user order data found."}]
+            except Exception as e_tou:
+                print(f"Warning: Could not query top order taking users: {e_tou}")
+                top_order_users_list = [{"note": "Using mock data due to query error."}] # Keep mock structure
+            summary_data["top_order_taking_users"] = top_order_users_list
+
+
+            # --- Trends ---
+
+            # Orders Trend (Last 12 Months) by count of orders
+            orders_trend_data_final = {}
+            try:
+                await cursor.execute("""
+                    SELECT
+                        strftime('%Y-%m', created_at) AS order_month,
+                        COUNT(order_id) AS monthly_orders
+                    FROM orders
+                    WHERE created_at >= DATE('now', '-12 months')
+                    GROUP BY order_month
+                    ORDER BY order_month ASC;
+                """)
+                orders_trend_rows = await cursor.fetchall()
+
+                # Generate labels for the last 12 months
+                date_labels_expected = []
+                today = date.today()
+                for i in range(12):
+                    past_month_start = (today.replace(day=1) - timedelta(days=(i+1)*30)).replace(day=1) # Approximation for month calculation
+                    date_labels_expected.append(past_month_start.strftime('%Y-%m'))
+                date_labels_expected.sort() # Ensure correct order
+
+                if orders_trend_rows:
+                    orders_map = {row[0]: row[1] for row in orders_trend_rows}
+                    final_data_points = [orders_map.get(month_label, 0) for month_label in date_labels_expected]
+                    orders_trend_data_final = {"labels": date_labels_expected, "data": final_data_points}
+                else:
+                    orders_trend_data_final = {
+                        "labels": date_labels_expected,
+                        "data": [0 for _ in range(12)],
+                        "note": "No order data for the last 12 months."
+                    }
+            except Exception as e_trend:
+                print(f"Warning: Could not generate real orders trend: {e_trend}")
+                # Generate mock labels for the last 12 months
+                mock_labels = []
+                today = date.today()
+                for i in range(12):
+                     past_month_start = (today.replace(day=1) - timedelta(days=(i+1)*30)).replace(day=1)
+                     mock_labels.append(past_month_start.strftime('%Y-%m'))
+                mock_labels.sort()
+                orders_trend_data_final = {
+                    "labels": mock_labels,
+                    "data": [random.randint(50, 200) for _ in range(12)], # Mock data
+                    "note": "Using mock data due to an error or no data."
+                }
+            summary_data["orders_trend_12_months"] = orders_trend_data_final
+
+
+            return summary_data
+
+    except Exception as e:
+        print(f"Error in get_analytics_summary: {e}")
+        raise e # Re-raise the original exception for debugging or higher-level handling
+    finally:
+        if conn:
+            await conn.close() # Close connection in actual implementation
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=5000)

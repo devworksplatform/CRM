@@ -1,0 +1,92 @@
+/* analytics_style.css */
+
+/* General body styling (Tailwind handles most of this, but can add base styles here) */
+body {
+    /* font-family: 'Inter', sans-serif; /* Ensure Inter font is loaded if not using Tailwind's default */
+    /* background-color: #f7fafc; /* Tailwind bg-gray-100 */
+    /* color: #2d3748; /* Tailwind text-gray-800 */
+    line-height: 1.6;
+}
+
+/* Card styles (can enhance Tailwind's shadow/rounded corners) */
+.bg-white.p-6.rounded-xl.shadow-lg {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.bg-white.p-6.rounded-xl.shadow-lg:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Tailwind shadow-xl */
+}
+
+/* Chart container styling */
+.chart-container {
+    padding: 10px; /* Add some padding around charts */
+    background-color: #fff; /* Ensure charts have a white background if not part of the card */
+    border-radius: 0.75rem; /* Tailwind rounded-xl */
+}
+
+/* Styling for icons in key metrics for better visual hierarchy */
+#key-metrics .fa-2x {
+    font-size: 1.75rem; /* Slightly larger icons */
+}
+
+#key-metrics > div > div:first-child { /* The icon container */
+    flex-shrink: 0; /* Prevent icon container from shrinking */
+    width: 60px; /* Fixed width for icon container */
+    height: 60px; /* Fixed height for icon container */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+/* Table styling enhancements */
+.min-w-full th {
+    background-color: #edf2f7; /* Tailwind bg-gray-200, slightly darker for header */
+}
+
+.min-w-full td, .min-w-full th {
+    padding: 1rem 1.5rem; /* Tailwind px-6 py-4 */
+}
+
+/* Responsive adjustments for smaller screens if needed beyond Tailwind */
+@media (max-width: 768px) {
+    .container {
+        padding: 1rem; /* md:p-8 */
+    }
+    h1 {
+        font-size: 2rem; /* text-4xl */
+    }
+    #key-metrics {
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+}
+
+/* Custom scrollbar for tables or long lists (optional) */
+.overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: #cbd5e0; /* Tailwind gray-400 */
+    border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0; /* Tailwind gray-500 */
+}
+
+/* Loading/No Data states for charts or tables */
+.loading-placeholder, .no-data-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+    color: #a0aec0; /* Tailwind text-gray-500 */
+    font-style: italic;
+}
