@@ -10,6 +10,24 @@ import json
 import random, string
 import aiosqlite  # Replaced sqlite3 with aiosqlite
 
+import asyncio
+import json
+import time
+import platform
+import os
+import psutil
+from sse_starlette.sse import EventSourceResponse
+
+from fastapi import WebSocket, WebSocketDisconnect
+import pty
+import select
+import termios
+import struct
+import fcntl
+import signal
+import subprocess
+
+
 from enum import Enum
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
@@ -507,7 +525,8 @@ async def rootPage(request: Request):
             logger.error(f"Error reading HTML file {html_file_path}: {e}")
             raise HTTPException(status_code=500, detail=f"Could not load interface: {e}")
     else:
-        raise HTTPException(status_code=404, detail=f"Could not load the page you are requesting")
+        return {"message": "Hello From AWS Domain"}
+        # raise HTTPException(status_code=404, detail=f"Could not load the page you are requesting")
 
 
 from fastapi import Request, HTTPException
@@ -522,7 +541,6 @@ async def rootPage(request: Request):
         return Response(content=xml_content, media_type="application/xml")
     except Exception as e:
         raise HTTPException(status_code=500, detail="Could not find the sitemap.xml")
-
 
 
 from datetime import datetime, timedelta, timezone
@@ -2671,6 +2689,527 @@ async def get_analytics_summary():
     finally:
         if conn:
             await conn.close() # Close connection in actual implementation
+
+
+
+
+async def get_system_details():
+    """
+    Asynchronously retrieves detailed system information.
+    """
+    # --- CPU Information ---
+    cpu_times = psutil.cpu_times()
+    cpu_stats = psutil.cpu_stats()
+    try:
+        cpu_freq = psutil.cpu_freq() # May not be available on all systems or may require permissions
+    except Exception:
+        cpu_freq = None
+    load_avg = psutil.getloadavg() # Unix-like specific
+
+    cpu_info = {
+        "logical_cores": psutil.cpu_count(logical=True),
+        "physical_cores": psutil.cpu_count(logical=False),
+        "usage_percent_per_cpu": psutil.cpu_percent(interval=0.1, percpu=True),
+        "total_cpu_usage_percent": psutil.cpu_percent(interval=0.1, percpu=False),
+        "times": {
+            "user": cpu_times.user,
+            "system": cpu_times.system,
+            "idle": cpu_times.idle,
+            "nice": getattr(cpu_times, 'nice', 'N/A'),  # POSIX
+            "iowait": getattr(cpu_times, 'iowait', 'N/A'), # Linux
+            "irq": getattr(cpu_times, 'irq', 'N/A'), # Linux, BSD
+            "softirq": getattr(cpu_times, 'softirq', 'N/A'), # Linux
+            "steal": getattr(cpu_times, 'steal', 'N/A'), # Linux (virtualized)
+            "guest": getattr(cpu_times, 'guest', 'N/A'), # Linux (virtualized)
+            "guest_nice": getattr(cpu_times, 'guest_nice', 'N/A'), # Linux (virtualized)
+        },
+        "stats": {
+            "ctx_switches": cpu_stats.ctx_switches,
+            "interrupts": cpu_stats.interrupts,
+            "soft_interrupts": cpu_stats.soft_interrupts,
+            "syscalls": cpu_stats.syscalls if hasattr(cpu_stats, 'syscalls') else 'N/A', # May not be available
+        },
+        "frequency": {
+            "current": cpu_freq.current if cpu_freq else 'N/A',
+            "min": cpu_freq.min if cpu_freq else 'N/A',
+            "max": cpu_freq.max if cpu_freq else 'N/A',
+        } if cpu_freq else 'N/A',
+        "load_average": { # Unix-like specific
+            "1_min": load_avg[0],
+            "5_min": load_avg[1],
+            "15_min": load_avg[2],
+        } if hasattr(psutil, 'getloadavg') else 'N/A',
+    }
+
+    # --- Memory Information ---
+    virtual_mem = psutil.virtual_memory()
+    swap_mem = psutil.swap_memory()
+    memory_info = {
+        "virtual_memory": {
+            "total_gb": round(virtual_mem.total / (1024**3), 2),
+            "available_gb": round(virtual_mem.available / (1024**3), 2),
+            "percent_used": virtual_mem.percent,
+            "used_gb": round(virtual_mem.used / (1024**3), 2),
+            "free_gb": round(virtual_mem.free / (1024**3), 2),
+            "active_gb": round(getattr(virtual_mem, 'active', 0) / (1024**3), 2), # Linux, macOS
+            "inactive_gb": round(getattr(virtual_mem, 'inactive', 0) / (1024**3), 2), # Linux, macOS
+            "buffers_gb": round(getattr(virtual_mem, 'buffers', 0) / (1024**3), 2), # Linux, BSD
+            "cached_gb": round(getattr(virtual_mem, 'cached', 0) / (1024**3), 2), # Linux, BSD
+            "shared_gb": round(getattr(virtual_mem, 'shared', 0) / (1024**3), 2), # Linux
+            "slab_gb": round(getattr(virtual_mem, 'slab', 0) / (1024**3), 2), # Linux
+        },
+        "swap_memory": {
+            "total_gb": round(swap_mem.total / (1024**3), 2),
+            "used_gb": round(swap_mem.used / (1024**3), 2),
+            "free_gb": round(swap_mem.free / (1024**3), 2),
+            "percent_used": swap_mem.percent,
+            "sin_gb": round(swap_mem.sin / (1024**3), 2), # Bytes Swapped In
+            "sout_gb": round(swap_mem.sout / (1024**3), 2), # Bytes Swapped Out
+        }
+    }
+
+    # --- Disk Information ---
+    disk_partitions_info = []
+    try:
+        for part in psutil.disk_partitions():
+            try:
+                usage = psutil.disk_usage(part.mountpoint)
+                disk_partitions_info.append({
+                    "device": part.device,
+                    "mountpoint": part.mountpoint,
+                    "fstype": part.fstype,
+                    "opts": part.opts,
+                    "total_gb": round(usage.total / (1024**3), 2),
+                    "used_gb": round(usage.used / (1024**3), 2),
+                    "free_gb": round(usage.free / (1024**3), 2),
+                    "percent_used": usage.percent,
+                })
+            except Exception: # Handle potential errors like "disk not ready"
+                disk_partitions_info.append({
+                    "device": part.device,
+                    "mountpoint": part.mountpoint,
+                    "fstype": part.fstype,
+                    "opts": part.opts,
+                    "error": "Could not retrieve usage",
+                })
+    except Exception:
+        disk_partitions_info = "Could not retrieve disk partitions"
+
+
+    disk_io = psutil.disk_io_counters()
+    disk_info = {
+        "partitions": disk_partitions_info,
+        "io_counters": {
+            "read_count": disk_io.read_count,
+            "write_count": disk_io.write_count,
+            "read_bytes_gb": round(disk_io.read_bytes / (1024**3), 2),
+            "write_bytes_gb": round(disk_io.write_bytes / (1024**3), 2),
+            "read_time_ms": disk_io.read_time,
+            "write_time_ms": disk_io.write_time,
+            "read_merged_count": getattr(disk_io, 'read_merged_count', 'N/A'), # Linux
+            "write_merged_count": getattr(disk_io, 'write_merged_count', 'N/A'), # Linux
+            "busy_time_ms": getattr(disk_io, 'busy_time', 'N/A'), # Linux
+        } if disk_io else 'N/A',
+    }
+
+    # --- Network Information ---
+    net_io = psutil.net_io_counters()
+    net_if_addrs = psutil.net_if_addrs()
+    interfaces = {}
+    for if_name, addrs in net_if_addrs.items():
+        stats = psutil.net_if_stats().get(if_name)
+        interfaces[if_name] = {
+            "addresses": [
+                {
+                    "family": str(addr.family),
+                    "address": addr.address,
+                    "netmask": addr.netmask,
+                    "broadcast": addr.broadcast,
+                    "ptp": addr.ptp, # Point-to-Point
+                } for addr in addrs
+            ],
+            "stats": {
+                "is_up": stats.isup if stats else 'N/A',
+                "duplex": str(stats.duplex) if stats else 'N/A', # e.g., NIC_DUPLEX_FULL
+                "speed_mbps": stats.speed if stats else 'N/A',
+                "mtu_bytes": stats.mtu if stats else 'N/A',
+            } if stats else 'N/A'
+        }
+
+    try:
+        net_connections = psutil.net_connections() # Can be slow or require permissions
+        connections_info = [
+            {
+                "fd": conn.fd,
+                "family": str(conn.family),
+                "type": str(conn.type), # e.g., SOCK_STREAM
+                "laddr": {"ip": conn.laddr.ip if conn.laddr else 'N/A', "port": conn.laddr.port if conn.laddr else 'N/A'},
+                "raddr": {"ip": conn.raddr.ip if conn.raddr else 'N/A', "port": conn.raddr.port if conn.raddr else 'N/A'},
+                "status": conn.status,
+                "pid": conn.pid
+            } for conn in net_connections[:20] # Limit for performance
+        ]
+    except psutil.AccessDenied:
+        connections_info = "Access Denied to network connections"
+    except Exception as e:
+        connections_info = f"Could not retrieve network connections: {str(e)}"
+
+
+    network_info = {
+        "io_counters": {
+            "bytes_sent_gb": round(net_io.bytes_sent / (1024**3), 2),
+            "bytes_recv_gb": round(net_io.bytes_recv / (1024**3), 2),
+            "packets_sent": net_io.packets_sent,
+            "packets_recv": net_io.packets_recv,
+            "errin": net_io.errin,
+            "errout": net_io.errout,
+            "dropin": net_io.dropin,
+            "dropout": net_io.dropout,
+        },
+        "interfaces": interfaces,
+        "connections_count": len(net_connections) if isinstance(net_connections, list) else 'N/A',
+        "connections_sample": connections_info # A sample to avoid overwhelming data
+    }
+
+    # --- Sensor Information ---
+    temperatures = {}
+    try:
+        temps = psutil.sensors_temperatures()
+        if temps:
+            for name, entries in temps.items():
+                temperatures[name] = [
+                    {
+                        "label": entry.label or 'N/A',
+                        "current_celsius": entry.current,
+                        "high_celsius": entry.high,
+                        "critical_celsius": entry.critical,
+                    } for entry in entries
+                ]
+        else:
+            temperatures = "Not available or not supported"
+    except Exception:
+        temperatures = "Could not retrieve temperatures (permissions or not supported)"
+
+    fans = {}
+    try:
+        fan_speeds = psutil.sensors_fans()
+        if fan_speeds:
+            for name, entries in fan_speeds.items():
+                fans[name] = [
+                    {
+                        "label": entry.label or 'N/A',
+                        "current_rpm": entry.current,
+                    } for entry in entries
+                ]
+        else:
+            fans = "Not available or not supported"
+    except Exception:
+        fans = "Could not retrieve fan speeds (permissions or not supported)"
+
+    battery_info = {}
+    try:
+        battery = psutil.sensors_battery()
+        if battery:
+            battery_info = {
+                "percent": battery.percent,
+                "secsleft": battery.secsleft, # Seconds left, -1 if N/A, -2 if unlimited
+                "power_plugged": battery.power_plugged,
+            }
+        else:
+            battery_info = "Not available or not supported"
+    except Exception:
+        battery_info = "Could not retrieve battery info (permissions or not supported)"
+
+    sensor_info = {
+        "temperatures": temperatures,
+        "fans": fans,
+        "battery": battery_info,
+    }
+
+    # --- System/OS Information ---
+    plat = platform.uname()
+    system_os_info = {
+        "boot_time_timestamp": psutil.boot_time(),
+        "boot_time_readable": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(psutil.boot_time())),
+        "users": [{"name": user.name, "terminal": user.terminal, "host": user.host, "started": user.started, "pid": user.pid} for user in psutil.users()],
+        "platform_details": {
+            "system": plat.system,
+            "node_hostname": plat.node,
+            "release": plat.release,
+            "version": plat.version,
+            "machine_arch": plat.machine,
+            "processor": plat.processor,
+            "python_version": platform.python_version(),
+            "os_name": os.name,
+        }
+    }
+
+    # --- Process Information (Summary) ---
+    pids = psutil.pids()
+    process_summary = {
+        "total_processes": len(pids),
+        "top_processes_by_memory": [],
+        "top_processes_by_cpu": []
+    }
+    processes = []
+    for pid in pids:
+        try:
+            p = psutil.Process(pid)
+            processes.append({
+                "pid": p.pid,
+                "name": p.name(),
+                "cpu_percent": p.cpu_percent(interval=0.01), # Short interval for quick snapshot
+                "memory_percent": p.memory_percent(),
+                "status": p.status(),
+                "username": p.username() if hasattr(p, 'username') else 'N/A'
+            })
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    # Sort processes (get top 5 for brevity in stream)
+    process_summary["top_processes_by_memory"] = sorted(
+        processes, key=lambda x: x["memory_percent"], reverse=True
+    )[:5]
+    process_summary["top_processes_by_cpu"] = sorted(
+        processes, key=lambda x: x["cpu_percent"], reverse=True
+    )[:5]
+
+
+    return {
+        "timestamp": time.time(),
+        "cpu": cpu_info,
+        "memory": memory_info,
+        "disk": disk_info,
+        "network": network_info,
+        "sensors": sensor_info,
+        "system_os": system_os_info,
+        "processes_summary": process_summary
+    }
+
+async def system_stats_event_generator(request: Request):
+    """
+    Generator function to stream system stats.
+    """
+    while True:
+        # Check if the client is still connected before doing heavy work
+        if await request.is_disconnected():
+            print("Client disconnected, stopping stream.")
+            break
+
+        details = await get_system_details()
+        yield {"data": json.dumps(details)}
+        await asyncio.sleep(1)  # Adjust the refresh interval as needed (e.g., 1 second)
+
+@app.get("/system-stats/live")
+async def stream_system_stats(request: Request):
+    """
+    Endpoint to stream live system statistics using Server-Sent Events.
+    """
+    event_generator = system_stats_event_generator(request)
+    return EventSourceResponse(event_generator)
+
+@app.get("/system-stats/snapshot")
+async def get_system_stats_snapshot():
+    """
+    Endpoint to get a single snapshot of system statistics.
+    """
+    return await get_system_details()
+
+
+
+
+# terminals
+# Store active terminals
+active_terminals = {}
+
+@app.websocket("/ws/terminal")
+async def websocket_terminal(websocket: WebSocket):
+    await websocket.accept()
+    
+    terminal_id = None
+    
+    try:
+        # Wait for initial configuration
+        config = await websocket.receive_json()
+        command = config.get("command", "/bin/bash")
+        cols = config.get("cols", 80)
+        rows = config.get("rows", 24)
+        
+        # Create PTY
+        master_fd, slave_fd = pty.openpty()
+        
+        # Set terminal size
+        term_size = struct.pack("HHHH", rows, cols, 0, 0)
+        fcntl.ioctl(slave_fd, termios.TIOCSWINSZ, term_size)
+        
+        # Start the process in a new session
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
+        
+        process = subprocess.Popen(
+            command,
+            shell=True,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            universal_newlines=False,
+            start_new_session=True,
+            env=env
+        )
+        
+        # Close the slave file descriptor as it's now used by the child process
+        os.close(slave_fd)
+        
+        # Set master fd to non-blocking mode
+        fl = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+        fcntl.fcntl(master_fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+        
+        # Create a unique terminal ID
+        terminal_id = str(process.pid)
+        
+        # Store terminal info
+        active_terminals[terminal_id] = {
+            "pid": process.pid,
+            "master_fd": master_fd,
+            "process": process
+        }
+        
+        # Send terminal ID back to client
+        await websocket.send_json({"type": "connected", "terminalId": terminal_id})
+        
+        # Create read task
+        read_task = asyncio.create_task(read_from_terminal(websocket, terminal_id))
+        
+        # Handle incoming messages
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            if message["type"] == "input":
+                # Send input to terminal
+                os.write(active_terminals[terminal_id]["master_fd"], message["data"].encode())
+            elif message["type"] == "resize":
+                # Handle window resize
+                rows = message["rows"]
+                cols = message["cols"]
+                term_size = struct.pack("HHHH", rows, cols, 0, 0)
+                fcntl.ioctl(active_terminals[terminal_id]["master_fd"], termios.TIOCSWINSZ, term_size)
+    
+    except WebSocketDisconnect:
+        # Clean up on disconnect
+        if terminal_id and terminal_id in active_terminals:
+            await close_terminal(terminal_id)
+    except Exception as e:
+        # Handle any other exceptions
+        print(f"Error in websocket: {str(e)}")
+        if terminal_id and terminal_id in active_terminals:
+            await close_terminal(terminal_id)
+
+async def read_from_terminal(websocket: WebSocket, terminal_id: str):
+    """Read output from the terminal and send to websocket"""
+    terminal = active_terminals[terminal_id]
+    
+    # Buffer for incomplete UTF-8 sequences
+    incomplete_utf8 = b""
+    
+    try:
+        while True:
+            # Check if process is still running
+            if terminal["process"].poll() is not None:
+                await websocket.send_json({"type": "exit", "code": terminal["process"].returncode})
+                await close_terminal(terminal_id)
+                break
+            
+            # Wait for data to be available
+            r, w, e = select.select([terminal["master_fd"]], [], [], 0.1)
+            
+            if terminal["master_fd"] in r:
+                try:
+                    data = os.read(terminal["master_fd"], 8192)
+                    
+                    if data:
+                        # Combine with any incomplete UTF-8 from last time
+                        data = incomplete_utf8 + data
+                        
+                        try:
+                            # Try to decode as UTF-8
+                            text = data.decode('utf-8')
+                            incomplete_utf8 = b""  # Reset buffer
+                            await websocket.send_json({"type": "output", "data": text})
+                        except UnicodeDecodeError:
+                            # If we got an error, try to find a valid UTF-8 sequence
+                            for i in range(len(data), 0, -1):
+                                try:
+                                    text = data[:i].decode('utf-8')
+                                    incomplete_utf8 = data[i:]
+                                    await websocket.send_json({"type": "output", "data": text})
+                                    break
+                                except UnicodeDecodeError:
+                                    continue
+                            else:
+                                # If we can't find any valid UTF-8, save the whole buffer
+                                incomplete_utf8 = data
+                                continue
+                    else:
+                        # EOF
+                        await websocket.send_json({"type": "eof"})
+                        await close_terminal(terminal_id)
+                        break
+                except OSError:
+                    # Process likely terminated
+                    await close_terminal(terminal_id)
+                    break
+            
+            # Allow other tasks to run
+            await asyncio.sleep(0.01)
+    except Exception as e:
+        print(f"Error in read_from_terminal: {str(e)}")
+        await close_terminal(terminal_id)
+
+async def close_terminal(terminal_id: str):
+    """Close a terminal session"""
+    if terminal_id not in active_terminals:
+        return
+    
+    terminal = active_terminals[terminal_id]
+    
+    # Try to terminate process gracefully first
+    try:
+        os.kill(terminal["pid"], signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    
+    # Clean up resources
+    try:
+        os.close(terminal["master_fd"])
+    except OSError:
+        pass
+    
+    # Remove from active terminals
+    del active_terminals[terminal_id]
+
+# Shutdown handler to clean up all terminals
+@app.on_event("shutdown")
+def shutdown_event():
+    for terminal_id in list(active_terminals.keys()):
+        try:
+            terminal = active_terminals[terminal_id]
+            # Try to terminate process
+            try:
+                os.kill(terminal["pid"], signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            
+            # Close file descriptor
+            try:
+                os.close(terminal["master_fd"])
+            except OSError:
+                pass
+        except Exception:
+            pass
+    
+    active_terminals.clear()
+
 
 
 if __name__ == "__main__":

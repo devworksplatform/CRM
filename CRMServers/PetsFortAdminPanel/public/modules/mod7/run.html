@@ -1,0 +1,229 @@
+<div class="container">
+    <header>
+        <h1><i class="fas fa-tachometer-alt"></i> Live System Monitor</h1>
+        <p>Real-time CPU, Memory, Disk, Network, and System Statistics</p>
+        <div class="status-indicator" id="status-indicator">
+            <span class="dot"></span> <span id="connection-status">Live Disabled</span>
+        </div>
+        <button id="toggle-live-button" class="button-live-toggle">Enable Live</button> 
+    </header>
+
+    <div id="last-updated">Last updated: N/A</div>
+
+    
+    <section id="cpu-section" class="metric-section">
+        <h2><i class="fas fa-microchip"></i> CPU Information</h2>
+        <div class="metric-card full-width">
+            <p class="metric-title">RAM Usage Over Time</p>
+            <canvas id="ramChart" height="100"></canvas>
+        </div>
+
+        <div class="grid-container">
+            <div class="metric-card">
+                <p class="metric-title">Total Usage</p>
+                <p id="cpu-total-usage" class="metric-value">N/A</p>
+                <div class="progress-bar-container">
+                    <div id="cpu-total-usage-bar" class="progress-bar"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Logical Cores</p>
+                <p id="cpu-logical-cores" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Physical Cores</p>
+                <p id="cpu-physical-cores" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Current Frequency</p>
+                <p id="cpu-frequency" class="metric-value">N/A MHz</p>
+            </div>
+            <div class="metric-card full-width">
+                <p class="metric-title">Usage Per Core</p>
+                <div id="cpu-per-core-usage" class="per-core-container">
+                    </div>
+            </div>
+                <div class="metric-card">
+                <p class="metric-title">Load Avg (1m)</p>
+                <p id="cpu-load-1m" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Load Avg (5m)</p>
+                <p id="cpu-load-5m" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Load Avg (15m)</p>
+                <p id="cpu-load-15m" class="metric-value">N/A</p>
+            </div>
+                <div class="metric-card">
+                <p class="metric-title">Context Switches</p>
+                <p id="cpu-ctx-switches" class="metric-value">N/A</p>
+            </div>
+                <div class="metric-card">
+                <p class="metric-title">Interrupts</p>
+                <p id="cpu-interrupts" class="metric-value">N/A</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="memory-section" class="metric-section">
+        <h2><i class="fas fa-memory"></i> Memory Information</h2>
+        <div class="grid-container">
+            <div class="metric-card">
+                <p class="metric-title">Virtual Total</p>
+                <p id="mem-virtual-total" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Virtual Used</p>
+                <p id="mem-virtual-used" class="metric-value">N/A GB</p>
+                <div class="progress-bar-container">
+                    <div id="mem-virtual-used-bar" class="progress-bar"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Virtual Available</p>
+                <p id="mem-virtual-available" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Virtual Usage %</p>
+                <p id="mem-virtual-percent" class="metric-value">N/A</p>
+            </div>
+
+            <div class="metric-card">
+                <p class="metric-title">Swap Total</p>
+                <p id="mem-swap-total" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Swap Used</p>
+                <p id="mem-swap-used" class="metric-value">N/A GB</p>
+                    <div class="progress-bar-container">
+                    <div id="mem-swap-used-bar" class="progress-bar"></div>
+                </div>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Swap Free</p>
+                <p id="mem-swap-free" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Swap Usage %</p>
+                <p id="mem-swap-percent" class="metric-value">N/A</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="disk-section" class="metric-section">
+        <h2><i class="fas fa-hdd"></i> Disk Information</h2>
+        <div id="disk-partitions-container" class="grid-container">
+            <div class="metric-card"><p>Loading disk data...</p></div>
+        </div>
+        <div class="grid-container">
+            <div class="metric-card">
+                <p class="metric-title">Total Reads</p>
+                <p id="disk-read-count" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Total Writes</p>
+                <p id="disk-write-count" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Data Read</p>
+                <p id="disk-read-bytes" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Data Written</p>
+                <p id="disk-write-bytes" class="metric-value">N/A GB</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="network-section" class="metric-section">
+        <h2><i class="fas fa-network-wired"></i> Network Information</h2>
+        <div class="grid-container">
+                <div class="metric-card">
+                <p class="metric-title">Bytes Sent</p>
+                <p id="net-bytes-sent" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Bytes Received</p>
+                <p id="net-bytes-recv" class="metric-value">N/A GB</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Packets Sent</p>
+                <p id="net-packets-sent" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Packets Received</p>
+                <p id="net-packets-recv" class="metric-value">N/A</p>
+            </div>
+        </div>
+        <div id="network-interfaces-container">
+            <h3>Network Interfaces:</h3>
+            <div class="metric-card full-width"><p>Loading interface data...</p></div>
+        </div>
+    </section>
+
+    <section id="sensors-section" class="metric-section">
+        <h2><i class="fas fa-thermometer-half"></i> Sensor Information</h2>
+        <div id="sensors-container" class="grid-container">
+            <div class="metric-card"><p>Loading sensor data...</p></div>
+        </div>
+    </section>
+
+    <section id="system-os-section" class="metric-section">
+        <h2><i class="fas fa-desktop"></i> System & OS Information</h2>
+        <div class="grid-container">
+            <div class="metric-card">
+                <p class="metric-title">Hostname</p>
+                <p id="os-hostname" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Platform</p>
+                <p id="os-platform" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">OS Release</p>
+                <p id="os-release" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">OS Version</p>
+                <p id="os-version" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Architecture</p>
+                <p id="os-arch" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card">
+                <p class="metric-title">Python Version</p>
+                <p id="os-python-version" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card full-width">
+                <p class="metric-title">Boot Time</p>
+                <p id="os-boot-time" class="metric-value">N/A</p>
+            </div>
+            <div class="metric-card full-width">
+                <p class="metric-title">Logged In Users</p>
+                <ul id="os-users-list" class="data-list"><li>N/A</li></ul>
+            </div>
+        </div>
+    </section>
+
+        <section id="processes-section" class="metric-section">
+        <h2><i class="fas fa-cogs"></i> Process Summary</h2>
+        <div class="grid-container">
+            <div class="metric-card">
+                <p class="metric-title">Total Processes</p>
+                <p id="proc-total" class="metric-value">N/A</p>
+            </div>
+        </div>
+        <div class="grid-container two-col">
+            <div class="metric-card list-card">
+                <h3 class="sub-heading">Top by CPU Usage</h3>
+                <ul id="proc-top-cpu" class="data-list process-list"><li>Loading...</li></ul>
+            </div>
+            <div class="metric-card list-card">
+                    <h3 class="sub-heading">Top by Memory Usage</h3>
+                <ul id="proc-top-mem" class="data-list process-list"><li>Loading...</li></ul>
+            </div>
+        </div>
+    </section>
+</div>

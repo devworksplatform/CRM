@@ -1,5 +1,9 @@
 // basic/initHelp.js
 
+// const SERVER_URL = "https://server.petsfort.in/";
+// const SERVER_URL = "http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/";
+const SERVER_URL = "https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/";
+
 // --- LocalStorage Helpers ---
 const StorageHelper = {
     save: (key, data) => {
@@ -170,9 +174,7 @@ async function callApi(method, url, body = null) {
     }
 
     try {
-      // const response = await fetch("https://server.petsfort.in/"+url, options);
-      // const response = await fetch("http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/"+url, options);
-      const response = await fetch("https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/"+url, options);
+      const response = await fetch(SERVER_URL+url, options);
 
         if (!response.ok) {
         throw new Error(`HTTP ${response.status} - ${response.statusText}`);

@@ -1,0 +1,167 @@
+
+<div id="maindiv" class="mainDiv">
+        <style>
+        .mainDiv {
+            font-family: 'Courier New', monospace;
+            color: var(--terminal-text);
+            background-color: #2d2d2d;
+            --terminal-bg: #1e1e1e;
+            --terminal-text: #f0f0f0;
+            --terminal-border: #444;
+        }
+        
+        .mainDiv {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+/*         
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #2d2d2d;
+            color: var(--terminal-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        } */
+        
+        header {
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .controls input {
+            padding: 8px;
+            background-color: #3a3a3a;
+            border: 1px solid var(--terminal-border);
+            color: var(--terminal-text);
+            font-family: inherit;
+        }
+        
+        .controls button {
+            padding: 8px 16px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .controls button:hover {
+            background-color: #0055aa;
+        }
+        
+        .terminal-container {
+            flex: 1;
+            background-color: var(--terminal-bg);
+            border: 1px solid var(--terminal-border);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #terminal {
+            flex: 1;
+            overflow: hidden;
+            padding: 0;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.2;
+            color: var(--terminal-text);
+        }
+        
+        .status-bar {
+            background-color: #333;
+            padding: 4px 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .status-connected {
+            background-color: #4caf50;
+        }
+        
+        .status-disconnected {
+            background-color: #f44336;
+        }
+        
+        .status-connecting {
+            background-color: #ff9800;
+        }
+        
+        /* Dark theme for xterm.js */
+        .xterm-viewport::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-track {
+            background: #333;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+    <header>
+        <h1>Web Terminal</h1>
+        <div class="controls">
+            <input type="text" id="command-input" placeholder="Command (default: /bin/bash)" value="/bin/bash">
+            <button id="connect-btn">Connect</button>
+            <button id="disconnect-btn" disabled>Disconnect</button>
+        </div>
+    </header>
+    
+    <div class="terminal-container">
+        <div id="terminal"></div>
+        <div class="status-bar">
+            <div>
+                <span class="status-indicator status-disconnected" id="status-indicator"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+            <div id="terminal-size">80x24</div>
+        </div>
+    </div>
+
+</div>
