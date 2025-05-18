@@ -251,7 +251,7 @@ class OrderResponse(BaseModel):
     total: float
     created_at: str
     address: str
-    notes: str
+    notes: Optional[str] = None
 
 class OperatorEnum(str, Enum):
     eq = "eq"  # Equal
@@ -2958,7 +2958,7 @@ async def get_system_details():
             processes.append({
                 "pid": p.pid,
                 "name": p.name(),
-                "cpu_percent": p.cpu_percent(interval=0.01), # Short interval for quick snapshot
+                "cpu_percent": 0,#p.cpu_percent(interval=0.01), # Short interval for quick snapshot
                 "memory_percent": p.memory_percent(),
                 "status": p.status(),
                 "username": p.username() if hasattr(p, 'username') else 'N/A'
