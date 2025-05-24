@@ -392,7 +392,7 @@ def build_query(filters: List[QueryParam]):
             else:
                 # Handle case where value is not a list or is empty for 'in' operator
                 query_parts.append("1=0") # Ensures no results match
-    # where_clause = " OR ".join(query_parts) if query_parts else "1=1"
+    # where_clause = " AND ".join(query_parts) if query_parts else "1=1"
     if query_parts:
         if len(query_parts) > 1:
             where_clause = f"{query_parts[0]} AND ({' OR '.join(query_parts[1:])})"

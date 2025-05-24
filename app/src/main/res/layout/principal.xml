@@ -36,11 +36,15 @@
 				android:orientation="vertical"
 				android:id="@+id/rootLinear"
 				app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
 				<androidx.cardview.widget.CardView
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:padding="1dp"
-					android:layout_margin="5dp"
+					android:layout_marginRight="20sp"
+					android:layout_marginLeft="20sp"
+					android:layout_marginTop="10dp"
+					android:layout_marginBottom="10dp"
 					app:cardCornerRadius="40dp"
 					android:elevation="20dp"
 					>
@@ -136,7 +140,9 @@
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:padding="1dp"
-					android:layout_margin="8dp"
+					android:layout_marginBottom="8sp"
+					android:layout_marginLeft="8sp"
+					android:layout_marginRight="8sp"
 					app:cardCornerRadius="40dp">
 					<com.google.android.material.bottomnavigation.BottomNavigationView
 						android:id="@+id/bottomnavigation1"

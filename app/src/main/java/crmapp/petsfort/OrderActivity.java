@@ -1,5 +1,7 @@
 package crmapp.petsfort;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.*;
@@ -9,6 +11,7 @@ import android.os.*;
 import android.view.*;
 import android.view.View;
 import android.view.View.*;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -48,6 +51,7 @@ public class OrderActivity extends AppCompatActivity {
 	private LinearLayout linear16;
 	private LinearLayout circle2;
 	private LinearLayout noDataLinear;
+	LinearLayout linearLoading;
 
 	private ImageView imageview1;
 	private TextView textview1,textviewTemp;
@@ -87,6 +91,15 @@ public class OrderActivity extends AppCompatActivity {
 		noDataLinear.setVisibility(View.GONE);
 
 
+		linearLoading = findViewById(R.id.init_loading);
+		linearLoading.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//pass
+			}
+		});
+		linearLoading.setVisibility(View.VISIBLE);
+
 
 		linear5.setOnClickListener(new View.OnClickListener() {
 			@Override
@@ -125,6 +138,27 @@ public class OrderActivity extends AppCompatActivity {
 		orderApiClient.callApi(queryData, new Business.OrderQueryApiClient.OrderApiCallback() {
 			@Override
 			public void onReceived(Business.OrderQueryApiClient.OrderQueryApiResponse response) {
+//				linearLoading.setVisibility(View.GONE);
+				new Handler(Looper.getMainLooper()).postDelayed(() -> {
+					linearLoading.animate()
+							.alpha(0f)
+							.translationY(-50)
+							.setDuration(400)
+							.setInterpolator(new AccelerateDecelerateInterpolator())
+							.setListener(new AnimatorListenerAdapter() {
+								@Override
+								public void onAnimationEnd(Animator animation) {
+									linearLoading.setVisibility(View.GONE);
+									linearLoading.setTranslationY(0);
+									linearLoading.setAlpha(1f);
+
+
+								}
+							})
+							.start();
+				}, 1000);
+
+
 				if(response.getStatusCode() == 200) {
 					listmap = response.getOrders();
 				}

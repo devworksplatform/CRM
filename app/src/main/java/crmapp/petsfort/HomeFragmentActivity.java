@@ -1,5 +1,6 @@
 package crmapp.petsfort;
 
+import android.animation.Animator;
 import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
@@ -25,6 +26,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager.widget.PagerAdapter;
 import androidx.viewpager.widget.ViewPager;
 
+import com.airbnb.lottie.LottieAnimationView;
 import com.bumptech.glide.Glide;
 import com.facebook.shimmer.*;
 import com.google.firebase.FirebaseApp;
@@ -121,6 +123,7 @@ public class HomeFragmentActivity extends Fragment {
 		initialize(_savedInstanceState, _view);
 		FirebaseApp.initializeApp(getContext());
 		initializeLogic();
+		extras(_view);
 		return _view;
 	}
 
@@ -296,16 +299,57 @@ public class HomeFragmentActivity extends Fragment {
 		linear40.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 		linear41.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFBDBDBD));
 
-		Fragment fragment = new Frag1FragmentActivity();
-		getChildFragmentManager()
-				.beginTransaction()
-				.replace(R.id.sk, fragment)
-				.commit();
+//		Fragment fragment = new Frag1FragmentActivity();
+//		getChildFragmentManager()
+//				.beginTransaction()
+//				.replace(R.id.sk, fragment)
+//				.commit();
 
 	}
 
 
+
+
+	int n=0;
+	void extras(View _view) {
+		LottieAnimationView catVisit =_view.findViewById(R.id.cat_visit);
+
+		catVisit.setProgress(0f); // 0f = start frame
+		catVisit.setSpeed(1f);  // Normal speed
+		catVisit.playAnimation();
+		catVisit.addAnimatorListener(new Animator.AnimatorListener() {
+			@Override
+			public void onAnimationStart(@NonNull Animator animation) {
+
+			}
+
+			@Override
+			public void onAnimationEnd(@NonNull Animator animation) {
+				if(n==0){
+					catVisit.setProgress(1f);
+					catVisit.setSpeed(-1f);
+					catVisit.playAnimation();
+					n+=1;
+				} else {
+					_view.findViewById(R.id.cat_visitLinear).setVisibility(View.GONE);
+				}
+			}
+
+			@Override
+			public void onAnimationCancel(@NonNull Animator animation) {
+
+			}
+
+			@Override
+			public void onAnimationRepeat(@NonNull Animator animation) {
+
+			}
+		});
+	}
+
+
 	public void hideLoadingAndStartIntro() {
+
 		JHelpers.runAfterDelay(getActivity(), 100, new Callbacker.Timer(){
 			@Override
 			public void onEnd() {
@@ -366,6 +410,12 @@ public class HomeFragmentActivity extends Fragment {
 
 
 	public void loadCredits() {
+
+		Fragment fragment = new Frag1FragmentActivity();
+		getChildFragmentManager()
+				.beginTransaction()
+				.replace(R.id.sk, fragment)
+				.commit();
 
 		JHelpers.runAfterDelay(getActivity(),400,new Callbacker.Timer(){
 			@Override

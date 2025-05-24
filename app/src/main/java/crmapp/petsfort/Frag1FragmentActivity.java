@@ -103,40 +103,7 @@ public class Frag1FragmentActivity extends Fragment {
 			}
 		});
 
-//		product.addListenerForSingleValueEvent(new ValueEventListener() {
-//			@Override
-//			public void onDataChange(DataSnapshot _dataSnapshot) {
-//				listmap = new ArrayList<>();
-//				try {
-//					GenericTypeIndicator<HashMap<String, Object>> _ind = new GenericTypeIndicator<HashMap<String, Object>>() {};
-//					for (DataSnapshot _data : _dataSnapshot.getChildren()) {
-//						HashMap<String, Object> _map = _data.getValue(_ind);
-//						_map.put("key", _data.getKey());
-//						_map.put("order", Integer.parseInt(_data.getKey().replaceAll("\\D", "")));
-//						listmap.add(_map);
-//					}
-//                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-//						Collections.sort(listmap, Comparator.comparingInt(m -> Integer.parseInt(m.get("order").toString())));
-//					}
-//                }
-//				catch (Exception _e) {
-//					_e.printStackTrace();
-//				}
-//				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
-//
-//				if (listmap.size() == 0) {
-//					progressbar1.setVisibility(View.VISIBLE);
-//					recyclerview1.setVisibility(View.GONE);
-//				}
-//				else {
-//					progressbar1.setVisibility(View.GONE);
-//					recyclerview1.setVisibility(View.VISIBLE);
-//				}
-//			}
-//			@Override
-//			public void onCancelled(DatabaseError _databaseError) {
-//			}
-//		});
+
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getContext().getApplicationContext(), 4, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 		recyclerview1.setLayoutManager(gridlayoutManager);
 
@@ -201,6 +168,18 @@ public class Frag1FragmentActivity extends Fragment {
 					startActivity(intent);
 				}
 			});
+
+			// 🔥 Animation Effect
+			_view.setAlpha(0f);
+			_view.setScaleX(0.9f);
+			_view.setScaleY(0.9f);
+			_view.animate()
+					.alpha(1f)
+					.scaleX(1f)
+					.scaleY(1f)
+					.setDuration(300)
+					.setStartDelay(_position * 30) // slight stagger effect
+					.start();
 		}
 		
 		@Override

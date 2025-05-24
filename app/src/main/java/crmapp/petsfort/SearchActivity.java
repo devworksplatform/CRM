@@ -1,5 +1,9 @@
 package crmapp.petsfort;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ArgbEvaluator;
+import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
@@ -14,6 +18,8 @@ import android.util.*;
 import android.view.*;
 import android.view.View;
 import android.view.View.*;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.*;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -170,7 +176,7 @@ public class SearchActivity extends AppCompatActivity {
 			@Override
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
 				final String _charSeq = _param1.toString();
-				searchForProductAndList(_charSeq, null);
+				searchForProductAndList(_charSeq, null, null);
 			}
 			
 			@Override
@@ -206,21 +212,70 @@ public class SearchActivity extends AppCompatActivity {
 		recyclerview1.setLayoutManager(gridlayoutManager);
 
 
-		searchForProductAndList("", null);
+		findViewById(R.id.init_loading).setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//pass
+			}
+		});
+
+		final View loadingView = findViewById(R.id.init_loading);
+		final long loadingStartTime = System.currentTimeMillis(); // ⏱️ Mark start time
+
+		searchForProductAndList("", null, new SearchCompleteListener() {
+			@Override
+			public void onSearchCompleted() {
+				long elapsed = System.currentTimeMillis() - loadingStartTime;
+				long delay = Math.max(0, 1000 - elapsed); // 🕒 Wait remaining time if needed
+
+				new Handler(Looper.getMainLooper()).postDelayed(() -> {
+					loadingView.animate()
+							.alpha(0f)
+							.translationY(-50)
+							.setDuration(400)
+							.setInterpolator(new AccelerateDecelerateInterpolator())
+							.setListener(new AnimatorListenerAdapter() {
+								@Override
+								public void onAnimationEnd(Animator animation) {
+									loadingView.setTranslationY(0);
+									loadingView.setVisibility(View.GONE);
+									loadingView.setAlpha(1f);
+
+								}
+							})
+							.start();
+				}, delay);
+			}
+		});
+
 	}
 	
 	public void _ICC(final ImageView _img, final String _c1, final String _c2) {
 		_img.setImageTintList(new android.content.res.ColorStateList(new int[][] {{-android.R.attr.state_pressed},{android.R.attr.state_pressed}},new int[]{Color.parseColor(_c1), Color.parseColor(_c2)}));
 	}
-	
+
+
+	public void _TransitionManager(final View _view, final double _duration) {
+		LinearLayout viewgroup =(LinearLayout) _view;
+
+		android.transition.AutoTransition autoTransition = new android.transition.AutoTransition(); autoTransition.setDuration((long)_duration);
+		autoTransition.setInterpolator(new android.view.animation.DecelerateInterpolator()); android.transition.TransitionManager.beginDelayedTransition(viewgroup, autoTransition);
+	}
+
+
 	public class Recyclerview1Adapter extends RecyclerView.Adapter<Recyclerview1Adapter.ViewHolder> {
-		
+
 		ArrayList<Product> _data;
-		
-		public Recyclerview1Adapter(ArrayList<Product> _arr) {
+		Context context;
+
+		Typeface typeface;
+
+		public Recyclerview1Adapter(Context context, ArrayList<Product> _arr) {
+			this.context = context;
 			_data = _arr;
+			typeface = Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf");
 		}
-		
+
 		@Override
 		public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 			LayoutInflater _inflater = getLayoutInflater();
@@ -229,7 +284,7 @@ public class SearchActivity extends AppCompatActivity {
 			_v.setLayoutParams(_lp);
 			return new ViewHolder(_v);
 		}
-		
+
 		@Override
 		public void onBindViewHolder(ViewHolder _holder, final int _position) {
 			View _view = _holder.itemView;
@@ -237,6 +292,11 @@ public class SearchActivity extends AppCompatActivity {
 			final androidx.cardview.widget.CardView cardview1 = _view.findViewById(R.id.cardview1);
 			final LinearLayout linear1 = _view.findViewById(R.id.linear1);
 			final LinearLayout linear2 = _view.findViewById(R.id.linear2);
+			final LinearLayout linearAddToCart = _view.findViewById(R.id.linear23);
+			final LinearLayout linearCounter = _view.findViewById(R.id.linear22);
+			final ImageView minus = _view.findViewById(R.id.minus);
+			final ImageView plus = _view.findViewById(R.id.plus);
+			final EditText edittext1Count = _view.findViewById(R.id.edittext1);
 			final ImageView imageview1 = _view.findViewById(R.id.productImageView);
 			final TextView textviewRefId = _view.findViewById(R.id.productIdTextView);
 			final TextView textviewName = _view.findViewById(R.id.productNameTextView);
@@ -244,7 +304,7 @@ public class SearchActivity extends AppCompatActivity {
 			final TextView textviewRate = _view.findViewById(R.id.rateTextView);
 			final TextView textviewGST = _view.findViewById(R.id.gstTextView);
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
-			final LottieAnimationView addToCart = _view.findViewById(R.id.addToCart);
+//			final LottieAnimationView addToCart = _view.findViewById(R.id.addToCart);
 
 
 
@@ -271,7 +331,9 @@ public class SearchActivity extends AppCompatActivity {
 			}
 
 			if (product.getProductImg() != null && product.getProductImg().size() > 0 && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
-				Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
+				Glide.with(context).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
+			} else {
+				Glide.with(context).load(R.drawable.app_icon).into(imageview1);
 			}
 
 //			textviewRefId.setText(product.getProductId());
@@ -295,12 +357,12 @@ public class SearchActivity extends AppCompatActivity {
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
 			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
 
-			textviewRefId.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			textviewName.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			textviewMRP.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			textviewRate.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			textviewGST.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			discountShow.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+			textviewRefId.setTypeface(typeface, 0);
+			textviewName.setTypeface(typeface, 0);
+			textviewMRP.setTypeface(typeface, 0);
+			textviewRate.setTypeface(typeface, 0);
+			textviewGST.setTypeface(typeface, 0);
+			discountShow.setTypeface(typeface, 0);
 
 
 			if (product.getCostDis() <= 0) {
@@ -311,65 +373,182 @@ public class SearchActivity extends AppCompatActivity {
 
 
 			rootLinear.setOnClickListener(_view2 -> {
-                Intent intent = new Intent();
-                intent.putExtra("product",(Product) product);
-                intent.setClass(getApplicationContext(), ProductviewActivity.class);
-                startActivity(intent);
-            });
+				Intent intent = new Intent();
+				intent.putExtra("product",(Product) product);
+				intent.setClass(getApplicationContext(), ProductviewActivity.class);
+				startActivity(intent);
+			});
 
 
 			if (product.productCount <= 0) {
-				addToCart.setProgress(0f); // 0f = start frame
+				linearAddToCart.setVisibility(View.VISIBLE);
+				linearCounter.setVisibility(View.GONE);
 			} else {
-				addToCart.setProgress(1f); // 1f = last frame
+				linearAddToCart.setVisibility(View.GONE);
+				linearCounter.setVisibility(View.VISIBLE);
 			}
 
-			addToCart.setOnClickListener(new OnClickListener() {
+
+			linearAddToCart.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					edittext1Count.setText("1");
+
+					linearAddToCart.animate()
+							.alpha(0f)
+							.translationYBy(-linearAddToCart.getHeight() / 2f)
+							.setDuration(150)
+							.withEndAction(() -> {
+								linearAddToCart.setVisibility(View.GONE);
+								linearAddToCart.setAlpha(1);
+								linearAddToCart.setTranslationY(0);
+
+								// Prepare and show "Counter" with animation
+								linearCounter.setAlpha(0f);
+								linearCounter.setTranslationY(linearCounter.getHeight() / 2f);
+								linearCounter.setVisibility(View.VISIBLE);
+
+								linearCounter.animate()
+										.alpha(1f)
+										.translationY(0f)
+										.setDuration(150)
+										.start();
+							})
+							.start();
+
+				}
+			});
+
+
+			plus.setOnClickListener(new OnClickListener() {
+				@Override
+				public void onClick(View v) {
+					edittext1Count.setText(String.valueOf(product.productCount+1));
+				}
+			});
+
+			minus.setOnClickListener(new OnClickListener() {
 				@Override
 				public void onClick(View v) {
 					if(product.productCount <= 0) {
-						addToCart.setSpeed(1f);  // Normal speed
-						addToCart.playAnimation();
-						product.productCount = 1L;
-						HashMap<String,Object> map = new HashMap<>();
-						map.put("count", product.productCount);
-						Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
+
 					} else {
-						addToCart.setSpeed(-1f);
-						addToCart.playAnimation();
-						product.productCount = 0L;
-						Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
+						edittext1Count.setText(String.valueOf(product.productCount-1));
 					}
 				}
 			});
 
 
-//			addToCartButton.setOnClickListener(_view1 -> {
-//                Product product = product;
-//
-//                Intent intent = new Intent();
-//                intent.putExtra("product",product);
-//                intent.setClass(getApplicationContext(), ProductviewActivity.class);
-//                startActivity(intent);
-//            });
+
+			if(_holder.watcher != null){
+				edittext1Count.removeTextChangedListener(_holder.watcher);
+			}
+
+			edittext1Count.setText(product.productCount+"");
+
+			_holder.watcher = new TextWatcher() {
+				@Override
+				public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
+					final String _charSeq = _param1.toString();
+
+					int currentCount = Integer.parseInt(String.valueOf(product.productCount));
+
+					int temp = currentCount;
+					if (_charSeq.equals("")) {
+						currentCount = 0;
+					} else {
+						try {
+							currentCount = Integer.parseInt(_charSeq);
+						} catch (Exception e) {
+							currentCount = 0;
+						}
+					}
+
+					if(temp == currentCount) {
+						return;
+					}
+
+					if(currentCount <= 0) {
+						if(!_charSeq.equals("")) {
+							edittext1Count.setText("");
+//							linearCounter.setVisibility(View.GONE);
+//							linearAddToCart.setVisibility(View.VISIBLE);
+							linearCounter.animate()
+									.alpha(0f)
+									.translationYBy(linearCounter.getHeight() / 2f)
+									.setDuration(150)
+									.withEndAction(() -> {
+										linearCounter.setVisibility(View.GONE);
+										linearCounter.setAlpha(1);
+										linearCounter.setTranslationY(0);
+
+										// Prepare and show "Add to Cart" with animation
+										linearAddToCart.setAlpha(0f);
+										linearAddToCart.setTranslationY(-linearAddToCart.getHeight() / 2f);
+										linearAddToCart.setVisibility(View.VISIBLE);
+
+										linearAddToCart.animate()
+												.alpha(1f)
+												.translationY(0f)
+												.setDuration(150)
+												.start();
+									})
+									.start();
+
+						}
+						product.productCount = 0L;
+
+						Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
+					} else {
+
+						if(currentCount > product.getStock()){
+							edittext1Count.setText(String.valueOf(product.getStock()));
+							Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
+							return;
+						}
+
+						product.productCount = (long) currentCount;
+
+						HashMap<String,Object> map = new HashMap<>();
+						map.put("count", product.productCount);
+						Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
+					}
+				}
+
+				@Override
+				public void beforeTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
+
+				}
+
+				@Override
+				public void afterTextChanged(Editable _param1) {
+
+				}
+			};
+			edittext1Count.addTextChangedListener(_holder.watcher);
 		}
-		
+		private int lastAnimatedPosition = -1;
+
+
 		@Override
 		public int getItemCount() {
 			return _data.size();
 		}
-		
+
 		public class ViewHolder extends RecyclerView.ViewHolder {
+			public TextWatcher watcher;
 			public ViewHolder(View v) {
 				super(v);
 			}
 		}
 	}
 
+	static class SearchCompleteListener {
+		public void onSearchCompleted(){
+		}
+	}
 
-
-
-	private void searchForProductAndList(String product_name, List<HashMap<String, String>> filtersSubCats) {
+	private void searchForProductAndList(String product_name, List<HashMap<String, String>> filtersSubCats, SearchCompleteListener searchCompleteListener) {
 		Business.QueryApiClient queryApiClient = new Business.QueryApiClient();
 
 		// Create filters list
@@ -385,6 +564,18 @@ public class SearchActivity extends AppCompatActivity {
 
 			if(filtersSubCats != null) {
 				filters.addAll(filtersSubCats);
+			} else {
+				ArrayList<HashMap<String, String>> filters_t = new ArrayList<>();
+				for (int i = 0; i < selectedPositions.size(); i++) {
+					int index = selectedPositions.get(i);
+					HashMap<String, String> filter = new HashMap<>();
+					filter.put("field", "cat_sub");
+					filter.put("operator", "contains");
+					filter.put("value", myDataList.get(index).getId());
+					filters_t.add(filter);
+				}
+
+				filters.addAll(filters_t);
 			}
 		} else {
 			//Main Category
@@ -444,9 +635,13 @@ public class SearchActivity extends AppCompatActivity {
 
 //				System.out.println(listmap);
 
-				recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
+				recyclerview1.setAdapter(new Recyclerview1Adapter(getApplicationContext(),listmap));
 				GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 				recyclerview1.setLayoutManager(gridlayoutManager);
+
+				if(searchCompleteListener != null){
+					searchCompleteListener.onSearchCompleted();
+				}
 //				loadingOverlay.hide(SearchActivity.this);
 			}
 		});
@@ -477,9 +672,12 @@ public class SearchActivity extends AppCompatActivity {
 			public void onReceived(Business.SubCategoriesApiClient.SubCategoriesApiResponse response) {
 				if (response.getStatusCode() == 200) {
 
-					ArrayList<SubCategory> myDataList = response.getSubCategories();
+					myDataList = response.getSubCategories();
 
-					int selectedColor = 0xFF64B5F6; // Blue 300 (Material Design)
+//					int selectedColor = 0xFFC0A95A; // Soft Gold - upscale and premium
+//					int selectedColor = 0xFF3949AB; // Indigo 600 - elegant and professional
+//					int selectedColor = 0xFF64B5F6; // Blue 300 (Material Design)
+					int selectedColor = 0xFF546E7A; // Blue Grey 600 - sleek, modern, and less flashy
 					int unselectedColor = 0xFFE0E0E0; // Grey 300 (Material Design)
 
 					SelectableStaggeredGridAdapter adapter = new SelectableStaggeredGridAdapter(myDataList, selectedColor, unselectedColor);
@@ -516,11 +714,11 @@ public class SearchActivity extends AppCompatActivity {
 	}
 
 
-
+	private ArrayList<Integer> selectedPositions = new ArrayList<>();
+	ArrayList<SubCategory> myDataList = new ArrayList<>();
 	public  class SelectableStaggeredGridAdapter extends RecyclerView.Adapter<SelectableStaggeredGridAdapter.ViewHolder> {
 
 		private ArrayList<SubCategory> dataList;
-		private ArrayList<Integer> selectedPositions = new ArrayList<>();
 		private final int selectedColor;
 		private final int unselectedColor;
 
@@ -545,11 +743,42 @@ public class SearchActivity extends AppCompatActivity {
 
 			holder.itemText.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 
+			int fromColor = unselectedColor;
+			int toColor = unselectedColor;
+//			try{
+//				fromColor = ((ColorDrawable) holder.itemRootContainer.getBackground()).getColor();
+//				toColor = selectedPositions.contains(position) ? selectedColor : unselectedColor;
+//			} catch (Exception e){
+//
+//			}
+
 			if (selectedPositions.contains(position)) {
-				holder.itemRootContainer.setBackgroundColor(selectedColor);
+//				holder.itemRootContainer.setBackgroundColor(selectedColor);
+				fromColor = unselectedColor;
+				toColor = selectedColor;
+				holder.itemText.setTextColor(Color.WHITE);
 			} else {
+				holder.itemText.setTextColor(Color.BLACK);
 				holder.itemRootContainer.setBackgroundColor(unselectedColor);
 			}
+
+			ObjectAnimator colorFade = ObjectAnimator.ofObject(
+					holder.itemRootContainer,
+					"backgroundColor",
+					new ArgbEvaluator(),
+					fromColor,
+					toColor
+			);
+			colorFade.setDuration(300); // duration in ms
+			colorFade.start();
+
+
+			holder.itemRootContainer.animate()
+					.setDuration(300)
+					.setInterpolator(new DecelerateInterpolator())
+					.start();
+
+
 
 			if(subcat.getImage() != null && subcat.getImage() != "null" && !subcat.getImage().isEmpty()) {
 				holder.item_image.setVisibility(View.VISIBLE);
@@ -559,24 +788,33 @@ public class SearchActivity extends AppCompatActivity {
 			}
 
 			holder.itemView.setOnClickListener(v -> {
-				if (selectedPositions.contains(position)) {
-					selectedPositions.remove(Integer.valueOf(position));
-				} else {
+
+				int alreadySelected = -1;
+				if(!selectedPositions.isEmpty()){
+					alreadySelected = selectedPositions.get(0);
+				}
+				selectedPositions.clear();
+//				if (selectedPositions.contains(position)) {
+//					selectedPositions.remove(Integer.valueOf(position));
+//				} else {
+//					selectedPositions.add(position);
+//				}
+				if(alreadySelected != position) {
 					selectedPositions.add(position);
 				}
 				notifyItemChanged(position); // Only update the clicked item
-
-				ArrayList<HashMap<String, String>> filters = new ArrayList<>();
-				for (int i = 0; i < selectedPositions.size(); i++) {
-					int index = selectedPositions.get(i);
-					HashMap<String, String> filter = new HashMap<>();
-					filter.put("field", "cat_sub");
-					filter.put("operator", "contains");
-					filter.put("value", dataList.get(index).getId());
-					filters.add(filter);
+				if(alreadySelected != -1){
+					notifyItemChanged(alreadySelected); // Only update the previously selected item
 				}
 
-				searchForProductAndList(edittext1.getText().toString().trim(), filters);
+//				notifyDataSetChanged();
+
+
+
+				searchForProductAndList(edittext1.getText().toString().trim(), null, null);
+
+				//animate
+
 			});
 		}
 
@@ -602,10 +840,6 @@ public class SearchActivity extends AppCompatActivity {
 			return selectedPositions;
 		}
 
-		public void setSelectedPositions(ArrayList<Integer> selectedPositions) {
-			this.selectedPositions = selectedPositions;
-			notifyDataSetChanged();
-		}
 
 		public void clearSelections() {
 			selectedPositions.clear();

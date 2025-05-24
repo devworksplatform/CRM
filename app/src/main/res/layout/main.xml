@@ -23,6 +23,20 @@
 <!--				android:layout_height="100dp"-->
 <!--				android:src="@drawable/logo"-->
 <!--				android:scaleType="fitCenter" />-->
+
+			<com.airbnb.lottie.LottieAnimationView
+				android:id="@+id/cat_visit"
+				android:visibility="gone"
+				android:padding="0dp"
+				android:layout_margin="0dp"
+				android:layout_width="200sp"
+				android:layout_height="200sp"
+				android:scaleX="2"
+				android:scaleY="2"
+				app:lottie_autoPlay="true"
+				app:lottie_loop="false"
+				app:lottie_rawRes="@raw/lottie_thug_dog"/>
+
 			<ImageView
 				android:id="@+id/imageview2"
 				android:layout_width="match_parent"

@@ -1,5 +1,7 @@
 package crmapp.petsfort;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.*;
 import android.content.*;
 import android.content.Intent;
@@ -8,6 +10,7 @@ import android.net.Uri;
 import android.os.*;
 import android.view.View;
 import android.view.View.*;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.*;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -64,6 +67,8 @@ public class OrderreviewActivity extends AppCompatActivity {
 	private TextView creditLabelTextView,creditTextView,textviewConfirmLabel,textview1;
 	private EditText addressEditText,notesEditText;
 	DecimalFormat df = new DecimalFormat("#.###");
+
+	private LinearLayout linearLoading;
 
 
 	private void initialize(Bundle _savedInstanceState) {
@@ -125,6 +130,15 @@ public class OrderreviewActivity extends AppCompatActivity {
 		getWindow().setStatusBarColor(0xFFFFFFFF);
 
 
+		linearLoading = findViewById(R.id.init_loading);
+		linearLoading.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//pass
+			}
+		});
+
+
 		lback.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -135,6 +149,10 @@ public class OrderreviewActivity extends AppCompatActivity {
 		Business.BulkDetailsApiClient bulkDetailsApiClient = new Business.BulkDetailsApiClient();
 
 		progressBarLinear.setVisibility(View.VISIBLE);
+		linearLoading.setVisibility(View.VISIBLE);
+
+
+
 		linear2.setVisibility(View.GONE);
 		linear33.setVisibility(View.GONE);
 
@@ -203,6 +221,8 @@ public class OrderreviewActivity extends AppCompatActivity {
 								if (isEmpty) {
 									JHelpers.TransitionManager(rootLinear, 1000);
 									progressBarLinear.setVisibility(View.VISIBLE);
+									linearLoading.setVisibility(View.VISIBLE);
+
 									linear2.setVisibility(View.GONE);
 									linear33.setVisibility(View.GONE);
 									subTotalTextView.setText("₹ 0.00");
@@ -372,6 +392,25 @@ public class OrderreviewActivity extends AppCompatActivity {
 			public void onEnd() {
 				JHelpers.TransitionManager(rootLinear, 800);
 				progressBarLinear.setVisibility(View.GONE);
+//				linearLoading.setVisibility(View.GONE);
+				new Handler(Looper.getMainLooper()).postDelayed(() -> {
+					linearLoading.animate()
+							.alpha(0f)
+							.translationY(-50)
+							.setDuration(400)
+							.setInterpolator(new AccelerateDecelerateInterpolator())
+							.setListener(new AnimatorListenerAdapter() {
+								@Override
+								public void onAnimationEnd(Animator animation) {
+									linearLoading.setTranslationY(0);
+									linearLoading.setVisibility(View.GONE);
+									linearLoading.setAlpha(1f);
+
+								}
+							})
+							.start();
+				}, 1000);
+
 				linear2.setVisibility(View.VISIBLE);
 				linear33.setVisibility(View.VISIBLE);
 

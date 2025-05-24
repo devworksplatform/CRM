@@ -1,5 +1,7 @@
 package crmapp.petsfort;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.app.*;
 import android.app.Activity;
 import android.content.Intent;
@@ -13,6 +15,7 @@ import android.os.*;
 import android.util.*;
 import android.view.*;
 import android.view.View;
+import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.*;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -70,6 +73,7 @@ public class LoginActivity extends AppCompatActivity {
 	
 	private ScrollView vscroll1;
 	private LinearLayout linear1;
+	private LinearLayout linearLoading;
 	private TextView title;
 	private TextView message;
 	private LinearLayout linear2;
@@ -272,6 +276,33 @@ public class LoginActivity extends AppCompatActivity {
 		auth = FirebaseAuth.getInstance();
 		userss = getSharedPreferences("logindata", Activity.MODE_PRIVATE);
 
+		linearLoading = findViewById(R.id.init_loading);
+		linearLoading.setVisibility(View.VISIBLE);
+//				linearLoading.setVisibility(View.GONE);
+		new Handler(Looper.getMainLooper()).postDelayed(() -> {
+			linearLoading.animate()
+					.alpha(0f)
+					.translationY(-50)
+					.setDuration(400)
+					.setInterpolator(new AccelerateDecelerateInterpolator())
+					.setListener(new AnimatorListenerAdapter() {
+						@Override
+						public void onAnimationEnd(Animator animation) {
+							linearLoading.setVisibility(View.GONE);
+							linearLoading.setAlpha(1f);
+							linearLoading.setTranslationY(0);
+						}
+					})
+					.start();
+		}, 1000);
+
+		linearLoading.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				//pass
+			}
+		});
+
 		textview2.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -312,7 +343,8 @@ public class LoginActivity extends AppCompatActivity {
 							((EditText)password).setError("Enter password");
 						}
 						else {
-							_Custom_Loading(true);
+//							_Custom_Loading(true);
+							linearLoading.setVisibility(View.VISIBLE);
 							auth.signInWithEmailAndPassword(email.getText().toString(), password.getText().toString()).addOnCompleteListener(LoginActivity.this, _auth_sign_in_listener);
 						}
 					}
@@ -455,7 +487,9 @@ public class LoginActivity extends AppCompatActivity {
 					});
 				}
 				else {
-					_Custom_Loading(false);
+//					_Custom_Loading(false);
+
+					linearLoading.setVisibility(View.GONE);
 					SketchwareUtil.showMessage(getApplicationContext(), _errorMessage);
 				}
 			}
@@ -531,43 +565,43 @@ public class LoginActivity extends AppCompatActivity {
 		}
 	}
 	
-	
-	public void _Custom_Loading(final boolean _ifShow) {
-		if (!isFinishing() && !isDestroyed()) {
-			if (_ifShow) {
-				if (coreprog == null) {
-					coreprog = new ProgressDialog(this);
-					coreprog.setCancelable(false);
-					coreprog.setCanceledOnTouchOutside(false);
-
-					coreprog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-					coreprog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
-
-				}
-				coreprog.setMessage(null);
-				try{
-					coreprog.show();
-				} catch (Exception e){
-
-				}
-				View _view = getLayoutInflater().inflate(R.layout.custom_dialog, null);
-				LinearLayout linear_base = (LinearLayout) _view.findViewById(R.id.linear_base);
-
-				android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
-				gd.setColor(Color.TRANSPARENT);
-				gd.setCornerRadius(25);
-				linear_base.setBackground(gd);
-				coreprog.setContentView(_view);
-			} else {
-				if (coreprog != null) {
-					coreprog.dismiss();
-				}
-			}
-		}
-	}
-	private ProgressDialog coreprog;
-	{
-	}
+//
+//	public void _Custom_Loading(final boolean _ifShow) {
+//		if (!isFinishing() && !isDestroyed()) {
+//			if (_ifShow) {
+//				if (coreprog == null) {
+//					coreprog = new ProgressDialog(this);
+//					coreprog.setCancelable(false);
+//					coreprog.setCanceledOnTouchOutside(false);
+//
+//					coreprog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+//					coreprog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+//
+//				}
+//				coreprog.setMessage(null);
+//				try{
+//					coreprog.show();
+//				} catch (Exception e){
+//
+//				}
+//				View _view = getLayoutInflater().inflate(R.layout.custom_dialog, null);
+//				LinearLayout linear_base = (LinearLayout) _view.findViewById(R.id.linear_base);
+//
+//				android.graphics.drawable.GradientDrawable gd = new android.graphics.drawable.GradientDrawable();
+//				gd.setColor(Color.TRANSPARENT);
+//				gd.setCornerRadius(25);
+//				linear_base.setBackground(gd);
+//				coreprog.setContentView(_view);
+//			} else {
+//				if (coreprog != null) {
+//					coreprog.dismiss();
+//				}
+//			}
+//		}
+//	}
+//	private ProgressDialog coreprog;
+//	{
+//	}
 	
 	
 	@Deprecated

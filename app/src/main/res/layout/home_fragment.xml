@@ -381,4 +381,22 @@
 				android:orientation="horizontal" />
 		</LinearLayout>
 	</androidx.core.widget.NestedScrollView>
+
+	<LinearLayout
+		android:id="@+id/cat_visitLinear"
+		android:layout_gravity="bottom|right"
+		android:translationY="-180dp"
+		android:translationX="-50sp"
+		android:layout_width="100sp"
+		android:layout_height="180sp">
+
+		<com.airbnb.lottie.LottieAnimationView
+			android:id="@+id/cat_visit"
+			android:padding="0dp"
+			android:layout_margin="0dp"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			app:lottie_rawRes="@raw/lottie_cat_visit"/>
+
+	</LinearLayout>
 </LinearLayout>

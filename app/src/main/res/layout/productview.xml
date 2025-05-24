@@ -303,6 +303,7 @@
 
 										<LinearLayout
 											android:id="@+id/linear22"
+											android:background="@drawable/quantity_editor_background"
 											android:layout_width="wrap_content"
 											android:layout_height="wrap_content"
 											android:gravity="center"

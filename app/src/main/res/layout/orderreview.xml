@@ -7,487 +7,528 @@
 	android:layout_height="match_parent"
 	android:fitsSystemWindows="true"
 	android:orientation="vertical">
-	<LinearLayout
-		android:id="@+id/linear1"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:padding="8dp"
-		android:orientation="horizontal">
-
-
-		<androidx.cardview.widget.CardView
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:padding="1dp"
-			android:layout_margin="5dp"
-			app:cardCornerRadius="40dp"
-			android:elevation="20dp">
-			<LinearLayout
-				android:id="@+id/linear111"
-				android:background="#ffffff"
-				android:elevation="100dp"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:gravity="center"
-				android:orientation="horizontal">
-				<LinearLayout
-					android:id="@+id/linear5111"
-					android:layout_width="wrap_content"
-					android:layout_height="match_parent"
-					android:padding="8dp"
-					android:gravity="center_horizontal|center_vertical"
-					android:orientation="vertical">
-					<ImageView
-						android:id="@+id/imageview1"
-						android:layout_width="20dp"
-						android:layout_height="25dp"
-						android:src="@drawable/back"
-						android:scaleType="fitCenter" />
-				</LinearLayout>
-				<LinearLayout
-					android:id="@+id/linear611"
-					android:layout_width="wrap_content"
-					android:layout_height="match_parent"
-					android:paddingRight="8dp"
-					android:gravity="left|center_vertical"
-					android:orientation="vertical"
-					android:layout_weight="1">
-					<TextView
-						android:id="@+id/textview1"
-						android:text="Order Review"
-						android:layout_width="match_parent"
-						android:layout_height="match_parent"
-						android:paddingLeft="8dp"
-						android:paddingRight="8dp"
-						android:background="@android:color/transparent"
-						android:gravity="center_vertical"
-						android:textSize="17sp"
-						android:textColor="#0A3D62"
-						android:textColorHint="#9E9E9E"
-						android:singleLine="true"
-						android:layout_weight="1"/>
-				</LinearLayout>
-			</LinearLayout>
-
-		</androidx.cardview.widget.CardView>
-
-	</LinearLayout>
-
-	<LinearLayout
-		android:visibility="gone"
-		android:id="@+id/progressBarLinear"
-		android:gravity="center"
+	<RelativeLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent">
-		<ProgressBar
-			android:layout_width="60dp"
-			android:layout_height="match_parent"/>
-	</LinearLayout>
-	<LinearLayout
-		android:id="@+id/linear2"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:orientation="vertical"
-		android:layout_weight="1">
-		<ScrollView
-			android:id="@+id/vscroll1"
+		<LinearLayout
+			android:orientation="vertical"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent">
 			<LinearLayout
-				android:id="@+id/linear5"
+				android:id="@+id/linear1"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:padding="8dp"
-				android:orientation="vertical">
+				android:orientation="horizontal">
+
 
 				<androidx.cardview.widget.CardView
-					android:layout_gravity="center"
-					app:cardCornerRadius="100dp"
-					app:cardBackgroundColor="#FFE8FFFF"
-					android:layout_width="wrap_content"
-					android:layout_height="wrap_content">
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content"
+					android:padding="1dp"
+					android:layout_margin="5dp"
+					app:cardCornerRadius="40dp"
+					android:elevation="20dp">
 					<LinearLayout
+						android:id="@+id/linear111"
+						android:background="#ffffff"
+						android:elevation="100dp"
 						android:layout_width="match_parent"
-						android:layout_height="match_parent"
-						android:padding="8dp"
+						android:layout_height="wrap_content"
 						android:gravity="center"
 						android:orientation="horizontal">
-
-						<ImageView
-							android:layout_width="200dp"
-							android:layout_height="60dp"
-							android:src="@drawable/lickandbite"
-							android:scaleType="fitCenter" />
+						<LinearLayout
+							android:id="@+id/linear5111"
+							android:layout_width="wrap_content"
+							android:layout_height="match_parent"
+							android:padding="8dp"
+							android:gravity="center_horizontal|center_vertical"
+							android:orientation="vertical">
+							<ImageView
+								android:id="@+id/imageview1"
+								android:layout_width="20dp"
+								android:layout_height="25dp"
+								android:src="@drawable/back"
+								android:scaleType="fitCenter" />
+						</LinearLayout>
+						<LinearLayout
+							android:id="@+id/linear611"
+							android:layout_width="wrap_content"
+							android:layout_height="match_parent"
+							android:paddingRight="8dp"
+							android:gravity="left|center_vertical"
+							android:orientation="vertical"
+							android:layout_weight="1">
+							<TextView
+								android:id="@+id/textview1"
+								android:text="Order Review"
+								android:layout_width="match_parent"
+								android:layout_height="match_parent"
+								android:paddingLeft="8dp"
+								android:paddingRight="8dp"
+								android:background="@android:color/transparent"
+								android:gravity="center_vertical"
+								android:textSize="17sp"
+								android:textColor="#0A3D62"
+								android:textColorHint="#9E9E9E"
+								android:singleLine="true"
+								android:layout_weight="1"/>
+						</LinearLayout>
 					</LinearLayout>
+
 				</androidx.cardview.widget.CardView>
 
-				<LinearLayout
-					android:id="@+id/costLinear"
+			</LinearLayout>
+			<LinearLayout
+				android:visibility="gone"
+				android:id="@+id/progressBarLinear"
+				android:gravity="center"
+				android:layout_width="match_parent"
+				android:layout_height="match_parent">
+				<ProgressBar
+					android:layout_width="60dp"
+					android:layout_height="match_parent"/>
+			</LinearLayout>
+			<LinearLayout
+				android:id="@+id/linear2"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:orientation="vertical"
+				android:layout_weight="1">
+				<ScrollView
+					android:id="@+id/vscroll1"
 					android:layout_width="match_parent"
-					android:layout_height="match_parent"
-					android:orientation="vertical">
-
-
-					<androidx.cardview.widget.CardView
-						android:layout_marginTop="10dp"
-						android:layout_marginLeft="8dp"
-						android:layout_marginRight="8dp"
-						android:layout_marginBottom="8dp"
-						app:cardCornerRadius="16dp"
-						app:cardBackgroundColor="#FFE8FFFF"
+					android:layout_height="match_parent">
+					<LinearLayout
+						android:id="@+id/linear5"
 						android:layout_width="match_parent"
-						android:layout_height="wrap_content">
+						android:layout_height="wrap_content"
+						android:padding="8dp"
+						android:orientation="vertical">
+
+						<androidx.cardview.widget.CardView
+							android:layout_gravity="center"
+							app:cardCornerRadius="100dp"
+							app:cardBackgroundColor="#FFE8FFFF"
+							android:layout_width="wrap_content"
+							android:layout_height="wrap_content">
+							<LinearLayout
+								android:layout_width="match_parent"
+								android:layout_height="match_parent"
+								android:padding="8dp"
+								android:gravity="center"
+								android:orientation="horizontal">
+
+								<ImageView
+									android:layout_width="200dp"
+									android:layout_height="60dp"
+									android:src="@drawable/lickandbite"
+									android:scaleType="fitCenter" />
+							</LinearLayout>
+						</androidx.cardview.widget.CardView>
 
 						<LinearLayout
-							android:orientation="vertical"
+							android:id="@+id/costLinear"
+							android:layout_width="match_parent"
+							android:layout_height="match_parent"
+							android:orientation="vertical">
+
+
+							<androidx.cardview.widget.CardView
+								android:layout_marginTop="10dp"
+								android:layout_marginLeft="8dp"
+								android:layout_marginRight="8dp"
+								android:layout_marginBottom="8dp"
+								app:cardCornerRadius="16dp"
+								app:cardBackgroundColor="#FFE8FFFF"
+								android:layout_width="match_parent"
+								android:layout_height="wrap_content">
+
+								<LinearLayout
+									android:orientation="vertical"
+									android:layout_width="match_parent"
+									android:layout_height="wrap_content">
+
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_marginTop="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/totalNoDiscountLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="MRP"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/totalNoDiscountTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/discountTotalLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="Discount"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/discountTotalTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+									<View
+										android:layout_width="match_parent"
+										android:layout_height="1dp"
+										android:background="#E0E0E0"
+										android:layout_marginTop="6dp"
+										android:layout_marginBottom="6dp"/>
+
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/subtotalLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="Sub Total"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/subTotalTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/gstTotalLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="CGST + SGST"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/gstTotalTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+									<View
+										android:layout_width="match_parent"
+										android:layout_height="1dp"
+										android:background="#E0E0E0"
+										android:layout_marginTop="6dp"
+										android:layout_marginBottom="6dp"/>
+
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/grandTotalLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="Grand Total"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/grandTotalTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+									<LinearLayout
+										android:layout_marginRight="20dp"
+										android:layout_marginLeft="20dp"
+										android:layout_marginBottom="10dp"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content">
+										<TextView
+											android:id="@+id/creditLabelTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="Available Credits"
+											android:textSize="16sp"
+											android:layout_weight="1"
+											android:textColor="#30476c"/>
+										<TextView
+											android:id="@+id/creditTextView"
+											android:layout_width="wrap_content"
+											android:layout_height="wrap_content"
+											android:text="₹ 0.00"
+											android:textSize="16sp"
+											android:textColor="#000000"/>
+									</LinearLayout>
+
+
+								</LinearLayout>
+							</androidx.cardview.widget.CardView>
+						</LinearLayout>
+
+
+
+
+						<androidx.cardview.widget.CardView
+							android:layout_margin="5dp"
+							app:cardCornerRadius="16dp"
+							app:cardBackgroundColor="#FFE8FFFF"
+							android:padding="20dp"
 							android:layout_width="match_parent"
 							android:layout_height="wrap_content">
-
-
 							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
-								android:layout_marginTop="10dp"
+								android:orientation="vertical"
 								android:layout_width="match_parent"
 								android:layout_height="wrap_content">
-								<TextView
-									android:id="@+id/totalNoDiscountLabelTextView"
-									android:layout_width="wrap_content"
+								<LinearLayout
+									android:id="@+id/linear22"
+									android:layout_width="match_parent"
 									android:layout_height="wrap_content"
-									android:text="MRP"
-									android:textSize="16sp"
-									android:layout_weight="1"
-									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/totalNoDiscountTextView"
-									android:layout_width="wrap_content"
+									android:padding="8dp"
+									android:orientation="horizontal">
+									<TextView
+										android:id="@+id/textview10"
+										android:layout_width="wrap_content"
+										android:layout_height="wrap_content"
+										android:paddingRight="8dp"
+										android:text="Address"
+										android:textSize="14sp"
+										android:textColor="#000000" />
+								</LinearLayout>
+								<LinearLayout
+									android:id="@+id/linear23"
+									android:layout_width="match_parent"
 									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
-							</LinearLayout>
+									android:paddingLeft="10dp"
+									android:paddingRight="10dp"
+									android:orientation="horizontal">
+									<LinearLayout
+										android:id="@+id/linear24"
+										android:layout_width="wrap_content"
+										android:layout_height="85dp"
+										android:padding="5dp"
+										android:background="#F6F2F1"
+										android:orientation="horizontal"
+										android:layout_marginBottom="10dp"
+										android:layout_weight="1">
+										<EditText
+											android:id="@+id/edittext1"
+											android:layout_width="wrap_content"
+											android:layout_height="match_parent"
+											android:padding="5dp"
+											android:background="@android:color/transparent"
+											android:gravity="top"
+											android:textSize="14sp"
+											android:textColor="#000000"
+											android:hint="Input your address..."
+											android:textColorHint="#9E9E9E"
+											android:imeOptions="actionNext"
+											android:layout_weight="1" />
+									</LinearLayout>
+								</LinearLayout>
 
+							</LinearLayout>
+						</androidx.cardview.widget.CardView>
+
+						<androidx.cardview.widget.CardView
+							android:layout_margin="5dp"
+							app:cardCornerRadius="16dp"
+							app:cardBackgroundColor="#FFE8FFFF"
+							android:padding="20dp"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content">
 							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
+								android:orientation="vertical"
 								android:layout_width="match_parent"
 								android:layout_height="wrap_content">
-								<TextView
-									android:id="@+id/discountTotalLabelTextView"
-									android:layout_width="wrap_content"
+								<LinearLayout
+									android:id="@+id/linear30"
+									android:layout_width="match_parent"
 									android:layout_height="wrap_content"
-									android:text="Discount"
-									android:textSize="16sp"
-									android:layout_weight="1"
-									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/discountTotalTextView"
-									android:layout_width="wrap_content"
+									android:padding="8dp"
+									android:orientation="horizontal">
+									<TextView
+										android:id="@+id/textview12"
+										android:layout_width="wrap_content"
+										android:layout_height="wrap_content"
+										android:paddingRight="8dp"
+										android:text="Note"
+										android:textSize="14sp"
+										android:textColor="#000000" />
+								</LinearLayout>
+								<LinearLayout
+									android:id="@+id/linear31"
+									android:layout_width="match_parent"
 									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
+									android:paddingLeft="10dp"
+									android:paddingRight="10dp"
+									android:orientation="horizontal">
+									<LinearLayout
+										android:id="@+id/linear32"
+										android:layout_width="wrap_content"
+										android:layout_height="60dp"
+										android:padding="5dp"
+										android:layout_marginBottom="10dp"
+										android:background="#F6F2F1"
+										android:orientation="horizontal"
+										android:layout_weight="1">
+										<EditText
+											android:id="@+id/edittext3"
+											android:layout_width="wrap_content"
+											android:layout_height="match_parent"
+											android:padding="5dp"
+											android:background="@android:color/transparent"
+											android:gravity="top"
+											android:textSize="14sp"
+											android:textColor="#000000"
+											android:hint="Input your notes for packing your order... (optional)"
+											android:textColorHint="#9E9E9E"
+											android:imeOptions="actionNext"
+											android:layout_weight="1" />
+									</LinearLayout>
+								</LinearLayout>
 							</LinearLayout>
+						</androidx.cardview.widget.CardView>
 
-							<View
-								android:layout_width="match_parent"
-								android:layout_height="1dp"
-								android:background="#E0E0E0"
-								android:layout_marginTop="6dp"
-								android:layout_marginBottom="6dp"/>
+					</LinearLayout>
+				</ScrollView>
+			</LinearLayout>
+			<LinearLayout
+				android:id="@+id/linear33"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:paddingLeft="12dp"
+				android:paddingTop="3dp"
+				android:paddingRight="12dp"
+				android:paddingBottom="8dp"
+				android:orientation="horizontal">
 
-
+				<LinearLayout
+					android:orientation="horizontal"
+					android:layout_width="match_parent"
+					android:layout_height="wrap_content">
+					<LinearLayout
+						android:id="@+id/confirmOrderLinear"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content">
+						<androidx.cardview.widget.CardView
+							android:id="@+id/confirmOrderLinearCard"
+							app:cardCornerRadius="16dp"
+							android:layout_marginBottom="2dp"
+							android:layout_marginLeft="10dp"
+							android:layout_marginRight="10dp"
+							app:cardBackgroundColor="#FFE8FFFF"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content">
 							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
+								android:padding="6dp"
+								android:gravity="center"
 								android:layout_width="match_parent"
-								android:layout_height="wrap_content">
+								android:layout_height="wrap_content"
+								android:orientation="horizontal">
 								<TextView
-									android:id="@+id/subtotalLabelTextView"
+									android:id="@+id/textviewConfirmLabel"
 									android:layout_width="wrap_content"
 									android:layout_height="wrap_content"
-									android:text="Sub Total"
+									android:text="Confirm Order Checkout"
+									android:gravity="center"
 									android:textSize="16sp"
-									android:layout_weight="1"
+									android:layout_marginLeft="6dp"
+									android:layout_weight="1.5"
 									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/subTotalTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
+								<ImageView
+									android:padding="6dp"
+									android:focusable="false"
+									android:layout_width="30dp"
+									android:layout_height="30dp"
+									android:src="@drawable/checkout"
+									android:scaleType="fitCenter" />
 							</LinearLayout>
+						</androidx.cardview.widget.CardView>
 
-							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
-								android:layout_width="match_parent"
-								android:layout_height="wrap_content">
-								<TextView
-									android:id="@+id/gstTotalLabelTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="CGST + SGST"
-									android:textSize="16sp"
-									android:layout_weight="1"
-									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/gstTotalTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
-							</LinearLayout>
+					</LinearLayout>
 
-							<View
-								android:layout_width="match_parent"
-								android:layout_height="1dp"
-								android:background="#E0E0E0"
-								android:layout_marginTop="6dp"
-								android:layout_marginBottom="6dp"/>
-
-
-							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
-								android:layout_width="match_parent"
-								android:layout_height="wrap_content">
-								<TextView
-									android:id="@+id/grandTotalLabelTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="Grand Total"
-									android:textSize="16sp"
-									android:layout_weight="1"
-									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/grandTotalTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
-							</LinearLayout>
-
-							<LinearLayout
-								android:layout_marginRight="20dp"
-								android:layout_marginLeft="20dp"
-								android:layout_marginBottom="10dp"
-								android:layout_width="match_parent"
-								android:layout_height="wrap_content">
-								<TextView
-									android:id="@+id/creditLabelTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="Available Credits"
-									android:textSize="16sp"
-									android:layout_weight="1"
-									android:textColor="#30476c"/>
-								<TextView
-									android:id="@+id/creditTextView"
-									android:layout_width="wrap_content"
-									android:layout_height="wrap_content"
-									android:text="₹ 0.00"
-									android:textSize="16sp"
-									android:textColor="#000000"/>
-							</LinearLayout>
-
-
-						</LinearLayout>
-					</androidx.cardview.widget.CardView>
 				</LinearLayout>
 
 
-
-
-				<androidx.cardview.widget.CardView
-					android:layout_margin="5dp"
-					app:cardCornerRadius="16dp"
-					app:cardBackgroundColor="#FFE8FFFF"
-					android:padding="20dp"
-					android:layout_width="match_parent"
-					android:layout_height="wrap_content">
-					<LinearLayout
-						android:orientation="vertical"
-						android:layout_width="match_parent"
-						android:layout_height="wrap_content">
-						<LinearLayout
-							android:id="@+id/linear22"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content"
-							android:padding="8dp"
-							android:orientation="horizontal">
-							<TextView
-								android:id="@+id/textview10"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:paddingRight="8dp"
-								android:text="Address"
-								android:textSize="14sp"
-								android:textColor="#000000" />
-						</LinearLayout>
-						<LinearLayout
-							android:id="@+id/linear23"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content"
-							android:paddingLeft="10dp"
-							android:paddingRight="10dp"
-							android:orientation="horizontal">
-							<LinearLayout
-								android:id="@+id/linear24"
-								android:layout_width="wrap_content"
-								android:layout_height="85dp"
-								android:padding="5dp"
-								android:background="#F6F2F1"
-								android:orientation="horizontal"
-								android:layout_marginBottom="10dp"
-								android:layout_weight="1">
-								<EditText
-									android:id="@+id/edittext1"
-									android:layout_width="wrap_content"
-									android:layout_height="match_parent"
-									android:padding="5dp"
-									android:background="@android:color/transparent"
-									android:gravity="top"
-									android:textSize="14sp"
-									android:textColor="#000000"
-									android:hint="Input your address..."
-									android:textColorHint="#9E9E9E"
-									android:imeOptions="actionNext"
-									android:layout_weight="1" />
-							</LinearLayout>
-						</LinearLayout>
-
-					</LinearLayout>
-				</androidx.cardview.widget.CardView>
-
-				<androidx.cardview.widget.CardView
-					android:layout_margin="5dp"
-					app:cardCornerRadius="16dp"
-					app:cardBackgroundColor="#FFE8FFFF"
-					android:padding="20dp"
-					android:layout_width="match_parent"
-					android:layout_height="wrap_content">
-					<LinearLayout
-						android:orientation="vertical"
-						android:layout_width="match_parent"
-						android:layout_height="wrap_content">
-						<LinearLayout
-							android:id="@+id/linear30"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content"
-							android:padding="8dp"
-							android:orientation="horizontal">
-							<TextView
-								android:id="@+id/textview12"
-								android:layout_width="wrap_content"
-								android:layout_height="wrap_content"
-								android:paddingRight="8dp"
-								android:text="Note"
-								android:textSize="14sp"
-								android:textColor="#000000" />
-						</LinearLayout>
-						<LinearLayout
-							android:id="@+id/linear31"
-							android:layout_width="match_parent"
-							android:layout_height="wrap_content"
-							android:paddingLeft="10dp"
-							android:paddingRight="10dp"
-							android:orientation="horizontal">
-							<LinearLayout
-								android:id="@+id/linear32"
-								android:layout_width="wrap_content"
-								android:layout_height="60dp"
-								android:padding="5dp"
-								android:layout_marginBottom="10dp"
-								android:background="#F6F2F1"
-								android:orientation="horizontal"
-								android:layout_weight="1">
-								<EditText
-									android:id="@+id/edittext3"
-									android:layout_width="wrap_content"
-									android:layout_height="match_parent"
-									android:padding="5dp"
-									android:background="@android:color/transparent"
-									android:gravity="top"
-									android:textSize="14sp"
-									android:textColor="#000000"
-									android:hint="Input your notes for packing your order... (optional)"
-									android:textColorHint="#9E9E9E"
-									android:imeOptions="actionNext"
-									android:layout_weight="1" />
-							</LinearLayout>
-						</LinearLayout>
-					</LinearLayout>
-				</androidx.cardview.widget.CardView>
-
 			</LinearLayout>
-		</ScrollView>
-	</LinearLayout>
-	<LinearLayout
-		android:id="@+id/linear33"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:paddingLeft="12dp"
-		android:paddingTop="3dp"
-		android:paddingRight="12dp"
-		android:paddingBottom="8dp"
-		android:orientation="horizontal">
-
+		</LinearLayout>
 		<LinearLayout
-			android:orientation="horizontal"
+			android:id="@+id/init_loading"
+			android:gravity="center"
 			android:layout_width="match_parent"
-			android:layout_height="wrap_content">
-			<LinearLayout
-				android:id="@+id/confirmOrderLinear"
+			android:layout_height="match_parent">
+			<RelativeLayout
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content">
-				<androidx.cardview.widget.CardView
-					android:id="@+id/confirmOrderLinearCard"
-					app:cardCornerRadius="16dp"
-					android:layout_marginBottom="2dp"
-					android:layout_marginLeft="10dp"
-					android:layout_marginRight="10dp"
-					app:cardBackgroundColor="#FFE8FFFF"
+				android:layout_height="match_parent">
+				<LinearLayout
+					android:background="#000000"
+					android:alpha="0.6"
+					android:gravity="center"
 					android:layout_width="match_parent"
-					android:layout_height="wrap_content">
-					<LinearLayout
-						android:padding="6dp"
-						android:gravity="center"
-						android:layout_width="match_parent"
-						android:layout_height="wrap_content"
-						android:orientation="horizontal">
-						<TextView
-							android:id="@+id/textviewConfirmLabel"
-							android:layout_width="wrap_content"
-							android:layout_height="wrap_content"
-							android:text="Confirm Order Checkout"
-							android:gravity="center"
-							android:textSize="16sp"
-							android:layout_marginLeft="6dp"
-							android:layout_weight="1.5"
-							android:textColor="#30476c"/>
-						<ImageView
-							android:padding="6dp"
-							android:focusable="false"
-							android:layout_width="30dp"
-							android:layout_height="30dp"
-							android:src="@drawable/checkout"
-							android:scaleType="fitCenter" />
-					</LinearLayout>
-				</androidx.cardview.widget.CardView>
-
-			</LinearLayout>
-
+					android:layout_height="match_parent">
+				</LinearLayout>
+				<LinearLayout
+					android:gravity="center"
+					android:layout_width="match_parent"
+					android:layout_height="match_parent">
+					<com.airbnb.lottie.LottieAnimationView
+						android:id="@+id/cat_visit"
+						android:padding="0dp"
+						android:layout_margin="0dp"
+						android:layout_width="200sp"
+						android:layout_height="match_parent"
+						app:lottie_loop="true"
+						app:lottie_autoPlay="true"
+						app:lottie_rawRes="@raw/lottie2"/>
+				</LinearLayout>
+			</RelativeLayout>
 		</LinearLayout>
 
+	</RelativeLayout>
 
-		</LinearLayout>
 </crmapp.petsfort.layouts.LinearBg>

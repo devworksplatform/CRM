@@ -400,7 +400,8 @@
 					android:paddingRight="8dp"
 					android:paddingBottom="8dp"
 					android:gravity="center_horizontal|center_vertical"
-					android:orientation="horizontal">
+					android:orientation="vertical">
+
 					<TextView
 						android:id="@+id/textview1"
 						android:layout_width="wrap_content"
