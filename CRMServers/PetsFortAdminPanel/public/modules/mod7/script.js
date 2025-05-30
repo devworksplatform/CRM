@@ -35,6 +35,79 @@ async function initMod7() { // Assuming this is your entry point for this module
         }
     });
 
+    const refreshLog = document.getElementById('refreshLog');
+    const deleteLog = document.getElementById('deleteLog');
+    const logsDiv = document.getElementById('logsDiv');
+
+
+    let logInterval = null;
+    let isRefreshing = false;
+
+    // Function to fetch and display logs
+    refreshLog.addEventListener('click', () => {
+        if (!isRefreshing) {
+            // Start refreshing logs every second
+            logInterval = setInterval(async () => {
+                let logs = await callApi("GET", "logs", null, false);
+                // Filter out lines containing "GET /logs HTTP/1.1"
+                logs = logs
+                    .split('\n')
+                    .filter(line => !line.includes("GET /logs HTTP/1.1"))
+                    .filter(line => !line.includes("GET /ram HTTP/1.1"))
+                    .join('\n');
+                logsDiv.textContent = logs;
+                logsDiv.scrollTop = logsDiv.scrollHeight;
+            }, 1000);
+            isRefreshing = true;
+            refreshLog.innerHTML = `Stop Logs`;
+        } else {
+            // Stop refreshing
+            clearInterval(logInterval);
+            logInterval = null;
+            isRefreshing = false;
+            refreshLog.innerHTML = `Start Logs`;
+        }
+    });
+
+
+    // Function to delete logs
+    deleteLog.addEventListener('click', async () => {
+        await callApi("DELETE", "logs", null, false);
+        if(!isRefreshing){
+            logsDiv.textContent = "";
+        }
+    });
+
+    refreshLog.click();
+
+    const refreshRam = document.getElementById('refreshRam');
+    const ramDiv = document.getElementById('ramDiv');
+
+    let ramInterval = null;
+    let isRamRefreshing = false;
+
+    // Function to fetch and display logs
+    refreshRam.addEventListener('click', () => {
+        if (!isRamRefreshing) {
+            // Start refreshing logs every second
+            ramInterval = setInterval(async () => {
+                let ramDetails = await callApi("GET", "ram", null, false);
+                ramDiv.textContent = ramDetails;
+            }, 1000);
+            isRamRefreshing = true;
+            refreshRam.innerHTML = `Stop Stream`;
+        } else {
+            // Stop refreshing
+            clearInterval(ramInterval);
+            ramInterval = null;
+            isRamRefreshing = false;
+            refreshRam.innerHTML = `Start Stream`;
+        }
+    });
+
+    refreshRam.click()
+
+
 
     const connectionStatusEl = document.getElementById('connection-status');
     const statusIndicatorEl = document.getElementById('status-indicator');

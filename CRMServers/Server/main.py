@@ -2,7 +2,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Query, Request, Response
 from fastapi.responses import RedirectResponse, HTMLResponse 
 from fastapi.responses import StreamingResponse
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 import httpx
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -252,6 +252,9 @@ class OrderResponse(BaseModel):
     created_at: str
     address: str
     notes: Optional[str] = None
+
+class OrderQueryResponse(OrderResponse):
+    user_name: str
 
 class OperatorEnum(str, Enum):
     eq = "eq"  # Equal
@@ -542,6 +545,31 @@ async def rootPage(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Could not find the sitemap.xml")
 
+@app.get("/logs")
+async def get_logs(request: Request):
+    log_file_path = "serverLogs.txt"
+    try:
+        with open(log_file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        return Response(content=content, media_type="text/plain")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Could not find the serverLogs.txt")
+
+@app.delete("/logs")
+async def delete_logs(request: Request):
+    log_file_path = "serverLogs.txt"
+    try:
+        open(log_file_path, "w", encoding="utf-8")
+        return {"detail": "Log file deleted successfully."}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Log file not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting log file: {str(e)}")
+
+@app.get("/ram")
+async def ram_data(request: Request):
+    result = subprocess.run(["free", "-h"], capture_output=True, text=True)
+    return PlainTextResponse(result.stdout)
 
 from datetime import datetime, timedelta, timezone
 import dbbackup
@@ -1643,14 +1671,18 @@ async def get_bill(order_id: str):
 
 
 
-
-@app.post("/orders/query", response_model=List[OrderResponse])
-async def query_orders(query_request: QueryRequest): # Made async
+@app.post("/orders/query", response_model=List[OrderQueryResponse])
+async def query_orders(query_request: QueryRequest):
     conn = await get_db_connection()
     try:
         async with conn.cursor() as cursor:
             where_clause, params = build_query(query_request.filters)
-            query = f"SELECT * FROM orders WHERE {where_clause}"
+            query = f"""
+                SELECT orders.*, userdata.name AS user_name
+                FROM orders
+                JOIN userdata ON orders.user_id = userdata.uid
+                WHERE {where_clause}
+            """
 
             # Add ordering
             if query_request.order_by:
@@ -1676,7 +1708,6 @@ async def query_orders(query_request: QueryRequest): # Made async
         raise HTTPException(status_code=500, detail=f"Database query error: {str(e)}")
     finally:
         await conn.close()
-
 
 @app.put("/orders/{order_id}", response_model=OrderResponse)
 async def update_order(order_id: str, order_update: OrderUpdate): # Made async

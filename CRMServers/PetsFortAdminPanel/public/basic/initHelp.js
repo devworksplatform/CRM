@@ -161,11 +161,12 @@ function checkPermissionForAction(action, param1) {
     } else return false;
 }
 
-async function callApi(method, url, body = null) {
+async function callApi(method, url, body = null, parseJson = true) {
+
     const options = {
         method: method.toUpperCase(),
         headers: {
-        'Content-Type': 'application/json'
+          'Content-Type': 'application/json'
         }
     };
 
@@ -177,10 +178,15 @@ async function callApi(method, url, body = null) {
       const response = await fetch(SERVER_URL+url, options);
 
         if (!response.ok) {
-        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+          throw new Error(`HTTP ${response.status} - ${response.statusText}`);
         }
 
-        return await response.json();
+        if(parseJson) {
+          return await response.json();
+        } else {
+          return await response.text();
+        }
+
     } catch (err) {
         console.error('API call error:', err.message);
         throw err;

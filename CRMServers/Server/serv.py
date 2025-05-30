@@ -150,6 +150,14 @@ def status():
         # check_process_status already prints errors if commands are missing
         print("--- Server Status: Not Running ---")
 
+def logs():
+    log_file_path = "serverLogs.txt"
+    try:
+        with open(log_file_path, "r", encoding="utf-8") as f:
+            content = f.read()
+        print(content)
+    except Exception as e:
+        print(f"Could not find the serverLogs.txt {str(e)}", e)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
@@ -165,6 +173,8 @@ if __name__ == "__main__":
         restart()
     elif command == "status":
         status()
+    elif command == "log":
+        logs()
     else:
         print("Invalid command. Use start, stop, res, or status.")
         sys.exit(1)

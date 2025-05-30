@@ -256,7 +256,7 @@ async function initMod4() {
 
     const orderList = Array.isArray(orderData) ? orderData.map(o => ({
         order_id: o.order_id,
-        user_id: o.user_id,
+        user_id: o.user_name,
         items: o.items,
         items_detail: o.items_detail,
         order_status: o.order_status,

@@ -25,9 +25,14 @@ async function initMod1() {
     const expiryInput = document.getElementById('user-credits-expiry');
 
     usernameInput.addEventListener('input', () => {
-        // Remove non-alphanumeric characters and trim spaces
-        const cleanedUsername = usernameInput.value.replace(/[^a-zA-Z0-9]/g, '').trim();
-        emailInput.value = cleanedUsername + '@petsfort.in';
+        
+        const isUpdating = Boolean(userIdInput.value);
+
+        if (!isUpdating) {
+            // Remove non-alphanumeric characters and trim spaces
+            const cleanedUsername = usernameInput.value.replace(/[^a-zA-Z0-9]/g, '').trim();
+            emailInput.value = cleanedUsername + '@petsfort.in';
+        }
     });
     
     // const today = new Date().toISOString().split('T')[0];
