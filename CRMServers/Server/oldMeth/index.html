@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/images%2FLogoAlone.png?alt=media&token=48bf0e46-4262-4dd3-b9e4-c566a682ffda">
+    <title>Petsfort - Your Pet's Best Friend</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            background-color: #f7f7f7;
+        }
+
+        .hero-section {
+            background: linear-gradient(to right, rgba(100, 116, 139, 0.8), rgba(51, 65, 85, 0.8)), url('https://images.unsplash.com/photo-1517849845537-4d257902454a?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80') no-repeat center center;
+            background-size: cover;
+            color: white;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            overflow: hidden; /* Ensure particles don't overflow if added */
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 0;
+        }
+
+        .hero-content {
+            z-index: 1;
+            position: relative; /* Ensure content is above overlay */
+        }
+
+        .product-card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+
+        .product-card:hover {
+            transform: translateY(-15px) scale(1.03);
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            transition: background-color 0.3s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Scroll Animation Classes */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .fade-in-up.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+         .scale-in {
+            opacity: 0;
+            transform: scale(0.8);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+         }
+
+         .scale-in.is-visible {
+            opacity: 1;
+            transform: scale(1);
+         }
+
+        /* Animation specific styles */
+        .animate__fadeIn { --animate-duration: 1s; }
+        .animate__fadeInDown { --animate-duration: 1s; }
+        .animate__fadeInUp { --animate-duration: 1s; }
+
+        .w-full {
+            height: max-content;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="p-6 bg-white shadow-md fixed top-0 left-0 right-0 z-50">
+        <div class="container mx-auto flex justify-between items-center">
+            <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/images%2FLogoWithName.png?alt=media&token=a685040a-eb58-4263-8451-5539f065b011" alt="Petsfort Full Logo" class="h-10"> <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="#about" class="text-gray-600 hover:text-gray-900 transition duration-300">About Us</a></li>
+                    <li><a href="#products" class="text-gray-600 hover:text-gray-900 transition duration-300">Products</a></li>
+                    <li><a href="#contact" class="text-gray-600 hover:text-gray-900 transition duration-300">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero-section">
+        <div class="hero-content">
+            <h2 class="text-5xl md:text-6xl font-bold mb-4 animate__animated animate__fadeInDown">Welcome to Petsfort.in</h2>
+            <p class="text-xl md:text-2xl mb-8 animate__animated animate__fadeInUp animate__delay-1s">Your one-stop shop for all your pet's needs.</p>
+            <div class="flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-6 animate__animated animate__fadeInUp animate__delay-2s">
+                <a href="https://play.google.com/store/apps/details?id=crmapp.petsfort" target="_blank" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg">Join Playstore Closed Testing</a>
+                <a href="https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/privacy_policy" target="_blank" class="btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-8 rounded-full shadow-lg">Privacy Policy</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-16 bg-white fade-in-up">
+        <div class="container mx-auto text-center px-4">
+            <h3 class="text-3xl font-bold mb-8 text-gray-800">About Petsfort</h3>
+            <p class="text-gray-600 leading-relaxed max-w-3xl mx-auto text-lg">
+                Welcome to Petsfort (“we”, “us”, “our”). Petsfort is a cart-tracker application for dog accessory sales, designed to work fully offline within Chennai, Tamil Nadu, India. We do not process payments or offer direct e‑commerce through the app. This Privacy Policy outlines our commitment to protecting your privacy and details what data, if any, we collect and how we handle it. This policy governs data collected through the Petsfort app and our website at petsfort.in. We adhere to the Google Play Developer Program Policies, including User Data and Data Safety requirements, and follow applicable regional data protection laws.
+            </p>
+        </div>
+    </section>
+
+    <section id="products" class="py-16 bg-gray-100">
+        <div class="container mx-auto px-4">
+            <h3 class="text-3xl font-bold mb-12 text-center text-gray-800 fade-in-up">Our Products</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat1.jpg?alt=media&token=ed4af7bf-2051-4aec-b4dd-9b48f4e6c234" alt="Snacks & Treats" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Snacks & Treats</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Soft Treats</li>
+                            <li>Tough Chews</li>
+                            <li>Bone Shaped</li>
+                            <li>Cat Snacks</li>
+                            <li>Energy Treats</li>
+                            <li>Semi-Moist Treats</li>
+                            <li>Ice Cream & Cheese</li>
+                            <li>Wanpy Tasty Meat</li>
+                            <li>Calcium Bones</li>
+                            <li>Made in India</li>
+                            <li>Cat Creamy Treats</li>
+                            <li>Puppy Snacks</li>
+                            <li>Dental Chews</li>
+                            <li>Meat Jerky Treats</li>
+                            <li>Groovy Gravy</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat10.jpg?alt=media&token=f1dcbdde-41e8-4365-ad89-ed90daf0d2a3" alt="Beddings" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Beddings</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Sofa Beds</li>
+                            <li>Mattress</li>
+                            <li>Round Bed</li>
+                            <li>Basket Beds</li>
+                            <li>Fancy Designer</li>
+                            <li>Water Proof Beds</li>
+                            <li>Pet Mat</li>
+                            <li>Cooling Mats</li>
+                            <li>Miscellaneous</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat11.jpg?alt=media&token=fdc894ef-25d1-4667-95ab-8d0a7de105a4" alt="Toys & Training" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Toys & Training</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Economy Range</li>
+                            <li>Squeaky Toys</li>
+                            <li>Imported Range</li>
+                            <li>Plush Toys</li>
+                            <li>Premium Rope Toys</li>
+                            <li>Fetching Toys</li>
+                            <li>Premium Latex Toys</li>
+                            <li>Premium Range</li>
+                            <li>Interactive Toys</li>
+                            <li>Ball Toys</li>
+                            <li>TPR & FT Toys</li>
+                            <li>Puppy Toys</li>
+                            <li>Edible Toys</li>
+                            <li>Bone Toys</li>
+                            <li>Latex Toys</li>
+                            <li>Tough Durable Toys</li>
+                            <li>Rope Toys</li>
+                            <li>Premium Rubber Toys</li>
+                            <li>Rubber Toys</li>
+                            <li>Treat Toy</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat12.jpg?alt=media&token=088e6cdd-8d10-4e9c-964b-8882c0b1a921" alt="Collars" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Collars</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Indian Hound</li>
+                            <li>Puppy Collars</li>
+                            <li>Imported Range</li>
+                            <li>Basic Range</li>
+                            <li>Classic Range</li>
+                            <li>Premium Range</li>
+                            <li>Choke Collars</li>
+                            <li>Choke Chains</li>
+                            <li>Brass Choke Chains</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat13.jpg?alt=media&token=1f4bd363-8e58-4943-ba40-9915df351e6b" alt="Ropes & Leashes" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Ropes & Leashes</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Indain Hound</li>
+                            <li>Indian Classic</li>
+                            <li>Rope Essentials</li>
+                            <li>Dog Chains</li>
+                            <li>Premium Ropes</li>
+                            <li>Imported Leash</li>
+                            <li>Indian Premium</li>
+                            <li>Handle Chain</li>
+                            <li>Retractable Leash</li>
+                            <li>Premium Chains</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat14.jpg?alt=media&token=518ea6dc-5a4b-4292-9106-62bd9ffe7e5d" alt="Harness" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Harness</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Premium Indian</li>
+                            <li>Indian Harnesses</li>
+                            <li>Imported Full Body</li>
+                            <li>Tough Wear Harness</li>
+                            <li>Imported Harness</li>
+                            <li>Indain Full Body</li>
+                            <li>Premium Indian</li>
+                            <li>Special Harness</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat15.jpg?alt=media&token=bb245804-9119-472b-9d7c-b098e31114ee" alt="Collars, Leashes, Harness Set" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Collars, Leashes, Harness Set</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Puppy Leash-Harness</li>
+                            <li>Puppy Leash-Collars</li>
+                            <li>Imported Range</li>
+                            <li>Imported Toy Breed</li>
+                            <li>Classic Range</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat2.jpg?alt=media&token=7e821fab-f518-40f9-b1fa-e294af347bed" alt="Grooming" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Grooming</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Grooming & Bathing</li>
+                            <li>Deshhedding Combs</li>
+                            <li>Miscellaneous</li>
+                            <li>Pet Tooth Brushes</li>
+                            <li>Hair Clippers & Brushes</li>
+                            <li>Spa Items</li>
+                            <li>Pin Brushes</li>
+                            <li>Combs</li>
+                            <li>Nail Clippers & Grinders</li>
+                            <li>Lint Rollers/Fur Remover</li>
+                            <li>Self Clean Slickers</li>
+                            <li>Brushes</li>
+                            <li>Slickers</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat3.jpg?alt=media&token=4989cd5d-5a68-4aa7-bd20-bf7d63d4fcbe" alt="Cosmetics" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Cosmetics</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Wet Wipes & Diapers</li>
+                            <li>Oral Care</li>
+                            <li>Hygiene Products</li>
+                            <li>Training Pads</li>
+                            <li>Powders & Sprays</li>
+                            <li>Basic Shampoos</li>
+                            <li>Performance</li>
+                            <li>Super Premium</li>
+                            <li>Essential Cosmetics</li>
+                            <li>Cat Shampoo</li>
+                            <li>Pet Perfumes</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat4.jpg?alt=media&token=89998110-c4cc-4ba4-bf8b-de8a4ef1eab5" alt="Accessories" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Accessories</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Steel Feeding</li>
+                            <li>Slow Feeding</li>
+                            <li>Premium Bowls</li>
+                            <li>Plastic Feeding</li>
+                            <li>Special Feeding</li>
+                            <li>Adjustable Stand</li>
+                            <li>Food & Water</li>
+                            <li>Feeding Bottles</li>
+                            <li>E Collar</li>
+                            <li>Bells & Name Tag</li>
+                            <li>Muzzle/Mouth</li>
+                            <li>Miscellaneous</li>
+                            <li>Premium Muzzles</li>
+                            <li>Training & Outdoor</li>
+                            <li>Scoopers & Poop Bags</li>
+                            <li>Dog Socks & Shoes</li>
+                            <li>Wire Hooks</li>
+                            <li>Sign Plates & Boards</li>
+                            <li>Pawlaland Accessories</li>
+                            <li>Display Rack</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat5.jpg?alt=media&token=47e84d76-1d01-4776-a3f0-4e33dafe890d" alt="Rawhides & Biscuits" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Rawhides & Biscuits</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Pouch Biscuits</li>
+                            <li>Jar Biscuits</li>
+                            <li>Ranch Chew Bone</li>
+                            <li>SPP Chew Bones</li>
+                            <li>Ranch Munchies</li>
+                            <li>SPP Munchies</li>
+                            <li>Rawhide Treats</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat6.jpg?alt=media&token=1df56f34-907b-4e7c-9d96-e81a674cbe44" alt="Feed" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Feed</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Premium Range</li>
+                            <li>Supplements</li>
+                            <li>Bird Feed</li>
+                            <li>Small Animal Feed</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat7.jpg?alt=media&token=df947b2a-e439-4495-b151-3b66f7ba4c6a" alt="Apparels" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Apparels</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Designer T-Shirts</li>
+                            <li>Speciality Wear</li>
+                            <li>Jackets</li>
+                            <li>Fashion T-Shirts</li>
+                            <li>Summer T-Shirts</li>
+                            <li>Cooling T-Shirts</li>
+                            <li>Flurocent T-Shirts</li>
+                            <li>Fancy Bandanas</li>
+                            <li>Raincoats</li>
+                            <li>Fancy Dog Bows & Tie</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat8.jpg?alt=media&token=50e1e0aa-d009-43e4-87fc-0e6cbcc65196" alt="Cat Accessories" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Cat Accessories</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Miscellaneous</li>
+                            <li>Cat Scratchers</li>
+                            <li>Cat Teasing Toys</li>
+                            <li>Cat Litter</li>
+                            <li>Cat Leash Collars</li>
+                            <li>Cat Litter Accessories</li>
+                            <li>Cat Toys</li>
+                            <li>Catnip Toys</li>
+                            <li>Premium Cat Toys</li>
+                            <li>Cat Tree</li>
+                            <li>Cat Tunnel</li>
+                            <li>Cat Apparels</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden product-card scale-in">
+                    <img src="https://firebasestorage.googleapis.com/v0/b/pets-fort.firebasestorage.app/o/categoryImages%2Fcat9.jpg?alt=media&token=e61b699b-aead-4d9d-b3a9-6ebac78d4cf7" alt="Cages & Carries" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h4 class="text-xl font-semibold mb-4 text-gray-800">Cages & Carries</h4>
+                        <ul class="text-gray-600 list-disc list-inside text-sm">
+                            <li>Puppy Carry Bag</li>
+                            <li>Imported Cages</li>
+                            <li>Fiber Carriers</li>
+                            <li>Indian Cages</li>
+                            <li>Miscellaneous</li>
+                            <li>Accessories</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="py-16 bg-white fade-in-up">
+        <div class="container mx-auto text-center px-4">
+            <h3 class="text-3xl font-bold mb-8 text-gray-800">Contact Us</h3>
+            <p class="text-gray-600 leading-relaxed max-w-2xl mx-auto text-lg">
+                Email: petsfort.in@gmail.com<br>
+                Website: petsfort.in<br>
+                Address: Chennai, Tamil Nadu, India
+            </p>
+        </div>
+    </section>
+
+    <footer class="bg-gray-800 text-white py-8 text-center">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Petsfort. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Function to check if an element is in viewport
+            const isInViewport = (el, offset = 0) => {
+                if (!el) return false;
+                const elementRect = el.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                return (
+                    elementRect.top <= (viewportHeight - offset) &&
+                    elementRect.bottom >= offset
+                );
+            };
+
+            // Handle scroll animations for elements with fade-in-up or scale-in class
+            const animateOnScroll = () => {
+                document.querySelectorAll('.fade-in-up:not(.is-visible), .scale-in:not(.is-visible)').forEach(element => {
+                    if (isInViewport(element, 100)) { // Offset 100px
+                        element.classList.add('is-visible');
+                    }
+                });
+            };
+
+            // Initial check and listen for scroll events
+            animateOnScroll();
+            window.addEventListener('scroll', animateOnScroll);
+            window.addEventListener('resize', animateOnScroll); // Also check on resize
+        });
+    </script>
+
+</body>
+</html>

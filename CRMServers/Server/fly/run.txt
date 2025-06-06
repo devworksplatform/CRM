@@ -1,0 +1,7 @@
+fly apps destroy jay-fastapi
+
+fly launch --name jay-fastapi --region sin --volume sqlite_data:/app/sqlite --no-deploy
+fly deploy
+fly scale count 1
+
+fly ssh console -a jay-fastapi

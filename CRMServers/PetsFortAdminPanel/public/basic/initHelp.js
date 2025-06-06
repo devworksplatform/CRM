@@ -2,8 +2,8 @@
 
 // const SERVER_URL = "https://server.petsfort.in/";
 // const SERVER_URL = "http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/";
-const SERVER_URL = "https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/";
-
+// const SERVER_URL = "https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/";
+const SERVER_URL = "https://jay-fastapi.fly.dev/";
 // --- LocalStorage Helpers ---
 const StorageHelper = {
     save: (key, data) => {

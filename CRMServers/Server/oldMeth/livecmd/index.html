@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Terminal</title>
+    <style>
+        :root {
+            --terminal-bg: #1e1e1e;
+            --terminal-text: #f0f0f0;
+            --terminal-border: #444;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #2d2d2d;
+            color: var(--terminal-text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        header {
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .controls input {
+            padding: 8px;
+            background-color: #3a3a3a;
+            border: 1px solid var(--terminal-border);
+            color: var(--terminal-text);
+            font-family: inherit;
+        }
+        
+        .controls button {
+            padding: 8px 16px;
+            background-color: #0066cc;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        
+        .controls button:hover {
+            background-color: #0055aa;
+        }
+        
+        .terminal-container {
+            flex: 1;
+            background-color: var(--terminal-bg);
+            border: 1px solid var(--terminal-border);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #terminal {
+            flex: 1;
+            overflow: hidden;
+            padding: 0;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.2;
+            color: var(--terminal-text);
+        }
+        
+        .status-bar {
+            background-color: #333;
+            padding: 4px 8px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .status-connected {
+            background-color: #4caf50;
+        }
+        
+        .status-disconnected {
+            background-color: #f44336;
+        }
+        
+        .status-connecting {
+            background-color: #ff9800;
+        }
+        
+        /* Dark theme for xterm.js */
+        .xterm-viewport::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-track {
+            background: #333;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 5px;
+        }
+
+        .xterm-viewport::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.css" />
+</head>
+<body>
+    <header>
+        <h1>Web Terminal</h1>
+        <div class="controls">
+            <input type="text" id="command-input" placeholder="Command (default: /bin/bash)" value="/bin/bash">
+            <button id="connect-btn">Connect</button>
+            <button id="disconnect-btn" disabled>Disconnect</button>
+        </div>
+    </header>
+    
+    <div class="terminal-container">
+        <div id="terminal"></div>
+        <div class="status-bar">
+            <div>
+                <span class="status-indicator status-disconnected" id="status-indicator"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+            <div id="terminal-size">80x24</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/xterm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/3.14.5/addons/fit/fit.min.js"></script>
+    <script>
+        // Enable the fit addon for xterm
+        Terminal.applyAddon(fit);
+
+        const terminal = new Terminal({
+            cursorBlink: true,
+            fontFamily: 'Courier New, monospace',
+            fontSize: 16,
+            theme: {
+                background: '#1e1e1e',
+                foreground: '#f0f0f0',
+                cursor: '#ffffff',
+                selection: 'rgba(255, 255, 255, 0.3)',
+                black: '#000000',
+                red: '#e06c75',
+                green: '#98c379',
+                yellow: '#e5c07b',
+                blue: '#61afef',
+                magenta: '#c678dd',
+                cyan: '#56b6c2',
+                white: '#d0d0d0',
+                brightBlack: '#808080',
+                brightRed: '#f44747',
+                brightGreen: '#b5e890',
+                brightYellow: '#f1d798',
+                brightBlue: '#8fc6f4',
+                brightMagenta: '#d8a6e0',
+                brightCyan: '#7bc6d0',
+                brightWhite: '#ffffff'
+            }
+        });
+
+        // DOM elements
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const terminalSizeElement = document.getElementById('terminal-size');
+        const commandInput = document.getElementById('command-input');
+        const connectButton = document.getElementById('connect-btn');
+        const disconnectButton = document.getElementById('disconnect-btn');
+        const terminalElement = document.getElementById('terminal');
+
+        // WebSocket connection
+        let socket = null;
+        let connected = false;
+        let terminalId = null;
+
+        // Open terminal and fit it to container
+        terminal.open(terminalElement);
+        fitTerminal();
+
+        // Handle terminal resizing
+        window.addEventListener('resize', () => {
+            fitTerminal();
+            if (connected) {
+                sendResizeMessage();
+            }
+        });
+
+        // Connect button click handler
+        connectButton.addEventListener('click', connectToTerminal);
+        
+        // Disconnect button click handler
+        disconnectButton.addEventListener('click', disconnectFromTerminal);
+
+        // Terminal key input handler
+        terminal.onData(data => {
+            if (connected) {
+                sendInputMessage(data);
+            }
+        });
+
+        function connectToTerminal() {
+            // Get the host dynamically based on the current URL
+            const host = window.location.host;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // const wsUrl = `${protocol}//${host}/ws/terminal`;
+            const wsUrl = `ws://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com:8000/ws/terminal`;
+
+            updateStatus('connecting', 'Connecting...');
+            
+            // Close existing socket if any
+            if (socket) {
+                socket.close();
+            }
+            
+            // Create new WebSocket connection
+            socket = new WebSocket(wsUrl);
+            
+            // Connection opened
+            socket.addEventListener('open', () => {
+                // Send initial configuration
+                const command = commandInput.value.trim() || '/bin/bash';
+                const { cols, rows } = terminal;
+                
+                socket.send(JSON.stringify({
+                    command: command,
+                    cols: cols,
+                    rows: rows
+                }));
+                
+                updateStatus('connected', 'Connected');
+                connected = true;
+                
+                // Update button states
+                connectButton.disabled = true;
+                disconnectButton.disabled = false;
+                
+                // Clear terminal
+                terminal.clear();
+            });
+            
+            // Listen for messages
+            socket.addEventListener('message', (event) => {
+                const message = JSON.parse(event.data);
+                
+                switch (message.type) {
+                    case 'connected':
+                        terminalId = message.terminalId;
+                        break;
+                        
+                    case 'output':
+                        terminal.write(message.data);
+                        break;
+                        
+                    case 'exit':
+                        terminal.writeln(`\r\n\nProcess exited with code ${message.code}`);
+                        disconnectFromTerminal();
+                        break;
+                        
+                    case 'eof':
+                        terminal.writeln('\r\n\nConnection closed');
+                        disconnectFromTerminal();
+                        break;
+                }
+            });
+            
+            // Socket closed
+            socket.addEventListener('close', () => {
+                disconnectFromTerminal();
+            });
+            
+            // Socket error
+            socket.addEventListener('error', (error) => {
+                console.error('WebSocket error:', error);
+                terminal.writeln('\r\n\nConnection error');
+                disconnectFromTerminal();
+            });
+        }
+
+        function disconnectFromTerminal() {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+            
+            connected = false;
+            terminalId = null;
+            
+            updateStatus('disconnected', 'Disconnected');
+            
+            // Update button states
+            connectButton.disabled = false;
+            disconnectButton.disabled = true;
+        }
+
+        function sendInputMessage(data) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'input',
+                    data: data
+                }));
+            }
+        }
+
+        function sendResizeMessage() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const { cols, rows } = terminal;
+                
+                socket.send(JSON.stringify({
+                    type: 'resize',
+                    cols: cols,
+                    rows: rows
+                }));
+                
+                terminalSizeElement.textContent = `${cols}x${rows}`;
+            }
+        }
+
+        function fitTerminal() {
+            terminal.fit();
+            const { cols, rows } = terminal;
+            terminalSizeElement.textContent = `${cols}x${rows}`;
+        }
+
+        function updateStatus(status, text) {
+            statusIndicator.className = `status-indicator status-${status}`;
+            statusText.textContent = text;
+        }
+
+        // Initial welcome message
+        terminal.writeln('Web Terminal - Connect to start');
+        terminal.writeln('');
+        terminal.writeln('Enter a command in the input box above or use the default /bin/bash');
+        terminal.writeln('Click Connect to start your terminal session');
+    </script>
+</body>
+</html>

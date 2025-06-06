@@ -1,0 +1,3 @@
+fly launch --name jay-fastapi --region sin --volume sqlite_data:/app/sqlite --no-deploy 
+fly scale count 1
+fly deploy

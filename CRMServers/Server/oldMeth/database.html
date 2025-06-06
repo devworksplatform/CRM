@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB Master Pro (Material Dark)</title>
+    <style>
+        /* --- Configuration & Theme Variables --- */
+        :root {
+            --color-primary: #bb86fc; /* Material Purple */
+            --color-primary-variant: #3700b3;
+            --color-secondary: #03dac6; /* Material Teal */
+            --color-background: #121212; /* Dark Background */
+            --color-surface: #1e1e1e; /* Slightly Lighter Surface */
+            --color-surface-variant: #2c2c2c; /* Elevation */
+            --color-error: #cf6679;
+            --color-warning: #ffb74d; /* Amber */
+            --color-success: #81c784; /* Green */
+            --color-on-primary: #000000;
+            --color-on-secondary: #000000;
+            --color-on-background: #e0e0e0; /* Light text on dark */
+            --color-on-surface: #e0e0e0;
+            --color-on-error: #000000;
+            --color-border: rgba(255, 255, 255, 0.12);
+            --color-text-secondary: rgba(255, 255, 255, 0.7);
+            --color-text-disabled: rgba(255, 255, 255, 0.5);
+            --color-overlay: rgba(0, 0, 0, 0.6);
+
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            --border-radius: 4px;
+            --transition-speed: 0.2s;
+            --elevation-1: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --elevation-2: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+            --elevation-4: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+            --elevation-8: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+        }
+
+        /* --- Reset & Base Styles --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px; /* Base font size */
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-background);
+            color: var(--color-on-background);
+            line-height: 1.6;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3 {
+            color: var(--color-on-background);
+            margin-bottom: 0.75em;
+            font-weight: 500;
+        }
+        h1 { font-size: 1.8rem; margin-top: 0; }
+        h2 { font-size: 1.4rem; margin-top: 1.5em; }
+        h3 { font-size: 1.2rem; margin-top: 1em; }
+
+        a { color: var(--color-secondary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* --- Layout --- */
+        .container {
+            width: 95%;
+            max-width: 1200px; /* Max width for laptop */
+            margin: 0 auto;
+            padding: 20px 15px;
+            flex-grow: 1;
+        }
+
+        .controls-bar {
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping on smaller screens */
+            align-items: center;
+            gap: 15px; /* Spacing between control items */
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--color-surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--elevation-1);
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1; /* Allow select group to grow */
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: auto; /* Push action buttons to the right on larger screens */
+        }
+
+        /* --- Components --- */
+
+        /* Buttons (Material Inspired) */
+        .btn {
+            display: inline-flex; /* Align icon and text */
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            cursor: pointer;
+            outline: none;
+            position: relative; /* For ripple */
+            overflow: hidden; /* For ripple */
+            transition: background-color var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            user-select: none;
+            min-width: 64px;
+            vertical-align: middle; /* Align nicely with other inline elements */
+            box-shadow: var(--elevation-1);
+        }
+
+        .btn:hover {
+            box-shadow: var(--elevation-2);
+        }
+        .btn:active {
+            box-shadow: var(--elevation-4);
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-on-primary);
+        }
+        .btn-primary:hover { background-color: lighten(var(--color-primary), 5%); } /* Need JS or preprocessor for lighten/darken */
+        .btn-primary:hover { filter: brightness(1.1); } /* Simple brightness adjustment */
+
+        .btn-secondary {
+            background-color: var(--color-surface-variant); /* Subtle background */
+            color: var(--color-primary); /* Use primary color for text */
+            border: 1px solid var(--color-border);
+        }
+        .btn-secondary:hover { background-color: rgba(var(--color-primary-rgb, 187, 134, 252), 0.1); } /* Use RGB for opacity, fallback values provided */
+
+        .btn-danger {
+            background-color: var(--color-error);
+            color: var(--color-on-error);
+        }
+        .btn-danger:hover { filter: brightness(1.1); }
+
+        .btn-warning {
+            background-color: var(--color-warning);
+            color: var(--color-on-error); /* Usually black/dark for warning */
+        }
+        .btn-warning:hover { filter: brightness(1.1); }
+
+        .btn-icon { /* For icon-only buttons if used */
+             min-width: 40px;
+             width: 40px;
+             height: 40px;
+             padding: 0;
+             border-radius: 50%;
+        }
+
+        /* Ripple Effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3); /* Light ripple on dark buttons */
+            transform: scale(0);
+            animation: ripple-animation 0.6s linear;
+            pointer-events: none; /* So it doesn't interfere with clicks */
+        }
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Select Dropdown (Material Inspired) */
+        .select-container {
+            position: relative;
+            display: inline-block; /* Or block */
+            min-width: 200px;
+             flex-grow: 1; /* Let it take available space */
+             max-width: 350px; /* Optional max width */
+        }
+
+        .select-label {
+            position: absolute;
+            top: -0.75em; /* Position above */
+            left: 10px;
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            background-color: var(--color-surface); /* Match control bar bg */
+            padding: 0 4px;
+            pointer-events: none; /* Don't interfere with select */
+        }
+
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-color: var(--color-surface-variant);
+            color: var(--color-on-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            padding: 10px 30px 10px 12px; /* Space for arrow */
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            width: 100%;
+            transition: border-color var(--transition-speed) ease;
+        }
+
+        select:hover {
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 1px var(--color-primary);
+        }
+
+        /* Custom Arrow */
+        .select-container::after {
+            content: '▼'; /* Simple down arrow */
+            /* Alternative: Use background SVG for better Material icon */
+            /* content: ''; background-image: url('data:image/svg+xml,...'); background-repeat: no-repeat; background-position: center; */
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            pointer-events: none; /* Don't interfere with select */
+        }
+
+        /* Inputs & Textarea (Material Inspired - Outlined Style) */
+        .form-field {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .form-field label {
+            position: absolute;
+            top: 12px; /* Adjust vertical position */
+            left: 12px;
+            font-size: 1rem;
+            color: var(--color-text-secondary);
+            pointer-events: none;
+            transition: all var(--transition-speed) ease;
+            background-color: var(--color-surface-variant); /* To cover the border */
+            padding: 0 4px;
+        }
+
+        .form-field input[type="text"],
+        .form-field input[type="number"],
+        .form-field input[type="date"],
+        .form-field input[type="datetime-local"],
+        .form-field input[type="email"],
+        .form-field textarea {
+            width: 100%;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            color: var(--color-on-surface);
+            background-color: transparent; /* See through to container */
+            border: 1px solid var(--color-border);
+            border-radius: var(--border-radius);
+            outline: none;
+            transition: border-color var(--transition-speed) ease;
+        }
+
+        .form-field textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Label Float Animation */
+        .form-field input:focus + label,
+        .form-field textarea:focus + label,
+        .form-field input:not(:placeholder-shown) + label,
+        .form-field textarea:not(:placeholder-shown) + label {
+            top: -0.7em; /* Move label up */
+            left: 10px;
+            font-size: 0.75rem;
+            color: var(--color-primary);
+        }
+
+        /* Input Focus */
+        .form-field input:focus,
+        .form-field textarea:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 1px var(--color-primary); /* Optional focus ring */
+        }
+
+        /* Required asterisk */
+        .form-field label.required::after {
+            content: ' *';
+            color: var(--color-error);
+        }
+
+        /* Handle date/datetime-local placeholders */
+        .form-field input[type="date"]:not(:placeholder-shown) + label,
+        .form-field input[type="datetime-local"]:not(:placeholder-shown) + label {
+             top: -0.7em; /* Move label up */
+            left: 10px;
+            font-size: 0.75rem;
+        }
+        /* Special handling for date/datetime if browser shows default text */
+        .form-field input[type="date"]:in-range + label,
+        .form-field input[type="datetime-local"]:in-range + label {
+            top: -0.7em;
+            left: 10px;
+            font-size: 0.75rem;
+        }
+
+
+        /* Data Table (Material Inspired) */
+        #dataTableContainer {
+            overflow-x: auto; /* Enable horizontal scroll on small screens */
+            background-color: var(--color-surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--elevation-1);
+            margin-top: 20px;
+        }
+
+        #dataTable {
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap; /* Prevent text wrapping initially */
+        }
+
+        #dataTable th, #dataTable td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--color-border);
+            vertical-align: middle;
+            white-space: nowrap; /* Keep cells from wrapping */
+            overflow: hidden;
+            text-overflow: ellipsis; /* Add ellipsis if content is too long */
+             max-width: 250px; /* Prevent extremely wide columns */
+        }
+
+        #dataTable th {
+            font-weight: 500;
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            background-color: var(--color-surface-variant); /* Header background */
+            position: sticky; /* Make header sticky if container scrolls vertically (needs height on container) */
+            top: 0;
+            z-index: 1;
+        }
+        #dataTable th:first-child { border-top-left-radius: var(--border-radius); }
+        #dataTable th:last-child { border-top-right-radius: var(--border-radius); }
+
+
+        #dataTable tbody tr {
+            transition: background-color var(--transition-speed) ease;
+        }
+
+        #dataTable tbody tr:hover {
+            background-color: rgba(255, 255, 255, 0.05); /* Subtle hover */
+        }
+
+        #dataTable tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        #dataTable td .cell-content { /* Optional wrapper for complex cell content */
+             display: block;
+             max-width: 250px; /* Same as td max-width */
+             white-space: nowrap;
+             overflow: hidden;
+             text-overflow: ellipsis;
+        }
+         #dataTable td span.null-value {
+             color: var(--color-text-disabled);
+             font-style: italic;
+         }
+
+
+        #dataTable td:last-child { /* Actions column */
+            text-align: right;
+             white-space: nowrap; /* Ensure buttons stay on one line */
+             position: sticky; /* Keep actions visible on horizontal scroll */
+             right: 0;
+             background-color: var(--color-surface); /* Match row background */
+             box-shadow: -2px 0 5px rgba(0,0,0,0.2); /* Shadow to indicate scroll */
+             max-width: none; /* Allow actions to take space */
+        }
+        #dataTable th:last-child {
+            position: sticky;
+            right: 0;
+            z-index: 2; /* Above td sticky */
+             background-color: var(--color-surface-variant); /* Match header bg */
+             box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+        }
+
+        #dataTable .action-cell button {
+            margin-left: 8px;
+            padding: 4px 8px; /* Smaller buttons for table */
+            font-size: 0.8rem;
+            min-width: auto;
+            box-shadow: none; /* Less emphasis */
+        }
+         #dataTable .action-cell button:hover {
+             box-shadow: var(--elevation-1); /* Add shadow on hover */
+         }
+
+
+        /* Modals (for Add/Edit Forms & Confirmation) */
+        .modal-overlay {
+            position: fixed;
+            inset: 0; /* top, right, bottom, left = 0 */
+            background-color: var(--color-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-speed) ease, visibility 0s var(--transition-speed) linear;
+            z-index: 1000;
+            padding: 15px; /* Padding for smaller screens */
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+            transition-delay: 0s;
+        }
+
+        .modal {
+            background-color: var(--color-surface-variant);
+            color: var(--color-on-surface);
+            border-radius: var(--border-radius);
+            box-shadow: var(--elevation-8);
+            width: 100%;
+            max-width: 500px; /* Max width for forms */
+            max-height: 90vh; /* Prevent modal being too tall */
+            display: flex;
+            flex-direction: column;
+            transform: scale(0.95);
+            transition: transform var(--transition-speed) ease;
+        }
+        .modal-overlay.visible .modal {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.25rem; }
+
+        .modal-close-btn {
+             background: none;
+             border: none;
+             color: var(--color-text-secondary);
+             font-size: 1.5rem;
+             cursor: pointer;
+             padding: 0 4px;
+             line-height: 1;
+        }
+        .modal-close-btn:hover { color: var(--color-on-surface); }
+
+        .modal-content {
+            padding: 24px;
+            overflow-y: auto; /* Allow content scrolling */
+            flex-grow: 1;
+        }
+
+        .modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid var(--color-border);
+            display: flex;
+            justify-content: flex-end; /* Align buttons right */
+            gap: 10px;
+            background-color: var(--color-surface); /* Slightly different footer bg */
+            border-bottom-left-radius: var(--border-radius);
+            border-bottom-right-radius: var(--border-radius);
+        }
+
+        #confirmModal .modal { max-width: 400px; } /* Smaller confirmation modal */
+
+
+        /* Snackbar (Status Messages) */
+        #snackbar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--color-surface-variant);
+            color: var(--color-on-surface);
+            padding: 12px 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--elevation-4);
+            z-index: 1001; /* Above modal overlay */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity var(--transition-speed) ease, visibility 0s var(--transition-speed) linear, bottom var(--transition-speed) ease;
+            min-width: 250px;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        #snackbar.show {
+            opacity: 1;
+            visibility: visible;
+            bottom: 30px; /* Slide up */
+            transition-delay: 0s;
+        }
+
+        #snackbar.success { background-color: var(--color-success); color: var(--color-on-primary); }
+        #snackbar.error { background-color: var(--color-error); color: var(--color-on-error); }
+        #snackbar.warning { background-color: var(--color-warning); color: var(--color-on-error); }
+
+        /* Loading Indicator */
+         .loader {
+             border: 4px solid var(--color-border);
+             border-top: 4px solid var(--color-primary);
+             border-radius: 50%;
+             width: 30px;
+             height: 30px;
+             animation: spin 1s linear infinite;
+             margin: 20px auto; /* Center it */
+             display: none; /* Hidden by default */
+         }
+        .loader.visible { display: block; }
+
+         @keyframes spin {
+             0% { transform: rotate(0deg); }
+             100% { transform: rotate(360deg); }
+         }
+
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: -1px;
+            padding: 0;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            border: 0;
+        }
+        .text-warning { color: var(--color-warning); font-weight: bold; }
+        .text-error { color: var(--color-error); font-weight: bold; }
+
+
+        /* --- Responsiveness --- */
+        @media (max-width: 768px) {
+            html { font-size: 15px; }
+            .container { padding: 15px 10px; }
+            h1 { font-size: 1.6rem; }
+
+            .controls-bar { flex-direction: column; align-items: stretch; }
+            .action-buttons { margin-left: 0; width: 100%; justify-content: space-between; }
+            .action-buttons .btn { flex-grow: 1; } /* Make buttons fill space */
+
+            .select-container { min-width: 100%; max-width: none; }
+
+            .modal { max-width: 95%; }
+            .modal-header { padding: 12px 16px; }
+            .modal-content { padding: 16px; }
+            .modal-footer { padding: 12px 16px; }
+             .modal-footer .btn { width: 100%; margin-bottom: 5px; } /* Stack buttons */
+             .modal-footer { flex-direction: column-reverse; } /* Stack cancel below save */
+
+            #dataTable th, #dataTable td { padding: 8px 10px; }
+            #dataTable td:last-child { padding-right: 10px; } /* Ensure padding consistency */
+
+            #snackbar { width: calc(100% - 40px); left: 20px; transform: none; bottom: 10px; white-space: normal; text-align: left;}
+            #snackbar.show { bottom: 20px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>DB Master Pro</h1>
+
+        <div class="controls-bar">
+            <div class="control-group">
+                 <label for="tableSelect" class="visually-hidden">Select Table:</label>
+                <div class="select-container">
+                    <span class="select-label">Table</span>
+                    <select id="tableSelect">
+                        <option value="">-- Loading Tables --</option>
+                    </select>
+                </div>
+                 <button id="refreshBtn" class="btn btn-secondary btn-icon" title="Refresh data">
+                    <span class="material-icons-outlined">refresh</span> </button>
+            </div>
+            <div class="action-buttons">
+                <button id="addBtn" class="btn btn-primary">
+                    <span class="material-icons-outlined">add</span> Add Row
+                 </button>
+            </div>
+        </div>
+
+        <h2 id="currentTableHeading">Select a table to view data</h2>
+        <div id="tableLoader" class="loader"></div> <div id="dataTableContainer">
+            <table id="dataTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+            <p id="noDataMessage" class="hidden" style="padding: 20px; text-align: center; color: var(--color-text-secondary);">No data in this table.</p>
+        </div>
+         <p id="noPkMessage" class="hidden text-warning" style="margin-top: 10px;">Warning: This table does not have a single primary key. Editing and deleting rows is disabled.</p>
+
+    </div>
+
+    <div id="addFormModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Add New Row to <span id="addTableName"></span></h3>
+                <button class="modal-close-btn" onclick="hideAddForm()" title="Close">&times;</button>
+            </div>
+            <div class="modal-content">
+                <form id="addRowForm" novalidate></form> </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitAddRow()">Save New Row</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="editFormModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Edit Row in <span id="editTableName"></span></h3>
+                 <button class="modal-close-btn" onclick="hideEditForm()" title="Close">&times;</button>
+            </div>
+            <div class="modal-content">
+                <form id="editRowForm" novalidate>
+                     <input type="hidden" id="editPkValue" name="pk_value">
+                 </form>
+            </div>
+            <div class="modal-footer">
+                 <button type="button" class="btn btn-secondary" onclick="hideEditForm()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitEditRow()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+     <div id="confirmModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="confirmTitle">Confirmation</h3>
+                 <button class="modal-close-btn" onclick="closeConfirmModal()" title="Close">&times;</button>
+            </div>
+            <div class="modal-content">
+                <p id="confirmMessage">Are you sure?</p>
+            </div>
+            <div class="modal-footer">
+                 <button type="button" id="confirmCancelBtn" class="btn btn-secondary">Cancel</button>
+                <button type="button" id="confirmOkBtn" class="btn btn-danger">Confirm</button> </div>
+        </div>
+    </div>
+
+
+    <div id="snackbar">Snackbar message</div>
+
+    <script>
+        // --- DOM Elements ---
+        const tableSelect = document.getElementById('tableSelect');
+        const dataTable = document.getElementById('dataTable');
+        const dataTableHead = dataTable.querySelector('thead');
+        const dataTableBody = dataTable.querySelector('tbody');
+        const currentTableHeading = document.getElementById('currentTableHeading');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const noPkMessage = document.getElementById('noPkMessage');
+        const tableLoader = document.getElementById('tableLoader');
+
+        // Modals & Forms
+        const addFormModal = document.getElementById('addFormModal');
+        const addRowForm = document.getElementById('addRowForm');
+        const addTableNameSpan = document.getElementById('addTableName');
+        const editFormModal = document.getElementById('editFormModal');
+        const editRowForm = document.getElementById('editRowForm');
+        const editTableNameSpan = document.getElementById('editTableName');
+        const editPkValueInput = document.getElementById('editPkValue');
+
+        // Confirmation Modal Elements
+        const confirmModal = document.getElementById('confirmModal');
+        const confirmTitle = document.getElementById('confirmTitle');
+        const confirmMessage = document.getElementById('confirmMessage');
+        const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+        const confirmOkBtn = document.getElementById('confirmOkBtn');
+
+        // Buttons
+        const addBtn = document.getElementById('addBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+
+        // Snackbar
+        const snackbar = document.getElementById('snackbar');
+        let snackbarTimeout;
+
+        // --- State ---
+        let currentColumns = [];
+        let currentPkColumn = null;
+        let currentTableName = '';
+        let confirmCallback = null; // Store the action to perform on confirm
+
+        // --- API Base URL ---
+        const API_BASE_URL = ''; // Assuming API is at the same origin root
+
+        // --- Utility Functions ---
+
+        function displaySnackbar(message, type = 'info', duration = 4000) {
+            clearTimeout(snackbarTimeout); // Clear existing timer
+            snackbar.textContent = message;
+            snackbar.className = 'show'; // Base class to show
+
+            // Add type class (success, error, warning)
+            if (type === 'success') snackbar.classList.add('success');
+            else if (type === 'error') snackbar.classList.add('error');
+            else if (type === 'warning') snackbar.classList.add('warning');
+            // 'info' uses default styling
+
+            snackbarTimeout = setTimeout(() => {
+                snackbar.className = snackbar.className.replace('show', '');
+                 // Clean up type classes after animation ends
+                 setTimeout(() => {
+                    snackbar.classList.remove('success', 'error', 'warning');
+                 }, 300); // Match transition duration
+            }, duration);
+        }
+
+        function showLoader() {
+            tableLoader.classList.add('visible');
+            dataTableContainer.classList.add('hidden'); // Hide table container
+             noDataMessage.classList.add('hidden');
+             noPkMessage.classList.add('hidden');
+        }
+
+        function hideLoader() {
+            tableLoader.classList.remove('visible');
+            dataTableContainer.classList.remove('hidden'); // Show table container
+        }
+
+        async function fetchData(url, options = {}) {
+            const fullUrl = `${API_BASE_URL}${url}`;
+            console.log(`Workspaceing: ${options.method || 'GET'} ${fullUrl}`);
+            // No loader shown here by default, handled by calling function if needed
+
+            try {
+                const response = await fetch(fullUrl, options);
+                const responseData = await response.json();
+
+                if (!response.ok) {
+                    const errorDetail = responseData.detail || `HTTP error! Status: ${response.status}`;
+                    console.error(`Workspace error on ${url}:`, errorDetail, responseData);
+                    throw new Error(errorDetail);
+                }
+                console.log(`Workspace success for ${url}:`, responseData);
+                return responseData;
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                console.error(`Workspace exception on ${url}:`, errorMessage, error);
+                displaySnackbar(`Error: ${errorMessage}`, 'error');
+                throw error; // Re-throw so calling function knows it failed
+            }
+        }
+
+        // --- Table Loading and Rendering ---
+        async function populateTableSelect() {
+             tableSelect.disabled = true;
+            try {
+                const tables = await fetchData('/api/tables');
+                tableSelect.innerHTML = '<option value="">-- Select a Table --</option>';
+                if (tables && tables.length > 0) {
+                    tables.forEach(tableName => {
+                        const option = document.createElement('option');
+                        option.value = tableName;
+                        option.textContent = tableName;
+                        tableSelect.appendChild(option);
+                    });
+                } else {
+                     tableSelect.innerHTML = '<option value="">-- No tables found --</option>';
+                    displaySnackbar("No tables found in the database.", 'warning');
+                }
+            } catch (error) {
+                 tableSelect.innerHTML = '<option value="">-- Error loading tables --</option>';
+                // Error message handled by fetchData calling displaySnackbar
+                 console.error("Failed to populate table select:", error);
+            } finally {
+                 tableSelect.disabled = false;
+            }
+        }
+
+        function clearTableDisplay() {
+            dataTableHead.innerHTML = '';
+            dataTableBody.innerHTML = '';
+            noDataMessage.classList.add('hidden');
+            noPkMessage.classList.add('hidden');
+             dataTable.style.display = 'none'; // Hide table itself initially
+            currentColumns = [];
+            currentPkColumn = null;
+        }
+
+        function renderTable(tableName, columns, pkColumn, data) {
+            hideLoader(); // Hide loader now that we have data (or lack thereof)
+            clearTableDisplay();
+            currentTableHeading.textContent = `Table: ${tableName}`;
+            currentColumns = columns;
+            currentPkColumn = pkColumn;
+            currentTableName = tableName; // Store current table name
+
+             dataTable.style.display = 'table'; // Show table structure
+
+            // Create Header Row
+            const headerRow = dataTableHead.insertRow();
+            columns.forEach(col => {
+                const th = document.createElement('th');
+                th.textContent = col.name;
+                th.title = `${col.type}${col.pk ? ' (PK)' : ''}${col.notnull ? ' NOT NULL' : ''}`;
+                headerRow.appendChild(th);
+            });
+
+            if (pkColumn) {
+                const thAction = document.createElement('th');
+                thAction.textContent = 'Actions';
+                headerRow.appendChild(thAction);
+                noPkMessage.classList.add('hidden');
+            } else {
+                noPkMessage.classList.remove('hidden'); // Show warning if no PK
+            }
+
+            // Create Data Rows
+            if (data && data.length > 0) {
+                data.forEach(row => {
+                    const tr = dataTableBody.insertRow();
+                    columns.forEach(col => {
+                        const td = tr.insertCell();
+                         const value = row[col.name];
+                         // Wrap content for ellipsis potential
+                         const contentSpan = document.createElement('span');
+                         contentSpan.className = 'cell-content';
+                         if (value !== null && value !== undefined) {
+                            contentSpan.textContent = value;
+                            contentSpan.title = value; // Show full value on hover
+                         } else {
+                             contentSpan.innerHTML = '<span class="null-value">NULL</span>'; // Style NULL values
+                         }
+                         td.appendChild(contentSpan);
+
+                    });
+
+                    // Add Action Buttons if PK exists
+                    if (pkColumn) {
+                        const tdAction = tr.insertCell();
+                         tdAction.className = 'action-cell'; // Class for styling sticky column
+                        const pkValue = row[pkColumn];
+
+                        if (pkValue === null || pkValue === undefined) {
+                             tdAction.innerHTML = '<span class="null-value">N/A</span>';
+                        } else {
+                            const editButton = document.createElement('button');
+                            editButton.innerHTML = `<span class="material-icons-outlined">edit</span>`; // Icon/Text
+                            editButton.className = 'btn btn-warning btn-icon'; // Adjusted class for icon only
+                            editButton.title = 'Edit Row';
+                            editButton.onclick = () => showEditForm(tableName, pkValue, row);
+                            tdAction.appendChild(editButton);
+
+                            const deleteButton = document.createElement('button');
+                            deleteButton.innerHTML = `<span class="material-icons-outlined">delete</span>`; // Icon/Text
+                            deleteButton.className = 'btn btn-danger btn-icon'; // Adjusted class for icon only
+                            deleteButton.title = 'Delete Row';
+                             // Encode PK value for URL safety
+                             const encodedPkValue = encodeURIComponent(String(pkValue));
+                            deleteButton.onclick = () => confirmDeleteRow(tableName, pkColumn, encodedPkValue, String(pkValue)); // Use confirmation modal
+                            tdAction.appendChild(deleteButton);
+                        }
+                    }
+                });
+                noDataMessage.classList.add('hidden');
+            } else {
+                noDataMessage.classList.remove('hidden'); // Show no data message
+                 dataTable.style.display = 'none'; // Hide the table structure if no data
+            }
+             // Enable/Disable Add button based on whether columns loaded
+             addBtn.disabled = !(columns && columns.length > 0);
+        }
+
+
+        async function loadTableData(tableName) {
+            if (!tableName) {
+                 clearTableDisplay();
+                 currentTableHeading.textContent = 'Select a table to view data';
+                 addBtn.disabled = true; // Disable add if no table selected
+                 return;
+             }
+            showLoader(); // Show loader while fetching
+            clearTableDisplay();
+            currentTableHeading.textContent = `Loading ${tableName}...`;
+            addBtn.disabled = true; // Disable add while loading
+
+            try {
+                const infoPromise = fetchData(`/api/table/${tableName}/info`);
+                const dataPromise = fetchData(`/api/table/${tableName}/data`);
+                const [infoResult, dataResult] = await Promise.all([infoPromise, dataPromise]);
+                renderTable(tableName, infoResult.columns, infoResult.pk_column, dataResult.data);
+            } catch (error) {
+                hideLoader(); // Hide loader on error
+                currentTableHeading.textContent = `Error loading ${tableName}`;
+                // Error message handled by fetchData
+                console.error(`Failed to load data for table ${tableName}:`, error);
+            }
+        }
+
+        async function reloadData() {
+            const tableName = tableSelect.value;
+            if (tableName) {
+                 displaySnackbar(`Refreshing ${tableName}...`, 'info', 2000);
+                await loadTableData(tableName);
+            } else {
+                displaySnackbar("Select a table to refresh.", 'warning');
+            }
+        }
+
+        // --- Form Handling & Modals ---
+
+        // Generate input fields based on column definition
+        function generateFormFields(formElement, columns, rowData = null) {
+            formElement.innerHTML = ''; // Clear previous fields
+            columns.forEach(col => {
+                const isAutoIncPK = col.pk && col.type.toUpperCase() === 'INTEGER'; // Basic check
+                const isAdding = rowData === null;
+
+                // Skip adding auto-increment PKs
+                 if (isAdding && isAutoIncPK) return;
+                // Optional: Make PK read-only when editing
+                 // const isPkField = col.pk && !isAdding;
+
+
+                const div = document.createElement('div');
+                div.className = 'form-field';
+
+                let input;
+                const inputId = `field_${formElement.id}_${col.name}`;
+                const colTypeLower = col.type.toLowerCase();
+
+                 // Determine input type
+                 if (colTypeLower.includes('text') || colTypeLower.includes('char')) {
+                    input = document.createElement(colTypeLower === 'text' ? 'textarea' : 'input');
+                    if (input.tagName === 'INPUT') input.type = col.name.toLowerCase().includes('email') ? 'email' : 'text';
+                    if (input.tagName === 'TEXTAREA') input.rows = 3;
+                 } else if (colTypeLower.includes('int')) {
+                     input = document.createElement('input');
+                     input.type = 'number';
+                     input.step = '1';
+                 } else if (colTypeLower.includes('real') || colTypeLower.includes('float') || colTypeLower.includes('doub')) {
+                     input = document.createElement('input');
+                     input.type = 'number';
+                     input.step = 'any';
+                 } else if (colTypeLower.includes('date') && !colTypeLower.includes('time')) { // DATE only
+                     input = document.createElement('input');
+                     input.type = 'date';
+                 } else if (colTypeLower.includes('time') || colTypeLower.includes('datet')) { // DATETIME, TIMESTAMP
+                     input = document.createElement('input');
+                     input.type = 'datetime-local';
+                 } else if (colTypeLower.includes('blob')) {
+                     input = document.createElement('textarea');
+                     input.rows = 3;
+                     input.placeholder = '(BLOB data - view/edit as text)'; // Indicate BLOB
+                     // Maybe disable editing BLOBs? input.readOnly = true;
+                 } else {
+                     input = document.createElement('input');
+                     input.type = 'text'; // Default fallback
+                 }
+
+
+                input.id = inputId;
+                input.name = col.name;
+                input.placeholder = ' '; // Required for floating label trick with :placeholder-shown
+
+                 // Set value if editing
+                if (!isAdding) {
+                    const value = rowData[col.name];
+                     // Handle date/datetime formatting for input value
+                     if ((input.type === 'date' || input.type === 'datetime-local') && value) {
+                        try {
+                             // Attempt to create a Date object. SQLite often returns strings.
+                             const dateObj = new Date(value);
+                             if (!isNaN(dateObj)) { // Check if valid date
+                                 if(input.type === 'date') {
+                                      // Format as YYYY-MM-DD
+                                      input.value = dateObj.toISOString().split('T')[0];
+                                 } else {
+                                      // Format as YYYY-MM-DDTHH:mm
+                                      // Need to adjust for timezone offset
+                                      const tzoffset = (new Date()).getTimezoneOffset() * 60000; //offset in milliseconds
+                                      const localISOTime = (new Date(dateObj.getTime() - tzoffset)).toISOString().slice(0, 16);
+                                      input.value = localISOTime;
+                                 }
+                             } else {
+                                 input.value = value; // Fallback to original string if parsing fails
+                             }
+                        } catch (e) {
+                             input.value = value; // Fallback on error
+                        }
+                     } else {
+                         input.value = (value !== null && value !== undefined) ? value : '';
+                     }
+                }
+
+                // ReadOnly for PK when editing (optional)
+                 // if (isPkField) {
+                 //     input.readOnly = true;
+                 //     input.style.backgroundColor = 'rgba(255,255,255,0.05)'; // Indicate readonly
+                 // }
+
+                const label = document.createElement('label');
+                label.htmlFor = inputId;
+                 label.textContent = `${col.name} (${col.type})`;
+                 if (col.notnull && !(isAdding && isAutoIncPK)) {
+                     input.required = true;
+                     label.classList.add('required'); // Style the label for required fields
+                 }
+
+
+                div.appendChild(input);
+                div.appendChild(label); // Label must come AFTER input for CSS sibling selector (+)
+                formElement.appendChild(div);
+            });
+        }
+
+        function showAddForm() {
+            const tableName = tableSelect.value;
+            if (!tableName || !currentColumns || currentColumns.length === 0) {
+                displaySnackbar("Please select a table with loaded columns first.", 'warning');
+                return;
+            }
+            hideEditForm(); // Close edit form if open
+            addTableNameSpan.textContent = tableName;
+            generateFormFields(addRowForm, currentColumns, null); // null data = add mode
+            addFormModal.classList.add('visible');
+            // Focus first input?
+            const firstInput = addRowForm.querySelector('input:not([type="hidden"]), textarea');
+            if(firstInput) setTimeout(() => firstInput.focus(), 100); // Delay focus slightly
+        }
+
+        function hideAddForm() {
+            addRowForm.reset();
+             clearFormValidation(addRowForm);
+            addFormModal.classList.remove('visible');
+        }
+
+        function showEditForm(tableName, pkValue, rowData) {
+             if (!currentColumns || currentColumns.length === 0 || !currentPkColumn) {
+                 displaySnackbar(`Cannot edit row: Missing table info or primary key for ${tableName}.`, 'error');
+                 return;
+             }
+             hideAddForm(); // Close add form if open
+             editTableNameSpan.textContent = `${tableName} (PK: ${currentPkColumn}=${pkValue})`;
+             generateFormFields(editRowForm, currentColumns, rowData); // Pass existing data
+             editPkValueInput.value = pkValue; // Set hidden PK value
+             editFormModal.classList.add('visible');
+              // Focus first input?
+             const firstInput = editRowForm.querySelector('input:not([type="hidden"]):not([readonly]), textarea:not([readonly])');
+             if(firstInput) setTimeout(() => firstInput.focus(), 100);
+         }
+
+        function hideEditForm() {
+            editRowForm.reset();
+             clearFormValidation(editRowForm);
+            editFormModal.classList.remove('visible');
+        }
+
+        // Basic form validation feedback (can be expanded)
+        function validateForm(form) {
+            clearFormValidation(form);
+            let isValid = true;
+            const requiredInputs = form.querySelectorAll('[required]');
+            requiredInputs.forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.style.borderColor = 'var(--color-error)'; // Example: highlight border
+                    // Optional: Add validation message element
+                     displaySnackbar(`Field '${input.name}' is required.`, 'warning');
+                }
+            });
+             if (!form.checkValidity()) { // Use browser's built-in check for types etc.
+                 isValid = false;
+                 // form.reportValidity(); // Shows native popups, maybe not desired
+                 displaySnackbar('Please correct the invalid fields.', 'warning');
+             }
+            return isValid;
+        }
+
+        function clearFormValidation(form) {
+             form.querySelectorAll('input, textarea').forEach(input => {
+                 input.style.borderColor = ''; // Reset border color
+             });
+        }
+
+
+        // --- Form Submission and Actions ---
+        async function submitAddRow() {
+            if (!validateForm(addRowForm)) return;
+
+            const tableName = currentTableName; // Use stored table name
+            if (!tableName) return;
+
+            const formData = new FormData(addRowForm);
+
+            try {
+                 displaySnackbar(`Adding row to ${tableName}...`, 'info', 2000);
+                const result = await fetchData(`/api/table/${tableName}/row`, {
+                    method: 'POST',
+                    body: formData
+                });
+                displaySnackbar(result.message || 'Row added successfully!', 'success');
+                hideAddForm();
+                await reloadData();
+            } catch (error) {
+                // Error already displayed by fetchData/validateForm
+                 console.error("Failed to add row:", error);
+                 // Keep modal open for user to correct
+            }
+        }
+
+        async function submitEditRow() {
+             if (!validateForm(editRowForm)) return;
+
+            const tableName = currentTableName;
+            const pkValue = editPkValueInput.value;
+
+            if (!tableName || !pkValue || !currentPkColumn) {
+                displaySnackbar("Cannot submit edit: Missing critical information.", 'error');
+                return;
+            }
+
+            const formData = new FormData(editRowForm);
+             const encodedPkValue = encodeURIComponent(String(pkValue));
+
+            try {
+                displaySnackbar(`Updating row ${pkValue} in ${tableName}...`, 'info', 2000);
+                 const result = await fetchData(`/api/table/${tableName}/row/${encodedPkValue}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+                displaySnackbar(result.message || 'Row updated successfully!', 'success');
+                hideEditForm();
+                await reloadData();
+            } catch (error) {
+                console.error("Failed to update row:", error);
+                 // Keep modal open
+            }
+        }
+
+         // --- Confirmation Modal Logic ---
+         function showConfirmModal(title, message, onConfirm, type = 'danger') {
+             confirmTitle.textContent = title;
+             confirmMessage.innerHTML = message; // Use innerHTML to allow basic formatting if needed
+             confirmCallback = onConfirm; // Store the function to call if confirmed
+
+             // Style the confirm button based on type
+             confirmOkBtn.className = 'btn'; // Reset classes
+             if (type === 'danger') confirmOkBtn.classList.add('btn-danger');
+             else if (type === 'warning') confirmOkBtn.classList.add('btn-warning');
+             else confirmOkBtn.classList.add('btn-primary'); // Default
+
+             confirmModal.classList.add('visible');
+             setTimeout(() => confirmOkBtn.focus(), 50); // Focus confirm button
+         }
+
+         function closeConfirmModal() {
+             confirmModal.classList.remove('visible');
+             confirmCallback = null; // Clear callback
+         }
+
+         confirmCancelBtn.onclick = closeConfirmModal;
+
+         confirmOkBtn.onclick = () => {
+             if (typeof confirmCallback === 'function') {
+                 confirmCallback(); // Execute the stored action
+             }
+             closeConfirmModal();
+         };
+
+         // --- Delete Action (using confirmation) ---
+         function confirmDeleteRow(tableName, pkColumn, encodedPkValue) {
+             const decodedPkValue = decodeURIComponent(String(encodedPkValue)); // For display
+             showConfirmModal(
+                 'Delete Confirmation',
+                 `Are you sure you want to delete the row from '<b>${tableName}</b>' where <b>${pkColumn} = ${decodedPkValue}</b>?`,
+                 () => actuallyDeleteRow(tableName, encodedPkValue, decodedPkValue), // Pass the actual delete function as callback
+                 'danger' // Use danger styling for delete confirmation
+             );
+         }
+
+         async function actuallyDeleteRow(tableName, encodedPkValue, decodedPkValue) {
+             try {
+                 displaySnackbar(`Deleting row ${decodedPkValue} from ${tableName}...`, 'info', 2000);
+                 const result = await fetchData(`/api/table/${tableName}/row/${encodedPkValue}`, {
+                     method: 'DELETE'
+                 });
+                 displaySnackbar(result.message || 'Row deleted successfully!', 'success');
+                 // Don't hide forms automatically on delete
+                 await reloadData(); // Refresh table view
+             } catch (error) {
+                 console.error("Failed to delete row:", error);
+                 // Error message already displayed by fetchData
+             }
+         }
+
+        // --- Ripple Effect for Buttons ---
+        function createRipple(event) {
+             const button = event.currentTarget;
+
+             // Remove existing ripples
+             const existingRipples = button.querySelectorAll(".ripple");
+             existingRipples.forEach(ripple => ripple.remove());
+
+
+             const circle = document.createElement("span");
+             const diameter = Math.max(button.clientWidth, button.clientHeight);
+             const radius = diameter / 2;
+
+             const rect = button.getBoundingClientRect();
+             circle.style.width = circle.style.height = `${diameter}px`;
+             // Calculate click position relative to the button
+             circle.style.left = `${event.clientX - rect.left - radius}px`;
+             circle.style.top = `${event.clientY - rect.top - radius}px`;
+             circle.classList.add("ripple");
+
+
+             button.appendChild(circle);
+
+             // Optional: Clean up ripple element after animation
+             setTimeout(() => {
+                 circle.remove();
+             }, 600); // Match animation duration
+         }
+
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DB Master Pro Initializing...");
+            populateTableSelect();
+
+            // Event Listeners
+            tableSelect.addEventListener('change', (event) => {
+                loadTableData(event.target.value);
+                hideAddForm();
+                hideEditForm();
+            });
+
+            refreshBtn.addEventListener('click', reloadData);
+            addBtn.addEventListener('click', showAddForm);
+            addBtn.disabled = true; // Initially disabled until table/columns load
+
+            // Attach ripple effect to all buttons
+             const buttons = document.querySelectorAll('.btn');
+             buttons.forEach(button => {
+                 button.addEventListener('click', createRipple);
+             });
+
+             // Close modals on overlay click
+             document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                 overlay.addEventListener('click', (e) => {
+                     if (e.target === overlay) { // Only if clicking the overlay itself
+                         if(overlay.id === 'addFormModal') hideAddForm();
+                         if(overlay.id === 'editFormModal') hideEditForm();
+                         if(overlay.id === 'confirmModal') closeConfirmModal();
+                     }
+                 });
+             });
+
+            // Close modals on Escape key
+            document.addEventListener('keydown', (e) => {
+                 if (e.key === 'Escape') {
+                     if (confirmModal.classList.contains('visible')) {
+                         closeConfirmModal();
+                     } else if (editFormModal.classList.contains('visible')) {
+                         hideEditForm();
+                     } else if (addFormModal.classList.contains('visible')) {
+                         hideAddForm();
+                     }
+                 }
+             });
+
+        });
+
+    </script>
+
+</body>
+</html>
