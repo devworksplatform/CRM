@@ -757,7 +757,7 @@ async function initMod3() {
         let cropper = null;
 
         // Controller variable for image quality (0 to 1)
-        const imageQuality = 0.7; // 70% quality
+        const imageQuality = 0.9; // 70% quality
 
         // Ensure fileInput exists
         if (!fileInput) {
@@ -837,7 +837,7 @@ async function initMod3() {
                 if (!cropper) return;
 
                 // Get cropped canvas at target size (e.g., 300x300)
-                const canvas = cropper.getCroppedCanvas({ width: 300, height: 300 });
+                const canvas = cropper.getCroppedCanvas({ width: 800, height: 800 });
                 console.log('Cropped Image Resolution (Target):', canvas.width, 'x', canvas.height);
 
                 // Convert canvas to blob (original quality, then compress)
@@ -860,8 +860,8 @@ async function initMod3() {
                     // Compress the blob using Compressor.js
                     new Compressor(blob, {
                         quality: imageQuality, // Use the controller variable here (e.g., 0.7)
-                        maxWidth: 300, // Ensure final image is not larger than this
-                        maxHeight: 300,
+                        maxWidth: 800, // Ensure final image is not larger than this
+                        maxHeight: 800,
                         convertSize: 0, // Always convert, helps ensure consistent format/quality
                         success(compressedBlob) {
                             console.log('Compressed Image Size:', (compressedBlob.size / 1024).toFixed(2), 'KB', (compressedBlob.size / (1024 * 1024)).toFixed(2), 'MB');
