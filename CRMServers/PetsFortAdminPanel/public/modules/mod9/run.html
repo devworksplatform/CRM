@@ -1,0 +1,305 @@
+<div class="module-container mod9-container">
+
+    <!-- ==================== TAB BAR ==================== -->
+    <div class="gst-tab-bar" id="gst-tab-bar">
+        <button class="gst-tab active" data-tab="dashboard"><i data-feather="home" class="tab-icon"></i>Dashboard</button>
+        <button class="gst-tab" data-tab="day-book"><i data-feather="book" class="tab-icon"></i>Day Book</button>
+        <button class="gst-tab" data-tab="sales-register"><i data-feather="book-open" class="tab-icon"></i>Sales Register</button>
+        <button class="gst-tab" data-tab="profit-loss"><i data-feather="trending-up" class="tab-icon"></i>Profit &amp; Loss</button>
+        <button class="gst-tab" data-tab="stock-summary"><i data-feather="box" class="tab-icon"></i>Stock Summary</button>
+        <button class="gst-tab" data-tab="outstanding"><i data-feather="dollar-sign" class="tab-icon"></i>Outstanding</button>
+        <button class="gst-tab" data-tab="vouchers"><i data-feather="file-plus" class="tab-icon"></i>Vouchers</button>
+        <button class="gst-tab" data-tab="gst-reports"><i data-feather="file-text" class="tab-icon"></i>GST Reports</button>
+        <button class="gst-tab" data-tab="party-ledger"><i data-feather="users" class="tab-icon"></i>Party Ledger</button>
+    </div>
+
+    <!-- ==================== 1. DASHBOARD ==================== -->
+    <div class="gst-section active" id="sec-dashboard">
+        <div class="section-toolbar">
+            <h2 class="section-title">Dashboard — Gateway of Tally</h2>
+            <div class="toolbar-actions">
+                <label>FY: <select id="dash-fy"><option value="">Current FY</option></select></label>
+                <button class="btn-sm btn-primary" onclick="window._gst.loadDashboard()"><i data-feather="refresh-cw" class="btn-icon"></i>Refresh</button>
+            </div>
+        </div>
+        <div class="metrics-grid" id="dash-metrics"></div>
+        <div class="charts-row">
+            <div class="chart-card"><h4>Monthly Revenue Trend</h4><canvas id="chart-monthly-revenue"></canvas></div>
+            <div class="chart-card"><h4>Top Customers</h4><canvas id="chart-top-customers"></canvas></div>
+        </div>
+        <div class="charts-row">
+            <div class="chart-card"><h4>Order Status Distribution</h4><canvas id="chart-status-dist"></canvas></div>
+            <div class="chart-card"><h4>Recent Activity</h4><div id="dash-recent-activity" class="recent-list"></div></div>
+        </div>
+    </div>
+
+    <!-- ==================== 2. DAY BOOK ==================== -->
+    <div class="gst-section" id="sec-day-book">
+        <div class="section-toolbar">
+            <h2 class="section-title">Day Book</h2>
+            <div class="toolbar-actions">
+                <input type="date" id="db-from" title="From Date">
+                <input type="date" id="db-to" title="To Date">
+                <button class="btn-sm btn-primary" onclick="window._gst.loadDayBook()"><i data-feather="search" class="btn-icon"></i>Load</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('day-book')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+            </div>
+        </div>
+        <div class="metrics-grid metrics-sm" id="db-summary"></div>
+        <div class="table-wrapper">
+            <table class="data-table" id="db-table">
+                <thead>
+                    <tr><th>Date</th><th>Voucher Type</th><th>Voucher No</th><th>Party</th><th class="num">Taxable</th><th class="num">Tax</th><th class="num">Amount</th><th>Status</th></tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot><tr><td colspan="4"><strong>Totals</strong></td><td class="num" id="db-ft-taxable">—</td><td class="num" id="db-ft-tax">—</td><td class="num" id="db-ft-amount">—</td><td></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 3. SALES REGISTER ==================== -->
+    <div class="gst-section" id="sec-sales-register">
+        <div class="section-toolbar">
+            <h2 class="section-title">Sales Register</h2>
+            <div class="toolbar-actions">
+                <input type="date" id="sr-from" title="From Date">
+                <input type="date" id="sr-to" title="To Date">
+                <input type="text" id="sr-search" placeholder="Search invoices..." class="search-input">
+                <button class="btn-sm btn-primary" onclick="window._gst.loadSalesRegister()"><i data-feather="search" class="btn-icon"></i>Load</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('sales-register')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+            </div>
+        </div>
+        <div class="metrics-grid metrics-sm" id="sr-summary"></div>
+        <div class="table-wrapper">
+            <table class="data-table" id="sr-table">
+                <thead>
+                    <tr><th>Invoice #</th><th>Date</th><th>Party</th><th>GSTIN</th><th class="num">Taxable</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot><tr><td colspan="4"><strong>Totals</strong></td><td class="num" id="sr-ft-taxable">—</td><td class="num" id="sr-ft-cgst">—</td><td class="num" id="sr-ft-sgst">—</td><td class="num" id="sr-ft-total">—</td><td colspan="2"></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 4. PROFIT & LOSS ==================== -->
+    <div class="gst-section" id="sec-profit-loss">
+        <div class="section-toolbar">
+            <h2 class="section-title">Profit &amp; Loss Account</h2>
+            <div class="toolbar-actions">
+                <label>FY: <select id="pl-fy"><option value="">Current FY</option></select></label>
+                <button class="btn-sm btn-primary" onclick="window._gst.loadProfitLoss()"><i data-feather="refresh-cw" class="btn-icon"></i>Load</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.printSection('pl-statement')"><i data-feather="printer" class="btn-icon"></i>Print</button>
+            </div>
+        </div>
+        <div id="pl-statement" class="pl-container">
+            <div class="pl-header">
+                <h3>Profit &amp; Loss Account</h3>
+                <p id="pl-period"></p>
+            </div>
+            <table class="pl-table" id="pl-table">
+                <thead><tr><th>Particulars</th><th class="num">Amount (₹)</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="charts-row" style="margin-top:1.5rem">
+            <div class="chart-card"><h4>Monthly Revenue vs Tax</h4><canvas id="chart-pl-monthly"></canvas></div>
+            <div class="chart-card" id="pl-orders-card">
+                <h4>Order Summary</h4>
+                <div id="pl-orders-summary"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 5. STOCK SUMMARY ==================== -->
+    <div class="gst-section" id="sec-stock-summary">
+        <div class="section-toolbar">
+            <h2 class="section-title">Stock Summary</h2>
+            <div class="toolbar-actions">
+                <select id="stock-cat-filter"><option value="">All Categories</option></select>
+                <input type="text" id="stock-search" placeholder="Search products..." class="search-input">
+                <button class="btn-sm btn-primary" onclick="window._gst.loadStockSummary()"><i data-feather="refresh-cw" class="btn-icon"></i>Refresh</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('stock')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+            </div>
+        </div>
+        <div class="metrics-grid metrics-sm" id="stock-summary-cards"></div>
+        <div class="table-wrapper">
+            <table class="data-table" id="stock-table">
+                <thead>
+                    <tr><th>Product</th><th>HSN</th><th>Category</th><th class="num">MRP</th><th class="num">Rate</th><th>GST%</th><th class="num">Stock</th><th class="num">Stock Value</th><th>Alert</th></tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot><tr><td colspan="6"><strong>Totals</strong></td><td class="num" id="stock-ft-qty">—</td><td class="num" id="stock-ft-val">—</td><td></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 6. OUTSTANDING ==================== -->
+    <div class="gst-section" id="sec-outstanding">
+        <div class="section-toolbar">
+            <h2 class="section-title">Outstanding / Receivables</h2>
+            <div class="toolbar-actions">
+                <select id="out-filter"><option value="all">All Parties</option><option value="credit">With Credit</option><option value="dues">With Dues</option></select>
+                <input type="text" id="out-search" placeholder="Search party..." class="search-input">
+                <button class="btn-sm btn-primary" onclick="window._gst.loadOutstanding()"><i data-feather="refresh-cw" class="btn-icon"></i>Refresh</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('outstanding')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+            </div>
+        </div>
+        <div class="metrics-grid metrics-sm" id="out-summary-cards"></div>
+        <div class="table-wrapper">
+            <table class="data-table" id="out-table">
+                <thead>
+                    <tr><th>Party Name</th><th>GSTIN</th><th>Contact</th><th class="num">Total Purchased</th><th class="num">Credits (₹)</th><th class="num">Orders</th><th>Last Order</th><th>Actions</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 7. VOUCHERS (CN + DN) ==================== -->
+    <div class="gst-section" id="sec-vouchers">
+        <div class="section-toolbar">
+            <h2 class="section-title">Voucher Entry</h2>
+            <div class="toolbar-actions">
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-voucher="credit" onclick="window._gst.switchVoucher('credit')">Credit Notes</button>
+                    <button class="toggle-btn" data-voucher="debit" onclick="window._gst.switchVoucher('debit')">Debit Notes</button>
+                </div>
+                <button class="btn-sm btn-primary" id="btn-new-voucher" onclick="window._gst.toggleVoucherForm()"><i data-feather="plus" class="btn-icon"></i>New</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('vouchers')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+            </div>
+        </div>
+
+        <!-- CN/DN Create Form (hidden by default) -->
+        <div class="voucher-form" id="voucher-form" style="display:none">
+            <h3 id="voucher-form-title">Create Credit Note</h3>
+            <div class="form-grid">
+                <div class="form-group"><label>Note Number *</label><input type="text" id="v-number" placeholder="e.g. CN-001"></div>
+                <div class="form-group"><label>Original Invoice *</label><input type="text" id="v-original-invoice" placeholder="e.g. INV-123"></div>
+                <div class="form-group"><label>User ID *</label><input type="text" id="v-user-id" placeholder="User ID"></div>
+                <div class="form-group"><label>User Name</label><input type="text" id="v-user-name" placeholder="Customer name"></div>
+                <div class="form-group"><label>User GSTIN</label><input type="text" id="v-user-gstin" placeholder="GSTIN"></div>
+                <div class="form-group"><label>Reason *</label><input type="text" id="v-reason" placeholder="Reason for note"></div>
+                <div class="form-group full-width"><label>Notes</label><textarea id="v-notes" rows="2" placeholder="Additional notes"></textarea></div>
+            </div>
+            <h4 style="margin-top:1rem">Items</h4>
+            <div id="v-items-container">
+                <!-- Item rows added dynamically -->
+            </div>
+            <button class="btn-sm btn-outline" onclick="window._gst.addVoucherItem()" style="margin-top:0.5rem"><i data-feather="plus" class="btn-icon"></i>Add Item</button>
+            <div class="note-totals" id="v-totals">
+                <span>Subtotal: <strong id="v-subtotal">₹0.00</strong></span>
+                <span>CGST: <strong id="v-cgst">₹0.00</strong></span>
+                <span>SGST: <strong id="v-sgst">₹0.00</strong></span>
+                <span>Total: <strong id="v-total">₹0.00</strong></span>
+            </div>
+            <div class="form-actions">
+                <button class="btn-sm btn-primary" onclick="window._gst.submitVoucher()"><i data-feather="save" class="btn-icon"></i>Save</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.toggleVoucherForm()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Voucher List -->
+        <div class="table-wrapper" style="margin-top:1rem">
+            <table class="data-table" id="voucher-table">
+                <thead>
+                    <tr><th>Note #</th><th>Date</th><th>Original Invoice</th><th>Party</th><th>Reason</th><th class="num">Subtotal</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total</th><th>Actions</th></tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot><tr><td colspan="5"><strong>Totals</strong></td><td class="num" id="vt-ft-sub">—</td><td class="num" id="vt-ft-cgst">—</td><td class="num" id="vt-ft-sgst">—</td><td class="num" id="vt-ft-total">—</td><td></td></tr></tfoot>
+            </table>
+        </div>
+    </div>
+
+    <!-- ==================== 8. GST REPORTS ==================== -->
+    <div class="gst-section" id="sec-gst-reports">
+        <div class="section-toolbar">
+            <h2 class="section-title">GST Reports</h2>
+            <div class="toolbar-actions">
+                <div class="toggle-group">
+                    <button class="toggle-btn active" data-gst-sub="gstr1" onclick="window._gst.switchGstReport('gstr1')">GSTR-1</button>
+                    <button class="toggle-btn" data-gst-sub="gstr3b" onclick="window._gst.switchGstReport('gstr3b')">GSTR-3B</button>
+                    <button class="toggle-btn" data-gst-sub="hsn" onclick="window._gst.switchGstReport('hsn')">HSN Summary</button>
+                    <button class="toggle-btn" data-gst-sub="taxledger" onclick="window._gst.switchGstReport('taxledger')">Tax Ledger</button>
+                </div>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('gst-report')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.printSection('gst-report-content')"><i data-feather="printer" class="btn-icon"></i>Print</button>
+            </div>
+        </div>
+        <div id="gst-report-content">
+            <!-- GSTR-1 -->
+            <div class="gst-sub-section active" id="sub-gstr1">
+                <h3>GSTR-1 — Outward Supplies</h3>
+                <div class="gstr-section"><h4>B2B Invoices</h4><table class="data-table" id="gstr1-b2b"><thead><tr><th>GSTIN</th><th>Party</th><th>Invoice #</th><th>Date</th><th class="num">Taxable</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total</th></tr></thead><tbody></tbody></table></div>
+                <div class="gstr-section"><h4>B2C Invoices</h4><table class="data-table" id="gstr1-b2c"><thead><tr><th>Invoice #</th><th>Date</th><th>Party</th><th class="num">Taxable</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total</th></tr></thead><tbody></tbody></table></div>
+                <div class="gstr-section"><h4>Credit Notes</h4><table class="data-table" id="gstr1-cn"><thead><tr><th>CN #</th><th>Date</th><th>Original Invoice</th><th>Party</th><th class="num">Taxable</th><th class="num">Tax</th><th class="num">Total</th></tr></thead><tbody></tbody></table></div>
+                <div class="gstr-section"><h4>Debit Notes</h4><table class="data-table" id="gstr1-dn"><thead><tr><th>DN #</th><th>Date</th><th>Original Invoice</th><th>Party</th><th class="num">Taxable</th><th class="num">Tax</th><th class="num">Total</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <!-- GSTR-3B -->
+            <div class="gst-sub-section" id="sub-gstr3b">
+                <h3>GSTR-3B — Monthly Summary</h3>
+                <table class="data-table gstr3b-table" id="gstr3b-table"><thead><tr><th>Description</th><th class="num">Taxable Value</th><th class="num">IGST</th><th class="num">CGST</th><th class="num">SGST/UTGST</th><th class="num">Cess</th></tr></thead><tbody></tbody></table>
+            </div>
+            <!-- HSN Summary -->
+            <div class="gst-sub-section" id="sub-hsn">
+                <h3>HSN-wise Summary</h3>
+                <table class="data-table" id="hsn-table"><thead><tr><th>HSN/SAC</th><th class="num">Taxable Value</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total Tax</th><th class="num">Invoice Value</th></tr></thead><tbody></tbody></table>
+            </div>
+            <!-- Tax Ledger -->
+            <div class="gst-sub-section" id="sub-taxledger">
+                <h3>Tax Ledger — Rate-wise Analysis</h3>
+                <div class="section-toolbar" style="margin-bottom:1rem">
+                    <div></div>
+                    <div class="toolbar-actions">
+                        <input type="date" id="tl-from" title="From Date">
+                        <input type="date" id="tl-to" title="To Date">
+                        <button class="btn-sm btn-primary" onclick="window._gst.loadTaxLedger()"><i data-feather="search" class="btn-icon"></i>Load</button>
+                    </div>
+                </div>
+                <h4>Rate-wise Summary</h4>
+                <table class="data-table" id="tl-rate-table"><thead><tr><th>GST Rate</th><th class="num">Invoices</th><th class="num">Taxable Value</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total Tax</th></tr></thead><tbody></tbody></table>
+                <h4 style="margin-top:1.5rem">Detailed Entries</h4>
+                <table class="data-table" id="tl-detail-table"><thead><tr><th>Date</th><th>Invoice</th><th>Party</th><th>HSN</th><th>Rate</th><th class="num">Taxable</th><th class="num">CGST</th><th class="num">SGST</th><th class="num">Total Tax</th></tr></thead><tbody></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 9. PARTY LEDGER ==================== -->
+    <div class="gst-section" id="sec-party-ledger">
+        <div class="section-toolbar">
+            <h2 class="section-title">Party Ledger</h2>
+            <div class="toolbar-actions">
+                <select id="pl-party"><option value="">Select Party...</option></select>
+                <input type="date" id="pl-from" title="From Date">
+                <input type="date" id="pl-to" title="To Date">
+                <button class="btn-sm btn-primary" onclick="window._gst.loadPartyLedger()"><i data-feather="search" class="btn-icon"></i>Load</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.exportCSV('party-ledger')"><i data-feather="download" class="btn-icon"></i>CSV</button>
+                <button class="btn-sm btn-outline" onclick="window._gst.printSection('pl-content')"><i data-feather="printer" class="btn-icon"></i>Print</button>
+            </div>
+        </div>
+        <div class="metrics-grid metrics-sm" id="pl-summary-cards"></div>
+        <div id="pl-content">
+            <div class="table-wrapper">
+                <table class="data-table" id="pl-table2">
+                    <thead>
+                        <tr><th>Date</th><th>Voucher Type</th><th>Voucher #</th><th class="num">Debit (₹)</th><th class="num">Credit (₹)</th><th class="num">Balance (₹)</th></tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot><tr><td colspan="3"><strong>Totals</strong></td><td class="num" id="pl-ft-debit">—</td><td class="num" id="pl-ft-credit">—</td><td class="num" id="pl-ft-bal">—</td></tr></tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== INVOICE MODAL ==================== -->
+    <div class="invoice-modal-overlay" id="invoice-modal-overlay">
+        <div class="invoice-modal">
+            <div class="invoice-modal-header">
+                <h3>Invoice Details</h3>
+                <div>
+                    <button class="btn-sm btn-outline" onclick="window._gst.printInvoice()"><i data-feather="printer" class="btn-icon"></i>Print</button>
+                    <button class="btn-sm btn-outline" onclick="window._gst.closeInvoice()"><i data-feather="x" class="btn-icon"></i>Close</button>
+                </div>
+            </div>
+            <div class="invoice-modal-body" id="invoice-modal-body"></div>
+        </div>
+    </div>
+</div>

@@ -5,159 +5,154 @@ import time
 # import signal # No longer needed for os.killpg
 
 # Configuration
-LOG_FILE = "serverLogs.txt" 
-# Command to start the server
-# sudo uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/server.petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/server.petsfort.in/privkey.pem
-# CMD_START = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
-CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/etc/letsencrypt/live/petsfort.in/fullchain.pem", "--ssl-keyfile", "/etc/letsencrypt/live/petsfort.in/privkey.pem"]
-# CMD_START = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+LOG_FILE = "serverLogs.txt"
+LOG_FILE_80 = "serverLogs_80.txt"
 
-# --- New approach using pattern matching ---
-# Pattern to find the process for status and stopping.
-# Make this AS SPECIFIC AS POSSIBLE to avoid matching other processes.
-# Including arguments like host/port makes it safer.
-# PROCESS_PATTERN = "uvicorn main:app --host 0.0.0.0 --port 8000"
-PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 443 --ssl-certfile /etc/letsencrypt/live/petsfort.in/fullchain.pem --ssl-keyfile /etc/letsencrypt/live/petsfort.in/privkey.pem"
-# PROCESS_PATTERN = "sudo /home/ubuntu/CRM/venv/bin/uvicorn main:app --host 0.0.0.0 --port 80"
+# --- Server on port 443 (HTTPS with SSL) ---
+CMD_START_443 = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "443", "--ssl-certfile", "/etc/letsencrypt/live/petsfort.in/fullchain.pem", "--ssl-keyfile", "/etc/letsencrypt/live/petsfort.in/privkey.pem"]
+PROCESS_PATTERN_443 = "uvicorn main:app --host 0.0.0.0 --port 443"
 
-# Command to find the process (using pgrep). -a lists PID and full command.
-CMD_PGREP = ["pgrep", "-af", PROCESS_PATTERN]
-# Command to kill the process (using pkill). -f matches the full command line.
-CMD_PKILL = ["pkill", "-f", PROCESS_PATTERN]
-# --- End of new approach config ---
+# --- Server on port 80 (HTTP) ---
+CMD_START_80 = ["sudo", "/home/ubuntu/CRM/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+PROCESS_PATTERN_80 = "uvicorn main:app --host 0.0.0.0 --port 80"
+
+# List of all server instances
+SERVERS = [
+    {"name": "HTTPS (443)", "cmd_start": CMD_START_443, "pattern": PROCESS_PATTERN_443, "log_file": LOG_FILE},
+    {"name": "HTTP (80)",   "cmd_start": CMD_START_80,  "pattern": PROCESS_PATTERN_80,  "log_file": LOG_FILE_80},
+]
 
 
-def check_process_status():
-    print(f"Checking for process matching: '{PROCESS_PATTERN}'")
+def check_process_status_for(pattern):
+    """Check if a process matching the given pattern is running."""
     try:
-        # Run pgrep, capture output, don't raise error on non-zero exit
         result = subprocess.run(
-            CMD_PGREP,
+            ["pgrep", "-af", pattern],
             capture_output=True,
             text=True,
-            check=False # Important: pgrep returns 1 if not found, don't treat as error
+            check=False
         )
-
-        # pgrep returns 0 if match(es) found, 1 if no matches, >1 for errors
         if result.returncode == 0:
-            # Process(es) found
             return True, result.stdout.strip()
         elif result.returncode == 1:
-            # No process found
             return False, None
         else:
-            # pgrep command itself failed
             print(f"Error running pgrep: {result.stderr}", file=sys.stderr)
             return False, None
-
     except FileNotFoundError:
-        print(f"Error: '{CMD_PGREP[0]}' command not found. Cannot check status.", file=sys.stderr)
-        print("Please install 'procps' or 'procps-ng' package.", file=sys.stderr)
-        return False, None # Treat as not running, but indicate the error
+        print("Error: 'pgrep' command not found. Install 'procps' package.", file=sys.stderr)
+        return False, None
     except Exception as e:
         print(f"Error checking server status: {e}", file=sys.stderr)
         return False, None
 
 
 def start():
-    is_running, details = check_process_status()
-    if is_running:
-        print("Server appears to be already running:")
-        print(details)
-        return
+    all_running = True
+    for server in SERVERS:
+        is_running, details = check_process_status_for(server["pattern"])
+        if is_running:
+            print(f"[{server['name']}] Already running: {details}")
+        else:
+            all_running = False
+            print(f"[{server['name']}] Starting: {' '.join(server['cmd_start'])}")
+            try:
+                with open(server["log_file"], "a") as log:
+                    subprocess.Popen(
+                        server["cmd_start"],
+                        stdout=log,
+                        stderr=log,
+                        stdin=subprocess.DEVNULL,
+                        preexec_fn=os.setsid
+                    )
+                print(f"[{server['name']}] Start initiated. Logs: {server['log_file']}")
+            except FileNotFoundError:
+                print(f"[{server['name']}] Error: command not found.", file=sys.stderr)
+            except Exception as e:
+                print(f"[{server['name']}] Error starting: {e}", file=sys.stderr)
 
-    print(f"Starting server with command: {' '.join(CMD_START)}")
-    try:
-        with open(LOG_FILE, "a") as log:
-            # Use DEVNULL for stdin, log stdout/stderr
-            # os.setsid is still good practice to detach the process
-            # fully from the controlling terminal and make it a group leader.
-            process = subprocess.Popen(
-                CMD_START,
-                stdout=log,
-                stderr=log,
-                stdin=subprocess.DEVNULL,
-                preexec_fn=os.setsid # Optional but generally recommended
-            )
-        # Note: We don't store process.pid anymore
-        print(f"Server start initiated in background. Check logs '{LOG_FILE}' and status.")
-        # Give it a moment to potentially start up before next status check
+    if all_running:
+        print("All servers already running.")
+    else:
         time.sleep(1)
-        status() # Show status after attempting start
-
-    except FileNotFoundError:
-         print(f"Error: '{CMD_START[0]}' command not found. Cannot start server.", file=sys.stderr)
-    except Exception as e:
-         print(f"Error starting server: {e}", file=sys.stderr)
+        status()
 
 
 def stop(onStopped=None):
-    is_running, details = check_process_status()
-
-    if not is_running:
-        print("Server is not running.")
-        print("Trying Force Kill.")
-    
-    if details:
-        print(f"Found running process(es):\n{details}")
-
-    print(f"Attempting to stop using: {' '.join(CMD_PKILL)}")
-
-    try:
-        # Run pkill, check=False to handle non-zero exit codes manually
-        result = subprocess.run(CMD_PKILL, check=False, capture_output=True, text=True)
-
-        # pkill returns 0 if at least one process was signaled, 1 if no match
-        if result.returncode == 0:
-            print("Stop signal sent successfully (pkill exited with 0). Verifying...")
-            # Give processes time to terminate gracefully
-            time.sleep(2)
-            is_running_after, _ = check_process_status()
-            if not is_running_after:
-                print("Server stopped successfully.")
-                if onStopped:
-                    onStopped()
-            else:
-                print("Warning: Server process might still be running after sending signal.", file=sys.stderr)
-                print("Check status again or try 'pkill -9 -f \"{PROCESS_PATTERN}\"' manually if needed.", file=sys.stderr)
-        elif result.returncode == 1:
-             # This is unexpected if check_process_status found it just before
-             print("Warning: pkill reported no processes matched, contradicting earlier check.", file=sys.stderr)
+    any_stopped = False
+    for server in SERVERS:
+        is_running, details = check_process_status_for(server["pattern"])
+        if not is_running:
+            print(f"[{server['name']}] Not running.")
         else:
-            # pkill command itself failed
-            print(f"Error running pkill: {result.stderr}", file=sys.stderr)
+            if details:
+                print(f"[{server['name']}] Found: {details}")
 
-    except FileNotFoundError:
-        print(f"Error: '{CMD_PKILL[0]}' command not found. Cannot stop server.", file=sys.stderr)
-        print("Please install 'procps' or 'procps-ng' package.", file=sys.stderr)
-    except Exception as e:
-        print(f"Error stopping server: {e}", file=sys.stderr)
+        print(f"[{server['name']}] Stopping with pkill...")
+        try:
+            result = subprocess.run(
+                ["pkill", "-f", server["pattern"]],
+                check=False, capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                any_stopped = True
+                print(f"[{server['name']}] Stop signal sent.")
+            elif result.returncode == 1:
+                print(f"[{server['name']}] No process matched for pkill.")
+            else:
+                print(f"[{server['name']}] pkill error: {result.stderr}", file=sys.stderr)
+        except FileNotFoundError:
+            print("Error: 'pkill' command not found.", file=sys.stderr)
+        except Exception as e:
+            print(f"[{server['name']}] Error stopping: {e}", file=sys.stderr)
+
+    if any_stopped:
+        time.sleep(2)
+        # Verify
+        all_stopped = True
+        for server in SERVERS:
+            is_running, _ = check_process_status_for(server["pattern"])
+            if is_running:
+                all_stopped = False
+                print(f"[{server['name']}] WARNING: Still running after stop signal.", file=sys.stderr)
+        if all_stopped:
+            print("All servers stopped successfully.")
+            if onStopped:
+                onStopped()
+        else:
+            print("Some servers may still be running. Try force kill manually.", file=sys.stderr)
+    else:
+        print("No servers were running.")
+        if onStopped:
+            onStopped()
 
 
 def restart():
-    print("Restarting server...")
-    # Pass the start function as the callback to run after stopping completes
+    print("Restarting all servers...")
     stop(onStopped=start)
 
 
 def status():
-    is_running, details = check_process_status()
-    if is_running:
-        print("--- Server Status: Running ---")
-        print("Process details (PID and Command):",details)
-        print("---")
-    else:
-        # check_process_status already prints errors if commands are missing
-        print("--- Server Status: Not Running ---")
+    print("=" * 50)
+    for server in SERVERS:
+        is_running, details = check_process_status_for(server["pattern"])
+        if is_running:
+            print(f"[{server['name']}] Status: RUNNING")
+            print(f"  PID/Command: {details}")
+        else:
+            print(f"[{server['name']}] Status: NOT RUNNING")
+    print("=" * 50)
 
 def logs():
-    log_file_path = "serverLogs.txt"
-    try:
-        with open(log_file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-        print(content)
-    except Exception as e:
-        print(f"Could not find the serverLogs.txt {str(e)}", e)
+    for server in SERVERS:
+        log_file_path = server["log_file"]
+        print(f"\n{'=' * 20} [{server['name']}] Logs ({log_file_path}) {'=' * 20}")
+        try:
+            with open(log_file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            print(content)
+        except Exception as e:
+            print(f"Could not read {log_file_path}: {str(e)}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

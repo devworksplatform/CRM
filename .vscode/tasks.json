@@ -1,0 +1,40 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Debug APK",
+            "type": "shell",
+            "command": "./gradlew assembleDebug",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Build the debug APK using Gradle"
+        },
+        {
+            "label": "Install & Run on Device",
+            "type": "shell",
+            "command": "./gradlew installDebug && G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell am start -n crmapp.petsfort/.MainActivity",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Build, install, and launch the app on connected device",
+            "dependsOn": []
+        },
+        {
+            "label": "Uninstall from Device",
+            "type": "shell",
+            "command": "G:\\androidSDK\\Sdk\\platform-tools\\adb.exe uninstall crmapp.petsfort",
+            "problemMatcher": [],
+            "detail": "Uninstall the app from the connected device"
+        },
+        {
+            "label": "View Logcat",
+            "type": "shell",
+            "command": "G:\\androidSDK\\Sdk\\platform-tools\\adb.exe logcat --pid=$(G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell pidof crmapp.petsfort)",
+            "problemMatcher": [],
+            "detail": "Show logcat output filtered to the app",
+            "isBackground": true
+        }
+    ]
+}

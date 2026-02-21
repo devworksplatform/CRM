@@ -117,6 +117,42 @@ TABLE_SCHEMAS = {
             order_id TEXT PRIMARY KEY,
             bill TEXT NOT NULL
         )
+        """,
+    "credit_notes": """
+        CREATE TABLE IF NOT EXISTS credit_notes (
+            cn_id TEXT PRIMARY KEY,
+            cn_number TEXT NOT NULL,
+            original_invoice TEXT DEFAULT '',
+            user_id TEXT NOT NULL,
+            user_name TEXT DEFAULT '',
+            user_gstin TEXT DEFAULT '',
+            reason TEXT DEFAULT '',
+            items TEXT NOT NULL,
+            subtotal REAL DEFAULT 0,
+            cgst_total REAL DEFAULT 0,
+            sgst_total REAL DEFAULT 0,
+            total REAL DEFAULT 0,
+            created_at TEXT,
+            notes TEXT DEFAULT ''
+        )
+        """,
+    "debit_notes": """
+        CREATE TABLE IF NOT EXISTS debit_notes (
+            dn_id TEXT PRIMARY KEY,
+            dn_number TEXT NOT NULL,
+            original_invoice TEXT DEFAULT '',
+            user_id TEXT NOT NULL,
+            user_name TEXT DEFAULT '',
+            user_gstin TEXT DEFAULT '',
+            reason TEXT DEFAULT '',
+            items TEXT NOT NULL,
+            subtotal REAL DEFAULT 0,
+            cgst_total REAL DEFAULT 0,
+            sgst_total REAL DEFAULT 0,
+            total REAL DEFAULT 0,
+            created_at TEXT,
+            notes TEXT DEFAULT ''
+        )
         """
 }
 
@@ -126,7 +162,7 @@ app = FastAPI(title="Async SQLite Products API") # Updated title
 app.add_middleware(
     CORSMiddleware,
     # allow_origins=["*"],
-    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],  # Or specify: ["http://127.0.0.1:5500"]
+    allow_origins=["https://pets-fort.web.app","https://petsfort.in","https://server.petsfort.in","http://localhost:5500","http://127.0.0.1:5500", "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -430,6 +466,8 @@ async def init_db():
             await cursor.execute(TABLE_SCHEMAS["subcategory"])
             await cursor.execute(TABLE_SCHEMAS["userdata"])
             await cursor.execute(TABLE_SCHEMAS["bills"])
+            await cursor.execute(TABLE_SCHEMAS["credit_notes"])
+            await cursor.execute(TABLE_SCHEMAS["debit_notes"])
             # await cursor.execute("""
             # CREATE TABLE IF NOT EXISTS products (
             #     id TEXT PRIMARY KEY,
@@ -3047,6 +3085,771 @@ async def get_system_stats_snapshot():
     return await get_system_details()
 
 
+
+# ==================== GST MODULE ENDPOINTS ====================
+
+def _get_fy_dates(fy_str=None):
+    """Convert FY string like '2025-26' to (start_iso, end_iso)."""
+    if fy_str and '-' in fy_str:
+        try:
+            start_year = int(fy_str.split('-')[0])
+            return f"{start_year}-04-01T00:00:00", f"{start_year + 1}-03-31T23:59:59"
+        except:
+            pass
+    now = datetime.utcnow()
+    if now.month >= 4:
+        return f"{now.year}-04-01T00:00:00", f"{now.year + 1}-03-31T23:59:59"
+    else:
+        return f"{now.year - 1}-04-01T00:00:00", f"{now.year}-03-31T23:59:59"
+
+def _parse_bill(bill_str):
+    """Safely parse bill JSON string."""
+    if not bill_str:
+        return None
+    try:
+        return json.loads(bill_str)
+    except:
+        return None
+
+
+@app.get("/gst/dashboard")
+async def gst_dashboard(fy: str = None):
+    """Dashboard overview for a financial year."""
+    fy_start, fy_end = _get_fy_dates(fy)
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT o.order_id, o.created_at, o.total, o.order_status,
+                      b.bill, u.name as user_name
+               FROM orders o
+               LEFT JOIN bills b ON o.order_id = b.order_id
+               LEFT JOIN userdata u ON o.user_id = u.uid
+               WHERE o.created_at >= ? AND o.created_at <= ?
+               ORDER BY o.created_at""",
+            (fy_start, fy_end)
+        )
+        rows = await cursor.fetchall()
+
+        total_taxable = 0.0
+        total_cgst = 0.0
+        total_sgst = 0.0
+        total_invoiced = 0.0
+        invoice_count = 0
+        monthly = {}
+
+        for row in rows:
+            r = dict(row)
+            bill = _parse_bill(r.get('bill'))
+            if not bill:
+                continue
+            totals = bill.get('totals', {})
+            sub = float(totals.get('subTotal', 0))
+            cgst = float(totals.get('cgstAmount', 0))
+            sgst = float(totals.get('sgstAmount', 0))
+            total_taxable += sub
+            total_cgst += cgst
+            total_sgst += sgst
+            total_invoiced += float(totals.get('total', 0))
+            invoice_count += 1
+
+            month_key = (r.get('created_at') or '')[:7]
+            if month_key:
+                if month_key not in monthly:
+                    monthly[month_key] = {'taxable': 0, 'cgst': 0, 'sgst': 0, 'total': 0, 'count': 0}
+                monthly[month_key]['taxable'] += sub
+                monthly[month_key]['cgst'] += cgst
+                monthly[month_key]['sgst'] += sgst
+                monthly[month_key]['total'] += float(totals.get('total', 0))
+                monthly[month_key]['count'] += 1
+
+        cn_cursor = await conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(total),0), COALESCE(SUM(cgst_total),0), COALESCE(SUM(sgst_total),0) FROM credit_notes WHERE created_at >= ? AND created_at <= ?",
+            (fy_start, fy_end)
+        )
+        cn_row = await cn_cursor.fetchone()
+
+        dn_cursor = await conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(total),0), COALESCE(SUM(cgst_total),0), COALESCE(SUM(sgst_total),0) FROM debit_notes WHERE created_at >= ? AND created_at <= ?",
+            (fy_start, fy_end)
+        )
+        dn_row = await dn_cursor.fetchone()
+
+        cn_tax = float(cn_row[2]) + float(cn_row[3])
+        dn_tax = float(dn_row[2]) + float(dn_row[3])
+
+        return {
+            "fy": fy or "current",
+            "fy_start": fy_start[:10],
+            "fy_end": fy_end[:10],
+            "total_taxable": round(total_taxable, 2),
+            "total_cgst": round(total_cgst, 2),
+            "total_sgst": round(total_sgst, 2),
+            "total_tax": round(total_cgst + total_sgst, 2),
+            "total_invoiced": round(total_invoiced, 2),
+            "invoice_count": invoice_count,
+            "credit_note_count": cn_row[0],
+            "credit_note_total": round(float(cn_row[1]), 2),
+            "debit_note_count": dn_row[0],
+            "debit_note_total": round(float(dn_row[1]), 2),
+            "net_tax_liability": round(total_cgst + total_sgst - cn_tax + dn_tax, 2),
+            "monthly": monthly
+        }
+    finally:
+        await conn.close()
+
+
+@app.get("/gst/sales-register")
+async def gst_sales_register(from_date: str = None, to_date: str = None):
+    """Return all invoices with parsed bill details for a date range."""
+    if not from_date or not to_date:
+        raise HTTPException(status_code=400, detail="from_date and to_date are required")
+    from_iso = f"{from_date}T00:00:00"
+    to_iso = f"{to_date}T23:59:59"
+
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT o.order_id, o.user_id, o.created_at, o.total, o.order_status,
+                      b.bill, u.name as user_name, u.gstin as user_gstin
+               FROM orders o
+               LEFT JOIN bills b ON o.order_id = b.order_id
+               LEFT JOIN userdata u ON o.user_id = u.uid
+               WHERE o.created_at >= ? AND o.created_at <= ?
+               ORDER BY o.created_at DESC""",
+            (from_iso, to_iso)
+        )
+        rows = await cursor.fetchall()
+        result = []
+        for row in rows:
+            r = dict(row)
+            bill = _parse_bill(r.get('bill'))
+            entry = {
+                "order_id": r['order_id'],
+                "date": r.get('created_at', ''),
+                "invoice_no": "",
+                "party_name": r.get('user_name', '') or '',
+                "gstin": r.get('user_gstin', '') or '',
+                "taxable_value": 0,
+                "cgst": 0,
+                "sgst": 0,
+                "total": float(r.get('total', 0)),
+                "order_status": r.get('order_status', ''),
+                "items": [],
+                "gst_details": []
+            }
+            if bill:
+                totals = bill.get('totals', {})
+                entry["invoice_no"] = bill.get('details', {}).get('invoiceNo', '')
+                entry["taxable_value"] = float(totals.get('subTotal', 0))
+                entry["cgst"] = float(totals.get('cgstAmount', 0))
+                entry["sgst"] = float(totals.get('sgstAmount', 0))
+                entry["total"] = float(totals.get('total', 0))
+                entry["items"] = bill.get('items', [])
+                entry["gst_details"] = bill.get('gstDetails', [])
+                if bill.get('buyer', {}).get('gstin'):
+                    entry["gstin"] = bill['buyer']['gstin']
+            result.append(entry)
+        return result
+    finally:
+        await conn.close()
+
+
+# --- Credit Notes ---
+
+class CreditNoteCreate(BaseModel):
+    original_invoice: Optional[str] = ''
+    user_id: str
+    user_name: Optional[str] = ''
+    user_gstin: Optional[str] = ''
+    reason: Optional[str] = ''
+    items: List[Dict[str, Any]]
+    notes: Optional[str] = ''
+
+@app.post("/gst/credit-notes")
+async def create_credit_note(note: CreditNoteCreate):
+    """Create a new credit note with auto-generated sequential number."""
+    conn = await get_db_connection()
+    try:
+        now = datetime.utcnow()
+        fy_year = now.year if now.month >= 4 else now.year - 1
+        fy_str = f"{fy_year}-{str(fy_year + 1)[-2:]}"
+        prefix = f"CN/{fy_str}/"
+
+        cursor = await conn.execute(
+            "SELECT cn_number FROM credit_notes WHERE cn_number LIKE ? ORDER BY cn_number DESC LIMIT 1",
+            (prefix + '%',)
+        )
+        last = await cursor.fetchone()
+        if last:
+            last_num = int(dict(last)['cn_number'].split('/')[-1])
+            next_num = last_num + 1
+        else:
+            next_num = 1
+        cn_number = f"{prefix}{str(next_num).zfill(3)}"
+
+        subtotal = 0.0
+        cgst_total = 0.0
+        sgst_total = 0.0
+        for item in note.items:
+            qty = float(item.get('qty', 1))
+            rate = float(item.get('rate', 0))
+            gst_rate = float(item.get('gst_rate', 0))
+            taxable = qty * rate
+            subtotal += taxable
+            cgst_total += taxable * (gst_rate / 2 / 100)
+            sgst_total += taxable * (gst_rate / 2 / 100)
+
+        total = subtotal + cgst_total + sgst_total
+        cn_id = str(uuid4())[:12]
+        created_at = now.isoformat()
+
+        await conn.execute(
+            """INSERT INTO credit_notes (cn_id, cn_number, original_invoice, user_id, user_name, user_gstin,
+                reason, items, subtotal, cgst_total, sgst_total, total, created_at, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (cn_id, cn_number, note.original_invoice or '', note.user_id, note.user_name or '',
+             note.user_gstin or '', note.reason or '', json.dumps(note.items),
+             round(subtotal, 2), round(cgst_total, 2), round(sgst_total, 2),
+             round(total, 2), created_at, note.notes or '')
+        )
+        await conn.commit()
+        return {"cn_id": cn_id, "cn_number": cn_number, "total": round(total, 2)}
+    finally:
+        await conn.close()
+
+
+@app.get("/gst/credit-notes")
+async def list_credit_notes(from_date: str = None, to_date: str = None):
+    """List credit notes in a date range."""
+    conn = await get_db_connection()
+    try:
+        if from_date and to_date:
+            cursor = await conn.execute(
+                "SELECT * FROM credit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at DESC",
+                (f"{from_date}T00:00:00", f"{to_date}T23:59:59")
+            )
+        else:
+            cursor = await conn.execute("SELECT * FROM credit_notes ORDER BY created_at DESC")
+        rows = await cursor.fetchall()
+        result = []
+        for row in rows:
+            r = dict(row)
+            r['items'] = json.loads(r['items']) if r.get('items') else []
+            result.append(r)
+        return result
+    finally:
+        await conn.close()
+
+
+@app.delete("/gst/credit-notes/{cn_id}")
+async def delete_credit_note(cn_id: str):
+    """Delete a credit note by ID."""
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute("DELETE FROM credit_notes WHERE cn_id = ?", (cn_id,))
+        await conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Credit note not found")
+        return {"message": "Deleted"}
+    finally:
+        await conn.close()
+
+
+# --- Debit Notes ---
+
+class DebitNoteCreate(BaseModel):
+    original_invoice: Optional[str] = ''
+    user_id: str
+    user_name: Optional[str] = ''
+    user_gstin: Optional[str] = ''
+    reason: Optional[str] = ''
+    items: List[Dict[str, Any]]
+    notes: Optional[str] = ''
+
+@app.post("/gst/debit-notes")
+async def create_debit_note(note: DebitNoteCreate):
+    """Create a new debit note with auto-generated sequential number."""
+    conn = await get_db_connection()
+    try:
+        now = datetime.utcnow()
+        fy_year = now.year if now.month >= 4 else now.year - 1
+        fy_str = f"{fy_year}-{str(fy_year + 1)[-2:]}"
+        prefix = f"DN/{fy_str}/"
+
+        cursor = await conn.execute(
+            "SELECT dn_number FROM debit_notes WHERE dn_number LIKE ? ORDER BY dn_number DESC LIMIT 1",
+            (prefix + '%',)
+        )
+        last = await cursor.fetchone()
+        if last:
+            last_num = int(dict(last)['dn_number'].split('/')[-1])
+            next_num = last_num + 1
+        else:
+            next_num = 1
+        dn_number = f"{prefix}{str(next_num).zfill(3)}"
+
+        subtotal = 0.0
+        cgst_total = 0.0
+        sgst_total = 0.0
+        for item in note.items:
+            qty = float(item.get('qty', 1))
+            rate = float(item.get('rate', 0))
+            gst_rate = float(item.get('gst_rate', 0))
+            taxable = qty * rate
+            subtotal += taxable
+            cgst_total += taxable * (gst_rate / 2 / 100)
+            sgst_total += taxable * (gst_rate / 2 / 100)
+
+        total = subtotal + cgst_total + sgst_total
+        dn_id = str(uuid4())[:12]
+        created_at = now.isoformat()
+
+        await conn.execute(
+            """INSERT INTO debit_notes (dn_id, dn_number, original_invoice, user_id, user_name, user_gstin,
+                reason, items, subtotal, cgst_total, sgst_total, total, created_at, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (dn_id, dn_number, note.original_invoice or '', note.user_id, note.user_name or '',
+             note.user_gstin or '', note.reason or '', json.dumps(note.items),
+             round(subtotal, 2), round(cgst_total, 2), round(sgst_total, 2),
+             round(total, 2), created_at, note.notes or '')
+        )
+        await conn.commit()
+        return {"dn_id": dn_id, "dn_number": dn_number, "total": round(total, 2)}
+    finally:
+        await conn.close()
+
+
+@app.get("/gst/debit-notes")
+async def list_debit_notes(from_date: str = None, to_date: str = None):
+    """List debit notes in a date range."""
+    conn = await get_db_connection()
+    try:
+        if from_date and to_date:
+            cursor = await conn.execute(
+                "SELECT * FROM debit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at DESC",
+                (f"{from_date}T00:00:00", f"{to_date}T23:59:59")
+            )
+        else:
+            cursor = await conn.execute("SELECT * FROM debit_notes ORDER BY created_at DESC")
+        rows = await cursor.fetchall()
+        result = []
+        for row in rows:
+            r = dict(row)
+            r['items'] = json.loads(r['items']) if r.get('items') else []
+            result.append(r)
+        return result
+    finally:
+        await conn.close()
+
+
+@app.delete("/gst/debit-notes/{dn_id}")
+async def delete_debit_note(dn_id: str):
+    """Delete a debit note by ID."""
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute("DELETE FROM debit_notes WHERE dn_id = ?", (dn_id,))
+        await conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Debit note not found")
+        return {"message": "Deleted"}
+    finally:
+        await conn.close()
+
+
+# --- Party Ledger ---
+
+@app.get("/gst/party-ledger")
+async def gst_party_ledger(from_date: str = None, to_date: str = None, user_id: str = None):
+    """Party-wise transaction ledger combining sales, credit notes, debit notes."""
+    if not from_date or not to_date:
+        raise HTTPException(status_code=400, detail="from_date and to_date are required")
+    from_iso = f"{from_date}T00:00:00"
+    to_iso = f"{to_date}T23:59:59"
+
+    conn = await get_db_connection()
+    try:
+        entries = []
+
+        # Sales invoices
+        if user_id:
+            order_cursor = await conn.execute(
+                """SELECT o.order_id, o.user_id, o.created_at, o.total, o.order_status,
+                          u.name as user_name
+                   FROM orders o LEFT JOIN userdata u ON o.user_id = u.uid
+                   WHERE o.user_id = ? AND o.created_at >= ? AND o.created_at <= ?
+                   ORDER BY o.created_at""",
+                (user_id, from_iso, to_iso)
+            )
+        else:
+            order_cursor = await conn.execute(
+                """SELECT o.order_id, o.user_id, o.created_at, o.total, o.order_status,
+                          u.name as user_name
+                   FROM orders o LEFT JOIN userdata u ON o.user_id = u.uid
+                   WHERE o.created_at >= ? AND o.created_at <= ?
+                   ORDER BY o.created_at""",
+                (from_iso, to_iso)
+            )
+        order_rows = await order_cursor.fetchall()
+        for row in order_rows:
+            r = dict(row)
+            entries.append({
+                "date": r.get('created_at', ''),
+                "type": "Sale",
+                "voucher_no": f"INV-{r['order_id']}",
+                "party_name": r.get('user_name', ''),
+                "debit": round(float(r.get('total', 0)), 2),
+                "credit": 0
+            })
+
+        # Credit notes
+        if user_id:
+            cn_cursor = await conn.execute(
+                "SELECT * FROM credit_notes WHERE user_id = ? AND created_at >= ? AND created_at <= ? ORDER BY created_at",
+                (user_id, from_iso, to_iso)
+            )
+        else:
+            cn_cursor = await conn.execute(
+                "SELECT * FROM credit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at",
+                (from_iso, to_iso)
+            )
+        cn_rows = await cn_cursor.fetchall()
+        for row in cn_rows:
+            r = dict(row)
+            entries.append({
+                "date": r.get('created_at', ''),
+                "type": "Credit Note",
+                "voucher_no": r.get('cn_number', ''),
+                "party_name": r.get('user_name', ''),
+                "debit": 0,
+                "credit": round(float(r.get('total', 0)), 2)
+            })
+
+        # Debit notes
+        if user_id:
+            dn_cursor = await conn.execute(
+                "SELECT * FROM debit_notes WHERE user_id = ? AND created_at >= ? AND created_at <= ? ORDER BY created_at",
+                (user_id, from_iso, to_iso)
+            )
+        else:
+            dn_cursor = await conn.execute(
+                "SELECT * FROM debit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at",
+                (from_iso, to_iso)
+            )
+        dn_rows = await dn_cursor.fetchall()
+        for row in dn_rows:
+            r = dict(row)
+            entries.append({
+                "date": r.get('created_at', ''),
+                "type": "Debit Note",
+                "voucher_no": r.get('dn_number', ''),
+                "party_name": r.get('user_name', ''),
+                "debit": round(float(r.get('total', 0)), 2),
+                "credit": 0
+            })
+
+        # Sort all entries by date
+        entries.sort(key=lambda x: x.get('date', ''))
+
+        total_debit = sum(e['debit'] for e in entries)
+        total_credit = sum(e['credit'] for e in entries)
+
+        return {
+            "entries": entries,
+            "total_debit": round(total_debit, 2),
+            "total_credit": round(total_credit, 2),
+            "net_balance": round(total_debit - total_credit, 2)
+        }
+    finally:
+        await conn.close()
+
+
+# --- Day Book ---
+
+@app.get("/gst/day-book")
+async def gst_day_book(from_date: str = None, to_date: str = None):
+    """All vouchers chronologically — Tally Day Book."""
+    if not from_date or not to_date:
+        raise HTTPException(status_code=400, detail="from_date and to_date required")
+    from_iso = f"{from_date}T00:00:00"
+    to_iso = f"{to_date}T23:59:59"
+    conn = await get_db_connection()
+    try:
+        entries = []
+        cursor = await conn.execute(
+            """SELECT o.order_id, o.user_id, o.created_at, o.total, o.total_rate, o.total_gst,
+                      o.total_discount, o.order_status, b.bill, u.name as user_name
+               FROM orders o LEFT JOIN bills b ON o.order_id = b.order_id
+               LEFT JOIN userdata u ON o.user_id = u.uid
+               WHERE o.created_at >= ? AND o.created_at <= ? ORDER BY o.created_at""",
+            (from_iso, to_iso))
+        for row in await cursor.fetchall():
+            r = dict(row)
+            bill = _parse_bill(r.get('bill'))
+            inv_no = (bill or {}).get('details', {}).get('invoiceNo', '') if bill else ''
+            entries.append({"date": r.get('created_at',''), "type": "Sales",
+                "voucher_no": inv_no or f"INV-{r['order_id']}",
+                "party": r.get('user_name','') or r.get('user_id',''),
+                "amount": round(float(r.get('total',0)),2),
+                "taxable": round(float(r.get('total_rate',0)),2),
+                "tax": round(float(r.get('total_gst',0)),2),
+                "status": r.get('order_status',''), "order_id": r['order_id']})
+        cn_cur = await conn.execute("SELECT * FROM credit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at", (from_iso, to_iso))
+        for row in await cn_cur.fetchall():
+            r = dict(row)
+            entries.append({"date": r.get('created_at',''), "type": "Credit Note",
+                "voucher_no": r.get('cn_number',''),
+                "party": r.get('user_name','') or r.get('user_id',''),
+                "amount": round(float(r.get('total',0)),2),
+                "taxable": round(float(r.get('subtotal',0)),2),
+                "tax": round(float(r.get('cgst_total',0)) + float(r.get('sgst_total',0)),2),
+                "status": "Issued", "order_id": r.get('original_invoice','')})
+        dn_cur = await conn.execute("SELECT * FROM debit_notes WHERE created_at >= ? AND created_at <= ? ORDER BY created_at", (from_iso, to_iso))
+        for row in await dn_cur.fetchall():
+            r = dict(row)
+            entries.append({"date": r.get('created_at',''), "type": "Debit Note",
+                "voucher_no": r.get('dn_number',''),
+                "party": r.get('user_name','') or r.get('user_id',''),
+                "amount": round(float(r.get('total',0)),2),
+                "taxable": round(float(r.get('subtotal',0)),2),
+                "tax": round(float(r.get('cgst_total',0)) + float(r.get('sgst_total',0)),2),
+                "status": "Issued", "order_id": r.get('original_invoice','')})
+        entries.sort(key=lambda x: x.get('date',''))
+        ts = sum(e['amount'] for e in entries if e['type']=='Sales')
+        tc = sum(e['amount'] for e in entries if e['type']=='Credit Note')
+        td = sum(e['amount'] for e in entries if e['type']=='Debit Note')
+        return {"entries": entries, "summary": {"total_entries": len(entries),
+            "sales_count": sum(1 for e in entries if e['type']=='Sales'),
+            "cn_count": sum(1 for e in entries if e['type']=='Credit Note'),
+            "dn_count": sum(1 for e in entries if e['type']=='Debit Note'),
+            "total_sales": round(ts,2), "total_cn": round(tc,2), "total_dn": round(td,2),
+            "net_amount": round(ts-tc+td,2)}}
+    finally:
+        await conn.close()
+
+
+# --- Profit & Loss ---
+
+@app.get("/gst/profit-loss")
+async def gst_profit_loss(fy: str = None):
+    """Profit & Loss statement from available order/bill data."""
+    fy_start, fy_end = _get_fy_dates(fy)
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT o.order_id, o.total, o.total_rate, o.total_gst, o.total_discount,
+                      o.order_status, o.created_at, b.bill
+               FROM orders o LEFT JOIN bills b ON o.order_id = b.order_id
+               WHERE o.created_at >= ? AND o.created_at <= ?""", (fy_start, fy_end))
+        rows = await cursor.fetchall()
+        total_revenue = 0.0; total_taxable = 0.0; total_cgst = 0.0; total_sgst = 0.0
+        total_mrp = 0.0; total_discount = 0.0; cancelled_count = 0; cancelled_amount = 0.0; monthly = {}
+        for row in rows:
+            r = dict(row)
+            if r.get('order_status') == 'ORDER_CANCELLED':
+                cancelled_count += 1; cancelled_amount += float(r.get('total',0)); continue
+            bill = _parse_bill(r.get('bill'))
+            total_revenue += float(r.get('total',0))
+            total_taxable += float(r.get('total_rate',0))
+            total_discount += float(r.get('total_discount',0))
+            if bill:
+                totals = bill.get('totals',{})
+                total_cgst += float(totals.get('cgstAmount',0))
+                total_sgst += float(totals.get('sgstAmount',0))
+                for item in bill.get('items',[]):
+                    mrp = float(item.get('mrp',0))
+                    qty_str = str(item.get('quantityBilled','0'))
+                    qty = int(''.join(filter(str.isdigit, qty_str)) or '0')
+                    total_mrp += mrp * qty
+            else:
+                total_cgst += float(r.get('total_gst',0))/2
+                total_sgst += float(r.get('total_gst',0))/2
+            mk = (r.get('created_at') or '')[:7]
+            if mk:
+                if mk not in monthly:
+                    monthly[mk] = {'revenue':0,'taxable':0,'tax':0,'discount':0,'count':0}
+                monthly[mk]['revenue'] += float(r.get('total',0))
+                monthly[mk]['taxable'] += float(r.get('total_rate',0))
+                monthly[mk]['tax'] += float(r.get('total_gst',0))
+                monthly[mk]['discount'] += float(r.get('total_discount',0))
+                monthly[mk]['count'] += 1
+        cn_cur = await conn.execute(
+            "SELECT COALESCE(SUM(total),0), COALESCE(SUM(subtotal),0), COALESCE(SUM(cgst_total),0), COALESCE(SUM(sgst_total),0) FROM credit_notes WHERE created_at>=? AND created_at<=?",
+            (fy_start, fy_end))
+        cn = await cn_cur.fetchone()
+        dn_cur = await conn.execute(
+            "SELECT COALESCE(SUM(total),0), COALESCE(SUM(subtotal),0), COALESCE(SUM(cgst_total),0), COALESCE(SUM(sgst_total),0) FROM debit_notes WHERE created_at>=? AND created_at<=?",
+            (fy_start, fy_end))
+        dn = await dn_cur.fetchone()
+        total_tax = total_cgst + total_sgst
+        return {"fy": fy or "current",
+            "revenue": {"gross_sales_mrp": round(total_mrp,2), "discount_given": round(total_discount,2),
+                "net_sales_taxable": round(total_taxable,2), "cgst_collected": round(total_cgst,2),
+                "sgst_collected": round(total_sgst,2), "total_tax_collected": round(total_tax,2),
+                "total_revenue": round(total_revenue,2), "credit_note_adj": round(float(cn[0]),2),
+                "debit_note_adj": round(float(dn[0]),2),
+                "net_revenue": round(total_revenue - float(cn[0]) + float(dn[0]),2)},
+            "orders": {"total_orders": len(rows), "active_orders": len(rows)-cancelled_count,
+                "cancelled_orders": cancelled_count, "cancelled_value": round(cancelled_amount,2)},
+            "profitability": {"gross_mrp_value": round(total_mrp,2), "discount_given": round(total_discount,2),
+                "effective_selling_price": round(total_taxable,2),
+                "margin_on_mrp": round(total_mrp-total_taxable,2) if total_mrp>0 else 0,
+                "margin_percentage": round(((total_mrp-total_taxable)/total_mrp*100),2) if total_mrp>0 else 0},
+            "tax_summary": {"output_cgst": round(total_cgst,2), "output_sgst": round(total_sgst,2),
+                "total_output_tax": round(total_tax,2),
+                "cn_tax_adj": round(float(cn[2])+float(cn[3]),2),
+                "dn_tax_adj": round(float(dn[2])+float(dn[3]),2),
+                "net_tax_payable": round(total_tax - float(cn[2]) - float(cn[3]) + float(dn[2]) + float(dn[3]),2)},
+            "monthly": monthly}
+    finally:
+        await conn.close()
+
+
+# --- Stock Summary ---
+
+@app.get("/gst/stock-summary")
+async def gst_stock_summary():
+    """Stock summary with valuation — Tally Stock Summary."""
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT p.id, p.product_id, p.product_name, p.product_hsn, p.product_cid,
+                      p.cost_mrp, p.cost_rate, p.cost_gst, p.cost_dis, p.stock,
+                      c.name as category_name
+               FROM products p LEFT JOIN category c ON p.cat_id = c.id ORDER BY p.product_name""")
+        products = []; total_sv = 0.0; total_mv = 0.0; total_items = 0; oos = 0; ls = 0; cat_sum = {}
+        for row in await cursor.fetchall():
+            r = dict(row)
+            stock = int(r.get('stock',0)); mrp = float(r.get('cost_mrp',0))
+            rate = mrp - (mrp * float(r.get('cost_dis',0))/100)
+            sv = rate * stock; mv = mrp * stock
+            total_sv += sv; total_mv += mv; total_items += stock
+            if stock == 0: oos += 1
+            elif stock < 5: ls += 1
+            cat = r.get('category_name','Uncategorized') or 'Uncategorized'
+            if cat not in cat_sum: cat_sum[cat] = {'count':0,'stock':0,'value':0}
+            cat_sum[cat]['count'] += 1; cat_sum[cat]['stock'] += stock; cat_sum[cat]['value'] += sv
+            products.append({"id":r['id'],"product_id":r.get('product_id',''),"name":r.get('product_name',''),
+                "hsn":r.get('product_hsn',''),"category":cat,"mrp":round(mrp,2),"rate":round(rate,2),
+                "gst_pct":float(r.get('cost_gst',0)),"discount_pct":float(r.get('cost_dis',0)),
+                "stock":stock,"stock_value":round(sv,2),"mrp_value":round(mv,2)})
+        for k in cat_sum: cat_sum[k]['value'] = round(cat_sum[k]['value'],2)
+        return {"products":products,"summary":{"total_products":len(products),"total_items":total_items,
+            "total_stock_value":round(total_sv,2),"total_mrp_value":round(total_mv,2),
+            "out_of_stock":oos,"low_stock":ls},"category_summary":cat_sum}
+    finally:
+        await conn.close()
+
+
+# --- Outstanding ---
+
+@app.get("/gst/outstanding")
+async def gst_outstanding():
+    """Party-wise outstanding balances — Tally Receivables."""
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT u.uid, u.name, u.email, u.contact, u.gstin, u.credits,
+                      COUNT(o.order_id) as total_orders,
+                      COALESCE(SUM(CASE WHEN o.order_status!='ORDER_CANCELLED' THEN o.total ELSE 0 END),0) as total_purchased,
+                      MAX(o.created_at) as last_order_date
+               FROM userdata u LEFT JOIN orders o ON u.uid = o.user_id
+               GROUP BY u.uid ORDER BY u.credits DESC""")
+        parties = []; total_credits = 0.0; total_outstanding = 0.0
+        for row in await cursor.fetchall():
+            r = dict(row); credits = float(r.get('credits',0))
+            total_credits += credits
+            if credits < 0: total_outstanding += abs(credits)
+            parties.append({"uid":r.get('uid',''),"name":r.get('name',''),"email":r.get('email',''),
+                "contact":r.get('contact',''),"gstin":r.get('gstin',''),"credits":round(credits,2),
+                "total_orders":r.get('total_orders',0),
+                "total_purchased":round(float(r.get('total_purchased',0)),2),
+                "last_order":r.get('last_order_date','')})
+        return {"parties":parties,"summary":{"total_parties":len(parties),
+            "total_credits":round(total_credits,2),"total_outstanding":round(total_outstanding,2),
+            "parties_with_credit":sum(1 for p in parties if p['credits']>0),
+            "parties_with_dues":sum(1 for p in parties if p['credits']<0)}}
+    finally:
+        await conn.close()
+
+
+# --- Tax Ledger ---
+
+@app.get("/gst/tax-ledger")
+async def gst_tax_ledger(from_date: str = None, to_date: str = None):
+    """Rate-wise tax register — Tally Tax Analysis."""
+    if not from_date or not to_date:
+        raise HTTPException(status_code=400, detail="from_date and to_date required")
+    from_iso = f"{from_date}T00:00:00"; to_iso = f"{to_date}T23:59:59"
+    conn = await get_db_connection()
+    try:
+        cursor = await conn.execute(
+            """SELECT o.order_id, o.created_at, o.total, b.bill, u.name as user_name
+               FROM orders o LEFT JOIN bills b ON o.order_id = b.order_id
+               LEFT JOIN userdata u ON o.user_id = u.uid
+               WHERE o.created_at >= ? AND o.created_at <= ? ORDER BY o.created_at""",
+            (from_iso, to_iso))
+        rate_map = {}; entries = []
+        for row in await cursor.fetchall():
+            r = dict(row); bill = _parse_bill(r.get('bill'))
+            if not bill: continue
+            for g in bill.get('gstDetails',[]):
+                crs = str(g.get('cgstRate','0')).replace('%','')
+                cr = float(crs) if crs else 0; gst_rate = cr*2; rk = f"{gst_rate}%"
+                tv = float(g.get('taxableValue',0)); ca = float(g.get('cgstAmount',0))
+                sa = float(g.get('sgstUtgstAmount',0)); tt = float(g.get('totalTaxAmount',0))
+                if rk not in rate_map:
+                    rate_map[rk] = {'rate':gst_rate,'taxable':0,'cgst':0,'sgst':0,'total_tax':0,'invoices':0}
+                rate_map[rk]['taxable']+=tv; rate_map[rk]['cgst']+=ca
+                rate_map[rk]['sgst']+=sa; rate_map[rk]['total_tax']+=tt; rate_map[rk]['invoices']+=1
+                entries.append({"date":r.get('created_at',''),
+                    "invoice":(bill.get('details',{}).get('invoiceNo','') or f"INV-{r['order_id']}"),
+                    "party":r.get('user_name',''),"hsn":g.get('hsnSac',''),"rate":gst_rate,
+                    "taxable":round(tv,2),"cgst":round(ca,2),"sgst":round(sa,2),"total_tax":round(tt,2)})
+        for k in rate_map:
+            for f in ['taxable','cgst','sgst','total_tax']: rate_map[k][f]=round(rate_map[k][f],2)
+        gt = sum(v['taxable'] for v in rate_map.values()); gx = sum(v['total_tax'] for v in rate_map.values())
+        return {"rate_summary":rate_map,"entries":entries,
+            "totals":{"total_taxable":round(gt,2),"total_tax":round(gx,2)}}
+    finally:
+        await conn.close()
+
+
+# --- Dashboard Extras ---
+
+@app.get("/gst/dashboard-extras")
+async def gst_dashboard_extras(fy: str = None):
+    """Extra dashboard data: top customers, status distribution, recent activity."""
+    fy_start, fy_end = _get_fy_dates(fy)
+    conn = await get_db_connection()
+    try:
+        tc = await conn.execute(
+            """SELECT u.name, u.uid, COUNT(o.order_id) as oc,
+                      SUM(CASE WHEN o.order_status!='ORDER_CANCELLED' THEN o.total ELSE 0 END) as tv
+               FROM orders o JOIN userdata u ON o.user_id=u.uid
+               WHERE o.created_at>=? AND o.created_at<=? GROUP BY u.uid ORDER BY tv DESC LIMIT 10""",
+            (fy_start, fy_end))
+        top_customers = [{"name":dict(r).get('name',''),"uid":dict(r).get('uid',''),
+            "orders":dict(r).get('oc',0),"value":round(float(dict(r).get('tv',0)),2)}
+            for r in await tc.fetchall()]
+        os_c = await conn.execute(
+            "SELECT order_status, COUNT(*) as c, COALESCE(SUM(total),0) as v FROM orders WHERE created_at>=? AND created_at<=? GROUP BY order_status",
+            (fy_start, fy_end))
+        status_dist = {dict(r).get('order_status','Unknown'):{"count":dict(r).get('c',0),
+            "value":round(float(dict(r).get('v',0)),2)} for r in await os_c.fetchall()}
+        ra = await conn.execute(
+            """SELECT o.order_id, o.created_at, o.total, o.order_status, u.name
+               FROM orders o LEFT JOIN userdata u ON o.user_id=u.uid
+               WHERE o.created_at>=? AND o.created_at<=? ORDER BY o.created_at DESC LIMIT 10""",
+            (fy_start, fy_end))
+        recent = [{"order_id":dict(r)['order_id'],"date":dict(r).get('created_at',''),
+            "total":round(float(dict(r).get('total',0)),2),"status":dict(r).get('order_status',''),
+            "party":dict(r).get('name','')} for r in await ra.fetchall()]
+        return {"top_customers":top_customers,"status_distribution":status_dist,"recent_activity":recent}
+    finally:
+        await conn.close()
+
+
+# ==================== END GST MODULE ======================================
 
 
 # terminals

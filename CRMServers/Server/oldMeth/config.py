@@ -3,6 +3,7 @@ import subprocess
 import sys
 import re
 import os
+import glob
 
 
 def is_ubuntu():
@@ -23,21 +24,28 @@ def send_file():
     # """Sends the main.py file to the remote server using scp.
     # Sample Command : scp -i "C:\Users\Jay\Downloads\AllowAll.pem" "main.py" ubuntu@ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:~/CRM
     # """
-    source_file = "*"
     remote_path = "~/CRM"
+
+    # Get only files (not directories), exclude __pycache__ and config.py
+    exclude = {"__pycache__", "config.py"}
+    files_to_send = [f for f in glob.glob("*") if os.path.isfile(f) and f not in exclude]
+
+    if not files_to_send:
+        print("No files to send.")
+        return
 
     scp_command = [
         "scp",
         "-i",
         key_path,
-        source_file,
+        *files_to_send,
         f"{remote_user}@{remote_host}:{remote_path}"
     ]
 
     try:
-        print("Sending file...")
-        result = subprocess.run(scp_command, check=True)
-        print("File sent successfully.")
+        print(f"Sending {len(files_to_send)} files...")
+        result = subprocess.run(scp_command, check=True, stdin=subprocess.DEVNULL)
+        print("Files sent successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error sending file: {e}")
     except FileNotFoundError:
@@ -132,7 +140,7 @@ def execute_remote_command():
                     f"cd {new_path} && pwd"
                 ]
                 try:
-                    result = subprocess.run(check_command, capture_output=True, text=True, check=True)
+                    result = subprocess.run(check_command, capture_output=True, text=True, check=True, stdin=subprocess.DEVNULL)
                     current_dir = result.stdout.strip()
                     # print(f"Changed directory to: {current_dir}")
                     continue
@@ -163,7 +171,7 @@ def execute_remote_command():
 
         try:
             # print(f"Executing: {command}")
-            result = subprocess.run(ssh_command, capture_output=True, text=True, check=True)
+            result = subprocess.run(ssh_command, capture_output=True, text=True, check=True, stdin=subprocess.DEVNULL)
             if result.stdout:
                 print(result.stdout.rstrip())
         except subprocess.CalledProcessError as e:
