@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Run on USB Device",
+            "type": "android",
+            "request": "launch",
+            "preLaunchTask": "Run on USB Device"
+        },
+        {
+            "name": "Run on Emulator",
+            "type": "android",
+            "request": "launch",
+            "preLaunchTask": "Run on Emulator"
+        },
+        {
+            "name": "Ensure Emulator & Run",
+            "type": "android",
+            "request": "launch",
+            "preLaunchTask": "Ensure Emulator & Run"
+        }
+    ]
+}

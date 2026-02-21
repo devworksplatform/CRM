@@ -13,12 +13,36 @@
             "detail": "Build the debug APK using Gradle"
         },
         {
-            "label": "Install & Run on Device",
+            "label": "Run on USB Device",
             "type": "shell",
-            "command": "./gradlew installDebug && G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell am start -n crmapp.petsfort/.MainActivity",
+            "command": "./gradlew installDebug -Pandroid.injected.build.api=26; if ($LASTEXITCODE -eq 0) { G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell am start -n crmapp.petsfort/.MainActivity }",
             "group": "build",
             "problemMatcher": [],
-            "detail": "Build, install, and launch the app on connected device",
+            "detail": "Build, install, and launch on physical USB device (auto-detects device)"
+        },
+        {
+            "label": "Run on Emulator",
+            "type": "shell",
+            "command": "./gradlew installDebug; if ($LASTEXITCODE -eq 0) { G:\\androidSDK\\Sdk\\platform-tools\\adb.exe -s emulator-5554 shell am start -n crmapp.petsfort/.MainActivity }",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Build, install, and launch on the running emulator"
+        },
+        {
+            "label": "Start Emulator",
+            "type": "shell",
+            "command": "G:\\androidSDK\\Sdk\\emulator\\emulator.exe -avd Medium_Phone",
+            "problemMatcher": [],
+            "detail": "Launch the Medium_Phone emulator AVD",
+            "isBackground": true
+        },
+        {
+            "label": "Install & Run on Device",
+            "type": "shell",
+            "command": "./gradlew installDebug; if ($LASTEXITCODE -eq 0) { G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell am start -n crmapp.petsfort/.MainActivity }",
+            "group": "build",
+            "problemMatcher": [],
+            "detail": "Build, install, and launch the app on any connected device",
             "dependsOn": []
         },
         {
@@ -29,12 +53,34 @@
             "detail": "Uninstall the app from the connected device"
         },
         {
-            "label": "View Logcat",
+            "label": "View Logcat (USB)",
             "type": "shell",
-            "command": "G:\\androidSDK\\Sdk\\platform-tools\\adb.exe logcat --pid=$(G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell pidof crmapp.petsfort)",
+            "command": "$pid = (G:\\androidSDK\\Sdk\\platform-tools\\adb.exe shell pidof crmapp.petsfort).Trim(); G:\\androidSDK\\Sdk\\platform-tools\\adb.exe logcat --pid=$pid",
             "problemMatcher": [],
-            "detail": "Show logcat output filtered to the app",
+            "detail": "Show logcat from the USB device",
             "isBackground": true
+        },
+        {
+            "label": "View Logcat (Emulator)",
+            "type": "shell",
+            "command": "$pid = (G:\\androidSDK\\Sdk\\platform-tools\\adb.exe -s emulator-5554 shell pidof crmapp.petsfort).Trim(); G:\\androidSDK\\Sdk\\platform-tools\\adb.exe -s emulator-5554 logcat --pid=$pid",
+            "problemMatcher": [],
+            "detail": "Show logcat from the emulator",
+            "isBackground": true
+        },
+        {
+            "label": "List Connected Devices",
+            "type": "shell",
+            "command": "G:\\androidSDK\\Sdk\\platform-tools\\adb.exe devices -l",
+            "problemMatcher": [],
+            "detail": "Show all connected ADB devices"
+        },
+        {
+            "label": "Ensure Emulator & Run",
+            "type": "shell",
+            "command": "$emulatorRunning = (G:\\androidSDK\\Sdk\\platform-tools\\adb.exe devices | Select-String 'emulator-'); if (-not $emulatorRunning) { Write-Host 'Starting emulator...'; Start-Process -FilePath 'G:\\androidSDK\\Sdk\\emulator\\emulator.exe' -ArgumentList '-avd Medium_Phone' -WindowStyle Minimized; Write-Host 'Waiting for emulator to boot...'; G:\\androidSDK\\Sdk\\platform-tools\\adb.exe wait-for-device; do { Start-Sleep -Seconds 2; $bootAnim = (G:\\androidSDK\\Sdk\\platform-tools\\adb.exe -s emulator-5554 shell getprop sys.boot_completed 2>$null).Trim() } while ($bootAnim -ne '1'); Write-Host 'Emulator booted.' } else { Write-Host 'Emulator already running.' }; ./gradlew installDebug; if ($LASTEXITCODE -eq 0) { G:\\androidSDK\\Sdk\\platform-tools\\adb.exe -s emulator-5554 shell am start -n crmapp.petsfort/.MainActivity }",
+            "problemMatcher": [],
+            "detail": "Start emulator if not running, then build, install, and launch the app"
         }
     ]
 }

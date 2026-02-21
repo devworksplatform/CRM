@@ -219,34 +219,38 @@ public class SearchActivity extends AppCompatActivity {
 			}
 		});
 
-		final View loadingView = findViewById(R.id.init_loading);
-		final long loadingStartTime = System.currentTimeMillis(); // ⏱️ Mark start time
+		// Only do the initial search here if there's no category intent.
+		// When a category is present, the search will be triggered from drawer()
+		// after subcategories load (auto-selecting the first subcategory).
+		if (!getIntent().hasExtra("category") || getIntent().getStringExtra("category").equals("")) {
+			final View loadingView = findViewById(R.id.init_loading);
+			final long loadingStartTime = System.currentTimeMillis();
 
-		searchForProductAndList("", null, new SearchCompleteListener() {
-			@Override
-			public void onSearchCompleted() {
-				long elapsed = System.currentTimeMillis() - loadingStartTime;
-				long delay = Math.max(0, 1000 - elapsed); // 🕒 Wait remaining time if needed
+			searchForProductAndList("", null, new SearchCompleteListener() {
+				@Override
+				public void onSearchCompleted() {
+					long elapsed = System.currentTimeMillis() - loadingStartTime;
+					long delay = Math.max(0, 1000 - elapsed);
 
-				new Handler(Looper.getMainLooper()).postDelayed(() -> {
-					loadingView.animate()
-							.alpha(0f)
-							.translationY(-50)
-							.setDuration(400)
-							.setInterpolator(new AccelerateDecelerateInterpolator())
-							.setListener(new AnimatorListenerAdapter() {
-								@Override
-								public void onAnimationEnd(Animator animation) {
-									loadingView.setTranslationY(0);
-									loadingView.setVisibility(View.GONE);
-									loadingView.setAlpha(1f);
-
-								}
-							})
-							.start();
-				}, delay);
-			}
-		});
+					new Handler(Looper.getMainLooper()).postDelayed(() -> {
+						loadingView.animate()
+								.alpha(0f)
+								.translationY(-50)
+								.setDuration(400)
+								.setInterpolator(new AccelerateDecelerateInterpolator())
+								.setListener(new AnimatorListenerAdapter() {
+									@Override
+									public void onAnimationEnd(Animator animation) {
+										loadingView.setTranslationY(0);
+										loadingView.setVisibility(View.GONE);
+										loadingView.setAlpha(1f);
+									}
+								})
+								.start();
+					}, delay);
+				}
+			});
+		}
 
 	}
 	
@@ -685,6 +689,42 @@ public class SearchActivity extends AppCompatActivity {
 					staggeredRecyclerView.setLayoutManager(layoutManager);
 					staggeredRecyclerView.setAdapter(adapter);
 //					ArrayList<Integer> selectedItems = adapter.getSelectedPositions();
+
+					// Auto-select the first subcategory and load its items
+					if (!myDataList.isEmpty()) {
+						selectedPositions.clear();
+						selectedPositions.add(0);
+						adapter.notifyItemChanged(0);
+					}
+
+					// Trigger the initial search (filtered by first subcategory if available)
+					final View loadingView = findViewById(R.id.init_loading);
+					final long loadingStartTime = System.currentTimeMillis();
+
+					searchForProductAndList("", null, new SearchCompleteListener() {
+						@Override
+						public void onSearchCompleted() {
+							long elapsed = System.currentTimeMillis() - loadingStartTime;
+							long delay = Math.max(0, 1000 - elapsed);
+
+							new Handler(Looper.getMainLooper()).postDelayed(() -> {
+								loadingView.animate()
+										.alpha(0f)
+										.translationY(-50)
+										.setDuration(400)
+										.setInterpolator(new AccelerateDecelerateInterpolator())
+										.setListener(new AnimatorListenerAdapter() {
+											@Override
+											public void onAnimationEnd(Animator animation) {
+												loadingView.setTranslationY(0);
+												loadingView.setVisibility(View.GONE);
+												loadingView.setAlpha(1f);
+											}
+										})
+										.start();
+							}, delay);
+						}
+					});
 				}
 			}
 		});
