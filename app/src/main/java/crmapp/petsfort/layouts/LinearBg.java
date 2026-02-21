@@ -30,16 +30,16 @@ public class LinearBg extends LinearLayout {
     };
 
     int[][] gradientColors = new int[][] {
-            {0xFFFFFFFF, 0xFFCCCCCC},  // Pure white to soft mid gray
-            {0xFFFDFDFD, 0xFFBFBFBF},  // Almost white to muted mid gray
-            {0xFFFAFAFA, 0xFFB3B3B3},  // Soft white to gentle mid gray
-            {0xFFFFFFFF, 0xFFD1D1D1},  // Bright white to light gray
-            {0xFFF9F9F9, 0xFFB8B8B8},  // Soft white to medium light gray
-            {0xFFFCFCFC, 0xFFBFBFBF},  // Very subtle white to medium gray
-            {0xFFFEFEFE, 0xFFC4C4C4},  // Almost pure white to medium gray
-            {0xFFF7F7F7, 0xFFADADAD},  // Gentle white to medium gray
-            {0xFFF8F8F8, 0xFFAAAAAA},  // Clean white to medium gray
-            {0xFFFFFFFF, 0xFFBEBEBE},  // Bright white to medium gray
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
+            {0xFFFFFFFF, 0xFFFFFFFF},  // Plain white
     };
 
     int[][] gradientColors2 = new int[][] {
