@@ -156,7 +156,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 		linear2.setVisibility(View.GONE);
 		linear33.setVisibility(View.GONE);
 
-		cartData = Business.localDB_SharedPref.getCart(localDB);
+		cartData = Business.localDB_SharedPref.getCart(localDB, userId);
 
 
 		JHelpers.runAfterDelay(this, 500, new Callbacker.Timer(){
@@ -312,7 +312,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 					@Override
 					public void onReceived(Business.OrderCheckoutApiClient.OrderCheckoutApiResponse response) {
 						if(response.getStatusCode() == 200) {
-							Business.localDB_SharedPref.clearCart(localDB);
+							Business.localDB_SharedPref.clearCart(localDB, userId);
 
 							progressDialog.hide();
 							var d = new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Confirmed")
@@ -350,7 +350,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 
 								HashMap<String,Object> map = new HashMap<>();
 								map.put("count", product_available_stock);
-								Business.localDB_SharedPref.updateCartProduct(localDB,product_id,map);
+								Business.localDB_SharedPref.updateCartProduct(localDB,userId,product_id,map);
 
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Out Of Stock!!!")

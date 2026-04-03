@@ -274,11 +274,12 @@ public class Business {
             }
         }
 
-        public static void updateCartProduct(SharedPreferences localDB, String productID, HashMap<String,Object> data) {
+        public static void updateCartProduct(SharedPreferences localDB, String userId, String productID, HashMap<String,Object> data) {
+            String cartKey = "carts_" + userId;
             HashMap<String,Object> details = getHashMap(localDB);
             HashMap<String,Object> carts = null;
             try {
-                LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get("carts");
+                LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get(cartKey);
                 if(temp == null) {
                     temp = new LinkedTreeMap<>();
                 }
@@ -288,17 +289,18 @@ public class Business {
             }
 
             carts.put(productID, data);
-            details.put("carts",carts);
+            details.put(cartKey,carts);
             saveHashMap(localDB, details);
         }
 
-        public static void  deleteCartProduct(SharedPreferences localDB, String productID) {
+        public static void  deleteCartProduct(SharedPreferences localDB, String userId, String productID) {
+            String cartKey = "carts_" + userId;
             HashMap<String,Object> details = getHashMap(localDB);
 
-            if(details.containsKey("carts")) {
+            if(details.containsKey(cartKey)) {
                 HashMap<String,Object> carts = null;
                 try {
-                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get("carts");
+                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get(cartKey);
                     if(temp == null) {
                         temp = new LinkedTreeMap<>();
                     }
@@ -309,19 +311,20 @@ public class Business {
 
                 if(carts.containsKey(productID)) {
                     carts.remove(productID);
-                    details.put("carts",carts);
+                    details.put(cartKey,carts);
                     saveHashMap(localDB, details);
                 }
             }
         }
 
-        public static HashMap<String,Object> getCartProduct(SharedPreferences localDB, String productID) {
+        public static HashMap<String,Object> getCartProduct(SharedPreferences localDB, String userId, String productID) {
+            String cartKey = "carts_" + userId;
             HashMap<String,Object> details = getHashMap(localDB);
 
-            if(details.containsKey("carts")) {
+            if(details.containsKey(cartKey)) {
                 HashMap<String,Object> carts = null;
                 try {
-                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get("carts");
+                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get(cartKey);
                     if(temp == null) {
                         temp = new LinkedTreeMap<>();
                     }
@@ -345,13 +348,14 @@ public class Business {
             return new HashMap<>();
         }
 
-        public static HashMap<String,Object> getCart(SharedPreferences localDB) {
+        public static HashMap<String,Object> getCart(SharedPreferences localDB, String userId) {
+            String cartKey = "carts_" + userId;
             HashMap<String,Object> details = getHashMap(localDB);
 
             HashMap<String,Object> carts = new HashMap<>();
-            if(details.containsKey("carts")) {
+            if(details.containsKey(cartKey)) {
                 try {
-                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get("carts");
+                    LinkedTreeMap<String,Object> temp = (LinkedTreeMap<String, Object>) details.get(cartKey);
                     if(temp == null) {
                         temp = new LinkedTreeMap<>();
                     }
@@ -364,10 +368,11 @@ public class Business {
             return carts;
         }
 
-        public static void clearCart(SharedPreferences localDB) {
+        public static void clearCart(SharedPreferences localDB, String userId) {
+            String cartKey = "carts_" + userId;
             HashMap<String,Object> details = getHashMap(localDB);
-            if(details.containsKey("carts")) {
-                details.remove("carts");
+            if(details.containsKey(cartKey)) {
+                details.remove(cartKey);
                 saveHashMap(localDB, details);
             }
         }

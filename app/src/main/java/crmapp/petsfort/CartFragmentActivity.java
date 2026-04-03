@@ -156,7 +156,7 @@ public class CartFragmentActivity extends Fragment {
 
 			@Override
 			public void run() {
-				HashMap<String, Object> currentCartData = Business.localDB_SharedPref.getCart(localDB);
+				HashMap<String, Object> currentCartData = Business.localDB_SharedPref.getCart(localDB, userId);
 				if (previousCartData == null || !previousCartData.equals(currentCartData)) {
 					updateCartListUI(currentCartData);
 					previousCartData = currentCartData;
@@ -502,7 +502,7 @@ public class CartFragmentActivity extends Fragment {
 //					cart.child(listmap.get((int)_position).get("key").toString()).removeValue();
 //					updateCountToCart(_firebase.getReference("datas/cart/" + userId + "/products/" + String.valueOf(product.getProductId())), 0L);
 					updateCountToCart(product.getProductId(), 0L);
-					updateCartListUI(Business.localDB_SharedPref.getCart(localDB));
+					updateCartListUI(Business.localDB_SharedPref.getCart(localDB, userId));
 				}
 			});
 
@@ -520,7 +520,7 @@ public class CartFragmentActivity extends Fragment {
 //					textview10.setText(String.valueOf(product.productCount));
 //					updateCountToCart(_firebase.getReference("datas/cart/" + userId + "/products/" +  String.valueOf(product.getProductId())), product.productCount);
 					updateCountToCart(product.getProductId(), product.productCount);
-					updateCartListUI(Business.localDB_SharedPref.getCart(localDB));
+					updateCartListUI(Business.localDB_SharedPref.getCart(localDB, userId));
 				}
 			});
 			minus.setOnClickListener(new View.OnClickListener() {
@@ -530,7 +530,7 @@ public class CartFragmentActivity extends Fragment {
 //					textview10.setText(String.valueOf(product.productCount));
 //					updateCountToCart(_firebase.getReference("datas/cart/" + userId + "/products/" +  String.valueOf(product.getProductId())), product.productCount);
 					updateCountToCart(product.getProductId(), product.productCount);
-					updateCartListUI(Business.localDB_SharedPref.getCart(localDB));
+					updateCartListUI(Business.localDB_SharedPref.getCart(localDB, userId));
 				}
 			});
 			textview8.setOnClickListener(new View.OnClickListener() {
@@ -549,12 +549,12 @@ public class CartFragmentActivity extends Fragment {
 		private void updateCountToCart(String productID,Long count) {
 			if (count == 0) {
 //				cart_.removeValue();
-				Business.localDB_SharedPref.deleteCartProduct(localDB,productID);
+				Business.localDB_SharedPref.deleteCartProduct(localDB,userId,productID);
 			} else {
 				HashMap<String,Object> map = new HashMap<>();
 				map.put("count", count);
 //				cart_.updateChildren(map);
-				Business.localDB_SharedPref.updateCartProduct(localDB,productID,map);
+				Business.localDB_SharedPref.updateCartProduct(localDB,userId,productID,map);
 			}
 		}
 

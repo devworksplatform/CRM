@@ -314,7 +314,7 @@ public class SearchActivity extends AppCompatActivity {
 
 			CartProduct product = new CartProduct(listmap.get((int)_position));
 
-			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
+			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,userId,product.getProductId());
 
 			if(map.containsKey("count")) {
 				long currentCount = 0L;
@@ -502,7 +502,7 @@ public class SearchActivity extends AppCompatActivity {
 						}
 						product.productCount = 0L;
 
-						Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
+						Business.localDB_SharedPref.deleteCartProduct(localDB,userId,product.getProductId());
 					} else {
 
 						if(currentCount > product.getStock()){
@@ -515,7 +515,7 @@ public class SearchActivity extends AppCompatActivity {
 
 						HashMap<String,Object> map = new HashMap<>();
 						map.put("count", product.productCount);
-						Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
+						Business.localDB_SharedPref.updateCartProduct(localDB,userId,product.getProductId(),map);
 					}
 				}
 

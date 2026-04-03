@@ -107,6 +107,7 @@ public class MainActivity extends AppCompatActivity {
 										FirebaseAuth.getInstance().signOut();
 										tela.setClass(getApplicationContext(), LoginActivity.class);
 										startActivity(tela);
+										JHelpers.applyFadeTransition(MainActivity.this);
 										finish();
 									} else {
 										if (userRole.equals("2") || userRole.equals("4")) {
@@ -115,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
 											tela.setClass(getApplicationContext(), PrincipalActivity.class);
 										}
 										startActivity(tela);
+										JHelpers.applyFadeTransition(MainActivity.this);
 										finish();
 									}
 								}

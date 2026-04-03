@@ -403,6 +403,7 @@ public class PrincipalActivity extends AppCompatActivity {
 				_drawer.closeDrawer(Gravity.RIGHT);
 				ii.setClass(getApplicationContext(), OrderActivity.class);
 				startActivity(ii);
+				JHelpers.applyForwardTransition(PrincipalActivity.this);
 			}
 		});
 
@@ -422,6 +423,7 @@ public class PrincipalActivity extends AppCompatActivity {
 				_drawer.closeDrawer(Gravity.RIGHT);
 				ii.setClass(getApplicationContext(), ProfileActivity.class);
 				startActivity(ii);
+				JHelpers.applyForwardTransition(PrincipalActivity.this);
 			}
 		});
 
@@ -431,14 +433,14 @@ public class PrincipalActivity extends AppCompatActivity {
 
 				if(Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), "no_proxy").equals("no_proxy")) {
 					Business.JFCM.unSubscribeAll();
-					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE));
+					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE), userId);
 					FirebaseAuth.getInstance().signOut();
 
 					ii.setClass(getApplicationContext(), MainActivity.class);
 					startActivity(ii);
 					finish();
 				} else {
-					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE));
+					Business.localDB_SharedPref.clearCart(getSharedPreferences("localDB", Activity.MODE_PRIVATE), userId);
 					finish();
 				}
 			}

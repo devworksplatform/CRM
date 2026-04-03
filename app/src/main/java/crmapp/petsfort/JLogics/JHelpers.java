@@ -98,6 +98,14 @@ public class JHelpers {
         android.transition.TransitionManager.beginDelayedTransition(viewgroup, autoTransition);
     }
 
+    public static void applyFadeTransition(android.app.Activity activity) {
+        activity.overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    public static void applyForwardTransition(android.app.Activity activity) {
+        activity.overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.slide_out_right);
+    }
+
 
 
     public static  class JValueAnimator {

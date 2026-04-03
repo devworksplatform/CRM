@@ -174,7 +174,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		if(isViewOnly) {
 			currentCount = (int) getIntent().getLongExtra("productCount",0);
 		} else {
-			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,product.getProductId());
+			HashMap<String,Object> map = Business.localDB_SharedPref.getCartProduct(localDB,userId,product.getProductId());
 			currentCount = 0;
 			if (map.containsKey("count")) {
 				Object value = map.get("count");
@@ -412,11 +412,11 @@ public class ProductviewActivity extends AppCompatActivity {
 		}
 
 		if (currentCount <= 0) {
-			Business.localDB_SharedPref.deleteCartProduct(localDB,product.getProductId());
+			Business.localDB_SharedPref.deleteCartProduct(localDB,userId,product.getProductId());
 		} else {
 			HashMap<String,Object> map = new HashMap<>();
 			map.put("count", currentCount);
-			Business.localDB_SharedPref.updateCartProduct(localDB,product.getProductId(),map);
+			Business.localDB_SharedPref.updateCartProduct(localDB,userId,product.getProductId(),map);
 		}
 	}
 
