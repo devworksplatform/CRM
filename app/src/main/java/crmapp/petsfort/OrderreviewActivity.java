@@ -32,11 +32,13 @@ import java.text.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.Product;
 import crmapp.petsfort.JLogics.Models.User;
 
 public class OrderreviewActivity extends AppCompatActivity {
@@ -146,8 +148,6 @@ public class OrderreviewActivity extends AppCompatActivity {
 			}
 		});
 
-		Business.BulkDetailsApiClient bulkDetailsApiClient = new Business.BulkDetailsApiClient();
-
 		progressBarLinear.setVisibility(View.VISIBLE);
 		linearLoading.setVisibility(View.VISIBLE);
 
@@ -211,6 +211,8 @@ public class OrderreviewActivity extends AppCompatActivity {
 //					public void onCancelled(DatabaseError _databaseError) { }
 //				});
 
+				Business.BulkDetailsApiClient bulkDetailsApiClient = new Business.BulkDetailsApiClient();
+
 				bulkDetailsApiClient.callApi(cartData,
 						new Callbacker.ApiResponseWaiters.BulkDetailsApiCallback() {
 							@Override
@@ -230,10 +232,79 @@ public class OrderreviewActivity extends AppCompatActivity {
 									totalNoDiscountTextView.setText("₹ 0.00");
 									discountTotalTextView.setText("- ₹ 0.00");
 									grandTotalTextView.setText("₹ 0.00");
-								} else {
-									costDetails = response.getCostDetails();
-									startIntroAnimation(costDetails);
+									return;
 								}
+
+								// --- Stock availability check ---
+								ArrayList<String> stockAdjustments = new ArrayList<>();
+								for (Product product : response.getProducts()) {
+									Object temp = cartData.get(product.getProductId());
+									long cartCount = 0;
+									if (temp instanceof java.util.Map) {
+										try {
+											cartCount = (long) Double.parseDouble(String.valueOf(((java.util.Map) temp).get("count")));
+										} catch (Exception e) { }
+									}
+
+									if (cartCount > 0 && cartCount > product.getStock()) {
+										long newCount = (long) product.getStock();
+										String productName = JHelpers.capitalize(product.getProductName());
+
+										if (newCount <= 0) {
+											stockAdjustments.add(productName + ":  " + cartCount + " \u2192 Removed (Out of Stock)");
+											Business.localDB_SharedPref.deleteCartProduct(localDB, userId, product.getProductId());
+										} else {
+											stockAdjustments.add(productName + ":  " + cartCount + " \u2192 " + newCount);
+											HashMap<String, Object> map = new HashMap<>();
+											map.put("count", newCount);
+											Business.localDB_SharedPref.updateCartProduct(localDB, userId, product.getProductId(), map);
+										}
+									}
+								}
+
+								if (!stockAdjustments.isEmpty() && !isFinishing() && !isDestroyed()) {
+									// Check if cart is now empty after adjustments
+									HashMap<String,Object> updatedCart = Business.localDB_SharedPref.getCart(localDB, userId);
+									if (updatedCart.isEmpty()) {
+										StringBuilder message = new StringBuilder("All items in your cart are out of stock:\n\n");
+										for (String adj : stockAdjustments) {
+											message.append("\u2022 ").append(adj).append("\n");
+										}
+										new AlertDialog.Builder(OrderreviewActivity.this)
+												.setTitle("Cart is Empty")
+												.setMessage(message.toString())
+												.setCancelable(false)
+												.setPositiveButton("OK", (dialog, which) -> {
+													dialog.dismiss();
+													finish();
+												})
+												.show();
+										return;
+									}
+
+									StringBuilder message = new StringBuilder("Some items in your cart have been adjusted due to limited stock:\n\n");
+									for (String adj : stockAdjustments) {
+										message.append("\u2022 ").append(adj).append("\n");
+									}
+									message.append("\nAmounts will be recalculated.");
+
+									new AlertDialog.Builder(OrderreviewActivity.this)
+											.setTitle("Stock Availability Changed")
+											.setMessage(message.toString())
+											.setCancelable(false)
+											.setPositiveButton("OK", (dialog, which) -> {
+												dialog.dismiss();
+												cartData = Business.localDB_SharedPref.getCart(localDB, userId);
+												Business.BulkDetailsApiClient revalidateClient = new Business.BulkDetailsApiClient();
+												revalidateClient.callApi(cartData, this);
+											})
+											.show();
+									return;
+								}
+								// --- End stock availability check ---
+
+								costDetails = response.getCostDetails();
+								startIntroAnimation(costDetails);
 							}
 						});
 			}
@@ -342,8 +413,9 @@ public class OrderreviewActivity extends AppCompatActivity {
 										}
 									}).show();
 						} else {
-							if(response.getErrorMessage().startsWith("OutOfStock")) {
-								String[] tuple = response.getErrorMessage().split(",");
+						String errorMsg = response.getErrorMessage() != null ? response.getErrorMessage() : "Unknown error";
+						if(errorMsg.startsWith("OutOfStock")) {
+							String[] tuple = errorMsg.split(",");
 								Integer product_available_stock = Integer.parseInt(tuple[1]);
 								String product_id = tuple[2];
 								String product_name = tuple[3];
@@ -367,7 +439,7 @@ public class OrderreviewActivity extends AppCompatActivity {
 							} else {
 								progressDialog.hide();
 								new AlertDialog.Builder(OrderreviewActivity.this).setTitle("Order Failed!!!")
-										.setMessage("Order was failed due to "+response.getErrorMessage()+", Please try again or Contact our admin (Mobile:7092552211) team about the issue.")
+									.setMessage("Order was failed due to "+errorMsg+", Please try again or Contact our admin (Mobile:7092552211) team about the issue.")
 										.setCancelable(false)
 										.setPositiveButton("OK", new DialogInterface.OnClickListener() {
 											@Override

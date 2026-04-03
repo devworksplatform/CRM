@@ -2,6 +2,7 @@ package crmapp.petsfort;
 
 import android.animation.*;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.*;
 import android.content.Intent;
 import android.graphics.*;
@@ -56,6 +57,7 @@ public class CartFragmentActivity extends Fragment {
 	DecimalFormat df = new DecimalFormat("#.###");
 
 	private boolean isOpen = false;
+	private boolean isStockAdjustmentDialogShowing = false;
 
 
 	@NonNull
@@ -309,6 +311,53 @@ public class CartFragmentActivity extends Fragment {
 					listmap.clear();
 				}
 
+				// --- Stock availability check: auto-adjust cart if server stock reduced ---
+				ArrayList<String> stockAdjustments = new ArrayList<>();
+				for (int i = listmap.size() - 1; i >= 0; i--) {
+					CartProduct cartProduct = listmap.get(i);
+					if (cartProduct.productCount > cartProduct.getStock()) {
+						long oldCount = cartProduct.productCount;
+						long newCount = (long) cartProduct.getStock();
+						String productName = JHelpers.capitalize(cartProduct.getProductName());
+
+						if (newCount <= 0) {
+							stockAdjustments.add(productName + ":  " + oldCount + " → Removed (Out of Stock)");
+							Business.localDB_SharedPref.deleteCartProduct(localDB, userId, cartProduct.getProductId());
+							listmap.remove(i);
+						} else {
+							stockAdjustments.add(productName + ":  " + oldCount + " → " + newCount);
+							HashMap<String, Object> map = new HashMap<>();
+							map.put("count", newCount);
+							Business.localDB_SharedPref.updateCartProduct(localDB, userId, cartProduct.getProductId(), map);
+							cartProduct.productCount = newCount;
+						}
+					}
+				}
+
+				if (!stockAdjustments.isEmpty() && !isStockAdjustmentDialogShowing && isAdded() && getContext() != null) {
+					isStockAdjustmentDialogShowing = true;
+					StringBuilder message = new StringBuilder("Some items in your cart have been adjusted due to limited stock:\n\n");
+					for (String adj : stockAdjustments) {
+						message.append("• ").append(adj).append("\n");
+					}
+					message.append("\nCart totals will be recalculated.");
+
+					try {
+						new AlertDialog.Builder(getContext())
+								.setTitle("Stock Availability Changed")
+								.setMessage(message.toString())
+								.setCancelable(false)
+								.setPositiveButton("OK", (dialog, which) -> {
+									dialog.dismiss();
+									isStockAdjustmentDialogShowing = false;
+								})
+								.show();
+					} catch (Exception e) {
+						isStockAdjustmentDialogShowing = false;
+					}
+					return; // Polling will re-fetch with corrected counts and recalculate costs
+				}
+				// --- End stock availability check ---
 
 				if (listmap.isEmpty()) {
 					progressbar1.setVisibility(View.GONE);
