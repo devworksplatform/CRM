@@ -40,7 +40,7 @@ import crmapp.petsfort.R;
 public class Business {
 //    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
 //    private static final String ServerURL = "https://server.petsfort.in";
-    private static final String ServerURL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com";
+    private static final String ServerURL = "https://ec2-16-176-155-113.ap-southeast-2.compute.amazonaws.com";
     Context context;
     public Business(Context context) {
         this.context = context;

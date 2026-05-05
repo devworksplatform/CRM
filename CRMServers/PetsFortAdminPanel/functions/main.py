@@ -9,7 +9,7 @@ initialize_app()
 
 # Define the target URL where requests will be proxied
 # TODO: Replace with your actual target URL
-TARGET_URL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
+TARGET_URL = "https://ec2-16-176-155-113.ap-southeast-2.compute.amazonaws.com"
 
 @https_fn.on_request(region="asia-south1")
 def proxy_request(req: https_fn.Request):
