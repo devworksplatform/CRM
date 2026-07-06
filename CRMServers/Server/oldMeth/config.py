@@ -16,7 +16,7 @@ def is_ubuntu():
 key_path = "C:\\Users\\Jay\\Documents\\pems\\petsfort0.pem"
 # remote_host = "petsfort.in"
 # remote_host = "ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
-remote_host = "ec2-16-176-155-113.ap-southeast-2.compute.amazonaws.com"
+remote_host = "ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com"
 remote_user = "ubuntu"
 
 
