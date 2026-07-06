@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import crmapp.petsfort.JLogics.Models.Category;
 import crmapp.petsfort.JLogics.Models.SubCategory;
@@ -48,8 +50,12 @@ public class Business {
     private static final String SERVER_CONFIG_PREFS = "server_config_cache";
     private static final String SERVER_CONFIG_KEY = "base_url";
     private static final String SERVER_CONFIG_DB_PATH = "appConfig/server/baseUrl";
+    private static final long SERVER_CONFIG_WAIT_TIMEOUT_MS = 5000;
     private static volatile String serverUrl = FALLBACK_SERVER_URL;
     private static volatile boolean serverConfigFetchStarted = false;
+    private static volatile boolean serverConfigLoaded = false;
+    private static volatile boolean hasCachedServerConfig = false;
+    private static final CountDownLatch serverConfigLatch = new CountDownLatch(1);
     Context context;
     public Business(Context context) {
         this.context = context;
@@ -66,6 +72,7 @@ public class Business {
         String cachedUrl = prefs.getString(SERVER_CONFIG_KEY, null);
         if (cachedUrl != null && !cachedUrl.trim().isEmpty()) {
             serverUrl = normalizeServerUrl(cachedUrl);
+            hasCachedServerConfig = true;
         }
 
         if (serverConfigFetchStarted) {
@@ -82,11 +89,16 @@ public class Business {
                         if (remoteUrl != null && !remoteUrl.trim().isEmpty()) {
                             serverUrl = normalizeServerUrl(remoteUrl);
                             prefs.edit().putString(SERVER_CONFIG_KEY, serverUrl).apply();
+                            hasCachedServerConfig = true;
                         }
+                        serverConfigLoaded = true;
+                        serverConfigLatch.countDown();
                     }
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
+                        serverConfigLoaded = true;
+                        serverConfigLatch.countDown();
                     }
                 });
     }
@@ -99,7 +111,20 @@ public class Business {
     }
 
     private static String getServerUrl() {
+        waitForServerConfigIfNeeded();
         return normalizeServerUrl(serverUrl);
+    }
+
+    private static void waitForServerConfigIfNeeded() {
+        if (hasCachedServerConfig || serverConfigLoaded || !serverConfigFetchStarted) {
+            return;
+        }
+
+        try {
+            serverConfigLatch.await(SERVER_CONFIG_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
 

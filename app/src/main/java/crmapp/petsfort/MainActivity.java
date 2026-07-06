@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
 		imageview2.setVisibility(View.GONE);
 
 
-		if(!AppVersionManager.isLoggedIn(getApplicationContext())) {
+		if(AppVersionManager.shouldForceRelogin(getApplicationContext())) {
 			if(FirebaseAuth.getInstance().getCurrentUser() != null) {
 				Toast.makeText(this, "Welcome To PetsFort", Toast.LENGTH_SHORT).show();
 				Toast.makeText(this, "Sign In Again To Use New Features", Toast.LENGTH_SHORT).show();
