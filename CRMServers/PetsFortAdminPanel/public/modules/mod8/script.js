@@ -1,6 +1,7 @@
 // const TARGET_URL_WS = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
 
 async function initMod8() { // Assuming this is your entry point for this module
+    const serverConfig = await window.serverConfigService.load();
     // const API_URL = TARGET_URL+"/system-stats/live"; // Your FastAPI endpoint
 
     // Enable the fit addon for xterm
@@ -82,7 +83,7 @@ async function initMod8() { // Assuming this is your entry point for this module
             console.log(host)
 
             // const wsUrl = `${protocol}//${host}/ws/terminal`;
-            const wsUrl = `ws://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com:8000/ws/terminal`;
+            const wsUrl = serverConfig.terminalWsUrl;
 
             updateStatus('connecting', 'Connecting...');
             

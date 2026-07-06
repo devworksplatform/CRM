@@ -72,6 +72,9 @@ async function initMod0() {
             } else {
                 localStorage.setItem("userId", userCredential.user.uid);
                 localStorage.setItem("userdata", JSON.stringify(userdata));
+                if (window.serverConfigService?.syncNavVisibility) {
+                    window.serverConfigService.syncNavVisibility();
+                }
                 console.log("Login successful!", userCredential.user);
                 hideLoading();
 

@@ -1,145 +1,213 @@
 # Import necessary libraries
-from firebase_functions import https_fn, scheduler_fn
-from firebase_admin import initialize_app
-import requests
+from datetime import datetime, timezone
 import json
 
-# Initialize the Firebase app (usually done once)
-initialize_app()
+from firebase_functions import https_fn, scheduler_fn
+from firebase_admin import auth, db, initialize_app
+import requests
 
-# Define the target URL where requests will be proxied
-# TODO: Replace with your actual target URL
-TARGET_URL = "https://ec2-16-176-155-113.ap-southeast-2.compute.amazonaws.com"
+
+initialize_app(options={
+    "databaseURL": "https://pets-fort-default-rtdb.asia-southeast1.firebasedatabase.app"
+})
+
+FALLBACK_TARGET_URL = "https://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com"
+SERVER_CONFIG_DB_PATH = "appConfig/server"
+SERVER_CONFIG_ADMIN_EMAIL = "dev@petsfort.in"
+ALLOWED_ORIGINS = {
+    "https://pets-fort.web.app",
+    "https://petsfort.in",
+    "https://server.petsfort.in",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+}
+
+
+def _normalize_base_url(value):
+    candidate = (value or FALLBACK_TARGET_URL).strip()
+    return candidate.rstrip("/")
+
+
+def _build_terminal_ws_url(base_url):
+    normalized = _normalize_base_url(base_url)
+    if normalized.startswith("https://"):
+        host = normalized[len("https://"):]
+        return f"wss://{host}:8000/ws/terminal"
+    if normalized.startswith("http://"):
+        host = normalized[len("http://"):]
+        return f"ws://{host}:8000/ws/terminal"
+    return f"wss://{normalized}:8000/ws/terminal"
+
+
+def _get_cors_headers(req):
+    origin = req.headers.get("Origin", "")
+    allowed_origin = origin if origin in ALLOWED_ORIGINS else ""
+    headers = {
+        "Access-Control-Allow-Methods": "GET,PUT,OPTIONS",
+        "Access-Control-Allow-Headers": "Authorization,Content-Type",
+        "Access-Control-Max-Age": "3600",
+    }
+    if allowed_origin:
+        headers["Access-Control-Allow-Origin"] = allowed_origin
+        headers["Vary"] = "Origin"
+    return headers
+
+
+def _get_server_config():
+    raw_config = db.reference(SERVER_CONFIG_DB_PATH).get() or {}
+    base_url = _normalize_base_url(raw_config.get("baseUrl") or raw_config.get("targetUrl"))
+    terminal_ws_url = (raw_config.get("terminalWsUrl") or "").strip() or _build_terminal_ws_url(base_url)
+
+    return {
+        "baseUrl": base_url,
+        "targetUrl": base_url,
+        "terminalWsUrl": terminal_ws_url,
+        "updatedAt": raw_config.get("updatedAt"),
+        "updatedByEmail": raw_config.get("updatedByEmail", ""),
+        "updatedByUid": raw_config.get("updatedByUid", ""),
+    }
+
+
+def _get_target_url():
+    return _get_server_config()["targetUrl"]
+
+
+def _verify_admin(req):
+    authorization = req.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        raise PermissionError("Missing bearer token.")
+
+    id_token = authorization.split(" ", 1)[1].strip()
+    decoded_token = auth.verify_id_token(id_token)
+    user_email = (decoded_token.get("email") or "").lower()
+    if user_email != SERVER_CONFIG_ADMIN_EMAIL:
+        raise PermissionError("Only dev@petsfort.in can update server configuration.")
+
+    return decoded_token
+
 
 @https_fn.on_request(region="asia-south1")
 def proxy_request(req: https_fn.Request):
-    """
-    Firebase HTTPS function that acts as a proxy.
-    It forwards the incoming request (method, headers, path, query params, body)
-    to a specified target URL and returns the response.
-    """
     try:
-        # Extract details from the incoming request
         method = req.method
-        # Headers are case-insensitive, so we can pass them directly
-        headers = dict(req.headers) # Convert headers to a mutable dictionary
+        headers = dict(req.headers)
         path = req.path
-        # Query parameters are already in a suitable format
         query_params = req.args
 
-        # Get the request body
-        # req.data is bytes, req.get_json() attempts to parse JSON
-        # We'll try to get JSON first, fallback to raw data if not JSON
-        body = req.get_json(silent=True) # silent=True prevents errors if not JSON
+        body = req.get_json(silent=True)
         if body is None:
-            body = req.data # Use raw bytes if not JSON
+            body = req.data
 
-        print(f"Received request: {method} {path}")
-        print(f"Headers: {headers}")
-        print(f"Query Params: {query_params}")
-        # Be careful printing body for large requests
-        # print(f"Body: {body}")
+        full_target_url = f"{_get_target_url()}{path}"
 
-        # Construct the full target URL
-        full_target_url = f"{TARGET_URL}{path}"
-
-        # Make the request to the target URL using the requests library
-        # We use requests.request to handle different HTTP methods dynamically
         response = requests.request(
             method=method,
             url=full_target_url,
             headers=headers,
             params=query_params,
-            # Pass data for non-GET methods, use json parameter if body is JSON
             data=body if not isinstance(body, dict) and body is not None else None,
             json=body if isinstance(body, dict) else None,
-            verify=False # Set to False if you need to ignore SSL certificate errors (not recommended for production)
+            verify=False
         )
 
-        print(f"Proxied request to {full_target_url}")
-        print(f"Target response status: {response.status_code}")
-
-        # Prepare the response to send back to the client
-        # Copy headers from the target response (excluding hop-by-hop headers)
-        # Hop-by-hop headers are headers that are meaningful only for a single transport-level connection
-        # and are not forwarded by proxies. Examples: Connection, Keep-Alive, Proxy-Authenticate, Proxy-Authorization, TE, Trailers, Transfer-Encoding, Upgrade.
-        # requests handles most of this, but it's good practice to be aware.
-        response_headers = dict(response.headers)
-
-        # Return the target response data and status code
         return https_fn.Response(
-            response.content, # Use response.content for bytes, response.text for string
+            response.content,
             status=response.status_code,
-            headers=response_headers
+            headers=dict(response.headers)
         )
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error making request to target URL: {e}")
-        return https_fn.Response(f"Proxy Error: Could not reach target URL. {e}", status=500)
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return https_fn.Response(f"Proxy Error: An internal error occurred. {e}", status=500)
-
+    except requests.exceptions.RequestException as exc:
+        print(f"Error making request to target URL: {exc}")
+        return https_fn.Response(f"Proxy Error: Could not reach target URL. {exc}", status=500)
+    except Exception as exc:
+        print(f"An unexpected error occurred: {exc}")
+        return https_fn.Response(f"Proxy Error: An internal error occurred. {exc}", status=500)
 
 
 def perform_backup():
-    """
-    Performs the core backup logic by making a GET request to the backup endpoint.
-    """
-    full_target_url = f"{TARGET_URL}/backup"
+    full_target_url = f"{_get_target_url()}/backup"
     print(f"Attempting backup request to {full_target_url}")
     try:
         response = requests.request(
             method="GET",
             url=full_target_url,
-            verify=False # Set to False if you need to ignore SSL certificate errors (not recommended for production)
+            verify=False
         )
         print(f"Backup target response status: {response.status_code}")
 
-        # You might want to add logging or error handling based on the response status
         if response.status_code == 200:
             print("Backup request successful.")
         else:
             print(f"Backup request failed with status code: {response.status_code}")
-            # Log response content for debugging if needed
-            # print(f"Backup response content: {response.text}")
 
         return response.content, response.status_code, dict(response.headers)
 
-    except requests.exceptions.RequestException as e:
-        print(f"Error making backup request to target URL: {e}")
-        # Depending on your needs, you might want to re-raise the exception
-        # or handle it differently for scheduled vs. HTTP triggers.
-        raise e # Re-raise the exception for the scheduler to potentially retry
+    except requests.exceptions.RequestException as exc:
+        print(f"Error making backup request to target URL: {exc}")
+        raise exc
+
 
 @https_fn.on_request(region="asia-south1")
 def backup_request(req: https_fn.Request):
-    """
-    Firebase HTTPS function to trigger a backup manually via HTTP.
-    Calls the core perform_backup logic.
-    """
     try:
         content, status, headers = perform_backup()
         return https_fn.Response(content, status=status, headers=headers)
-    except Exception as e:
-        print(f"Error in backup_request (HTTP trigger): {e}")
-        return https_fn.Response(f"Backup Error: {e}", status=500)
+    except Exception as exc:
+        print(f"Error in backup_request (HTTP trigger): {exc}")
+        return https_fn.Response(f"Backup Error: {exc}", status=500)
 
 
-# @scheduler_fn.on_schedule(schedule="0 * * * *", region="asia-south1")
 @scheduler_fn.on_schedule(schedule="0 */8 * * *", region="asia-south1")
 def scheduled_backup(event: scheduler_fn.ScheduledEvent):
-    """
-    Firebase Scheduled function to trigger a backup every hour.
-    Calls the core perform_backup logic.
-    The schedule "0 * * * *" means at minute 0 of every hour.
-    """
     print("Scheduled backup function triggered.")
     try:
         perform_backup()
         print("Scheduled backup completed successfully.")
-    except Exception as e:
-        print(f"Error during scheduled backup: {e}")
-        # The scheduler will handle retries based on function execution results
-        # You might want to log this error to a monitoring system like Cloud Logging
+    except Exception as exc:
+        print(f"Error during scheduled backup: {exc}")
 
+
+@https_fn.on_request(region="asia-south1")
+def server_config(req: https_fn.Request):
+    cors_headers = _get_cors_headers(req)
+
+    if req.method == "OPTIONS":
+        return https_fn.Response("", status=204, headers=cors_headers)
+
+    if req.method == "GET":
+        return https_fn.Response(
+            json.dumps({"config": _get_server_config()}),
+            status=200,
+            headers={**cors_headers, "Content-Type": "application/json"},
+        )
+
+    if req.method != "PUT":
+        return https_fn.Response("Method not allowed", status=405, headers=cors_headers)
+
+    try:
+        decoded_token = _verify_admin(req)
+        body = req.get_json(silent=True) or {}
+        base_url = _normalize_base_url(body.get("baseUrl") or body.get("targetUrl"))
+        terminal_ws_url = (body.get("terminalWsUrl") or "").strip() or _build_terminal_ws_url(base_url)
+
+        config = {
+            "baseUrl": base_url,
+            "targetUrl": base_url,
+            "terminalWsUrl": terminal_ws_url,
+            "updatedAt": datetime.now(timezone.utc).isoformat(),
+            "updatedByEmail": decoded_token.get("email", ""),
+            "updatedByUid": decoded_token.get("uid", ""),
+        }
+
+        db.reference(SERVER_CONFIG_DB_PATH).set(config)
+
+        return https_fn.Response(
+            json.dumps({"status": "ok", "config": config}),
+            status=200,
+            headers={**cors_headers, "Content-Type": "application/json"},
+        )
+    except PermissionError as exc:
+        return https_fn.Response(str(exc), status=403, headers=cors_headers)
+    except Exception as exc:
+        print(f"Error updating server config: {exc}")
+        return https_fn.Response(f"Failed to update server config: {exc}", status=500, headers=cors_headers)

@@ -9,6 +9,10 @@ import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -40,10 +44,62 @@ import crmapp.petsfort.R;
 public class Business {
 //    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
 //    private static final String ServerURL = "https://server.petsfort.in";
-    private static final String ServerURL = "https://ec2-16-176-155-113.ap-southeast-2.compute.amazonaws.com";
+    private static final String FALLBACK_SERVER_URL = "https://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com";
+    private static final String SERVER_CONFIG_PREFS = "server_config_cache";
+    private static final String SERVER_CONFIG_KEY = "base_url";
+    private static final String SERVER_CONFIG_DB_PATH = "appConfig/server/baseUrl";
+    private static volatile String serverUrl = FALLBACK_SERVER_URL;
+    private static volatile boolean serverConfigFetchStarted = false;
     Context context;
     public Business(Context context) {
         this.context = context;
+        initializeServerUrl(context);
+    }
+
+    public static void initializeServerUrl(Context context) {
+        if (context == null) {
+            return;
+        }
+
+        Context appContext = context.getApplicationContext();
+        SharedPreferences prefs = appContext.getSharedPreferences(SERVER_CONFIG_PREFS, Context.MODE_PRIVATE);
+        String cachedUrl = prefs.getString(SERVER_CONFIG_KEY, null);
+        if (cachedUrl != null && !cachedUrl.trim().isEmpty()) {
+            serverUrl = normalizeServerUrl(cachedUrl);
+        }
+
+        if (serverConfigFetchStarted) {
+            return;
+        }
+        serverConfigFetchStarted = true;
+
+        FirebaseDatabase.getInstance()
+                .getReference(SERVER_CONFIG_DB_PATH)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String remoteUrl = snapshot.getValue(String.class);
+                        if (remoteUrl != null && !remoteUrl.trim().isEmpty()) {
+                            serverUrl = normalizeServerUrl(remoteUrl);
+                            prefs.edit().putString(SERVER_CONFIG_KEY, serverUrl).apply();
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+    }
+
+    private static String normalizeServerUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return FALLBACK_SERVER_URL;
+        }
+        return url.trim().replaceAll("/+$", "");
+    }
+
+    private static String getServerUrl() {
+        return normalizeServerUrl(serverUrl);
     }
 
 
@@ -381,8 +437,8 @@ public class Business {
 
     public static class UserDataApiClient {
 //        private static final OkHttpClient client = new OkHttpClient();
-        private static final String getURL = ServerURL + "/user/";
-        private static final String URL = ServerURL + "/userdata/";
+        private static String getUserUrl() { return getServerUrl() + "/user/"; }
+        private static String getUserdataUrl() { return getServerUrl() + "/userdata/"; }
 
         public static void putUserDataCallApi(String userId, User user, Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -402,7 +458,7 @@ public class Business {
                     RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
 
                     Request request = new Request.Builder()
-                            .url(URL + userId)
+                            .url(getUserdataUrl() + userId)
                             .addHeader("Content-Type", "application/json")
                             .put(body)
                             .build();
@@ -431,7 +487,7 @@ public class Business {
             executor.execute(() -> {
                 try {
                     Request request = new Request.Builder()
-                            .url(getURL + userId)
+                            .url(getUserUrl() + userId)
                             .addHeader("Content-Type", "application/json")
                             .build();
 
@@ -458,7 +514,7 @@ public class Business {
             executor.execute(() -> {
                 try {
                     Request request = new Request.Builder()
-                            .url(URL) // already set as "/userdata/"
+                            .url(getUserdataUrl()) // already set as "/userdata/"
                             .addHeader("Content-Type", "application/json")
                             .build();
 
@@ -543,7 +599,7 @@ public class Business {
     }
 
     public static class CategoriesApiClient {
-        private static final String URL = ServerURL + "/categories";
+        private static String getUrl() { return getServerUrl() + "/categories"; }
 //        private static final OkHttpClient client = new OkHttpClient();
 
         public static void getCategoriesCallApi(Callbacker.ApiResponseWaiters.CategoriesApiCallback callback) {
@@ -551,7 +607,7 @@ public class Business {
             executor.execute(() -> {
                 try {
                     Request request = new Request.Builder()
-                            .url(URL)
+                            .url(getUrl())
                             .addHeader("Content-Type", "application/json")
                             .build();
 
@@ -611,7 +667,7 @@ public class Business {
     }
 
     public static class SubCategoriesApiClient {
-        private static final String URL = ServerURL + "/subcats/";
+        private static String getUrl() { return getServerUrl() + "/subcats/"; }
 //        private static final OkHttpClient client = new OkHttpClient();
 
         public static void getSubCategoriesCallApi(String category_id, Callbacker.ApiResponseWaiters.SubCategoriesApiCallback callback) {
@@ -619,7 +675,7 @@ public class Business {
             executor.execute(() -> {
                 try {
                     Request request = new Request.Builder()
-                            .url(URL.concat(category_id))
+                            .url(getUrl().concat(category_id))
                             .addHeader("Content-Type", "application/json")
                             .build();
 
@@ -680,7 +736,7 @@ public class Business {
     }
 
     public static class QueryApiClient {
-        private static final String URL = ServerURL + "/products/query";
+        private static String getUrl() { return getServerUrl() + "/products/query"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.QueryApiCallback callback) {
@@ -690,7 +746,7 @@ public class Business {
                     JSONObject jsonBody = new JSONObject(data);
                     RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
                     Request request = new Request.Builder()
-                            .url(URL)
+                            .url(getUrl())
                             .addHeader("Content-Type", "application/json")
                             .post(body)
                             .build();
@@ -767,7 +823,7 @@ public class Business {
 
     }
     public static class BulkDetailsApiClient {
-        private static final String URL = ServerURL + "/products/bulk-details";
+        private static String getUrl() { return getServerUrl() + "/products/bulk-details"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.BulkDetailsApiCallback callback) {
@@ -777,7 +833,7 @@ public class Business {
                     JSONObject jsonBody = new JSONObject(data);
                     RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
                     Request request = new Request.Builder()
-                            .url(URL)
+                            .url(getUrl())
                             .addHeader("Content-Type", "application/json")
                             .post(body)
                             .build();
@@ -900,8 +956,7 @@ public class Business {
     }
     public static class OrderCheckoutApiClient {
 
-        // Define ServerURL here or pass it in constructor/method if needed
-        private static final String BASE_URL = ServerURL + "/orders/checkout/"; // Note the trailing slash
+        private static String getBaseUrl() { return getServerUrl() + "/orders/checkout/"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         /**
@@ -915,7 +970,7 @@ public class Business {
         public void callApi(String userId, HashMap<String, Object> data, Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback callback) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
-                String url = BASE_URL + userId; // Append user ID to the base URL
+                String url = getBaseUrl() + userId; // Append user ID to the base URL
                 try {
                     JSONObject jsonBody = new JSONObject(data);
                     RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
@@ -1071,7 +1126,7 @@ public class Business {
 
     }
     public static class OrderQueryApiClient {
-        private static final String URL = ServerURL + "/orders/query";
+        private static String getUrl() { return getServerUrl() + "/orders/query"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, OrderApiCallback callback) {
@@ -1081,7 +1136,7 @@ public class Business {
                     JSONObject jsonBody = new JSONObject(data);
                     RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
                     Request request = new Request.Builder()
-                            .url(URL)
+                            .url(getUrl())
                             .addHeader("Content-Type", "application/json")
                             .post(body)
                             .build();

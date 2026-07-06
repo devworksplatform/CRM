@@ -115,6 +115,7 @@ public class LoginActivity extends AppCompatActivity {
 		setContentView(R.layout.login);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
+		Business.initializeServerUrl(getApplicationContext());
 		initializeLogic();
 
 		checkForAppUpdate();

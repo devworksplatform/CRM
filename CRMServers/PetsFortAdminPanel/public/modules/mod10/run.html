@@ -1,0 +1,41 @@
+<div class="server-config-page">
+    <div class="card server-config-card">
+        <div class="server-config-header">
+            <div>
+                <h3>Server Configuration</h3>
+                <p>Manage the shared backend URL used by the app, admin panel tools, and Firebase Functions.</p>
+            </div>
+            <button id="server-config-refresh" class="btn btn-outline">
+                <i data-feather="refresh-ccw"></i> Refresh
+            </button>
+        </div>
+
+        <div id="server-config-locked" class="server-config-locked" style="display: none;">
+            Only <strong>dev@petsfort.in</strong> can view and edit this configuration.
+        </div>
+
+        <form id="server-config-form" class="server-config-form">
+            <div class="form-group">
+                <label for="server-config-base-url">Backend Base URL</label>
+                <input type="url" id="server-config-base-url" class="form-control" placeholder="https://ec2-xx-xx-xx-xx.region.compute.amazonaws.com" required>
+            </div>
+
+            <div class="form-group">
+                <label for="server-config-terminal-ws-url">Terminal WebSocket URL (optional override)</label>
+                <input type="url" id="server-config-terminal-ws-url" class="form-control" placeholder="Leave empty to auto-generate from base URL">
+                <small id="server-config-terminal-preview" class="server-config-help"></small>
+            </div>
+
+            <div class="server-config-meta">
+                <span id="server-config-updated-at">Last updated: Never</span>
+                <span id="server-config-updated-by">Updated by: -</span>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i data-feather="save"></i> Save Config
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -3,6 +3,10 @@
 // const SERVER_URL = "https://server.petsfort.in/";
 // const SERVER_URL = "http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/";
  const SERVER_URL = "https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/";
+const SERVER_CONFIG_FUNCTION_URL = "https://asia-south1-pets-fort.cloudfunctions.net/server_config";
+const SERVER_CONFIG_DB_PATH = "appConfig/server";
+const SERVER_CONFIG_ADMIN_EMAIL = "dev@petsfort.in";
+const FALLBACK_TARGET_URL = "https://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com";
 //const SERVER_URL = "http://jay-fastapi.fly.dev/";
 // --- LocalStorage Helpers ---
 const StorageHelper = {
@@ -116,6 +120,134 @@ const database = firebase.database();
 
 console.log("Firebase loaded and ready");
 
+let serverConfigCache = null;
+let serverConfigPromise = null;
+
+function normalizeBaseUrl(url) {
+    const value = (url || FALLBACK_TARGET_URL).trim();
+    return value.replace(/\/+$/, '');
+}
+
+function buildDefaultTerminalWsUrl(baseUrl) {
+    try {
+        const parsed = new URL(normalizeBaseUrl(baseUrl));
+        const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${parsed.hostname}:8000/ws/terminal`;
+    } catch (error) {
+        console.warn("Falling back to default terminal websocket URL", error);
+        return "wss://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com:8000/ws/terminal";
+    }
+}
+
+function normalizeServerConfig(rawConfig = {}) {
+    const targetUrl = normalizeBaseUrl(rawConfig.baseUrl || rawConfig.targetUrl || FALLBACK_TARGET_URL);
+    const terminalWsUrl = (rawConfig.terminalWsUrl || "").trim() || buildDefaultTerminalWsUrl(targetUrl);
+
+    return {
+        baseUrl: targetUrl,
+        targetUrl,
+        terminalWsUrl,
+        updatedAt: rawConfig.updatedAt || null,
+        updatedByEmail: rawConfig.updatedByEmail || "",
+        updatedByUid: rawConfig.updatedByUid || ""
+    };
+}
+
+function getStoredUserData() {
+    try {
+        return JSON.parse(localStorage.getItem("userdata"));
+    } catch (error) {
+        console.warn("Failed to parse stored user data", error);
+        return null;
+    }
+}
+
+function getCurrentUserEmail() {
+    const authEmail = auth.currentUser?.email;
+    if (authEmail) return authEmail.toLowerCase();
+
+    const storedUserData = getStoredUserData();
+    return (storedUserData?.email || "").toLowerCase();
+}
+
+function canEditServerConfig() {
+    return getCurrentUserEmail() === SERVER_CONFIG_ADMIN_EMAIL;
+}
+
+function syncServerConfigNavVisibility() {
+    const navItem = document.getElementById("server-config-nav");
+    if (!navItem) return;
+    navItem.style.display = canEditServerConfig() ? "" : "none";
+}
+
+async function loadServerConfig(forceRefresh = false) {
+    if (serverConfigPromise && !forceRefresh) {
+        return serverConfigPromise;
+    }
+
+    serverConfigPromise = database.ref(SERVER_CONFIG_DB_PATH).once("value")
+        .then((snapshot) => {
+            serverConfigCache = normalizeServerConfig(snapshot.val() || {});
+            return serverConfigCache;
+        })
+        .catch((error) => {
+            console.error("Failed to load server config from Firebase RTDB:", error);
+            serverConfigCache = normalizeServerConfig({});
+            return serverConfigCache;
+        });
+
+    return serverConfigPromise;
+}
+
+function getCachedServerConfig() {
+    if (!serverConfigCache) {
+        serverConfigCache = normalizeServerConfig({});
+    }
+    return serverConfigCache;
+}
+
+async function saveServerConfig(nextConfig) {
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error("Please login first.");
+    }
+
+    const idToken = await user.getIdToken();
+    const response = await fetch(SERVER_CONFIG_FUNCTION_URL, {
+        method: "PUT",
+        headers: {
+            "Authorization": `Bearer ${idToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(nextConfig)
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `Failed to save config (${response.status})`);
+    }
+
+    const result = await response.json();
+    serverConfigCache = normalizeServerConfig(result?.config || nextConfig);
+    return serverConfigCache;
+}
+
+window.serverConfigService = {
+    canEdit: canEditServerConfig,
+    getCachedServerConfig,
+    getTargetUrl: () => getCachedServerConfig().targetUrl,
+    getTerminalWebSocketUrl: () => getCachedServerConfig().terminalWsUrl,
+    load: loadServerConfig,
+    save: saveServerConfig,
+    syncNavVisibility: syncServerConfigNavVisibility
+};
+
+auth.onAuthStateChanged(() => {
+    syncServerConfigNavVisibility();
+});
+
+loadServerConfig();
+
 function isLoggedIn() {
     if(localStorage.getItem("userId") == null) {
         return false;
@@ -128,6 +260,7 @@ async function handleLogout() {
         await auth.signOut();
         localStorage.removeItem("userId");
         localStorage.removeItem("userdata");
+        syncServerConfigNavVisibility();
         console.log("Logged out successfully!");
         hideLoading();
         // Reload the current module (assuming this initMod0 will be called again)
@@ -142,12 +275,16 @@ async function handleLogout() {
 function checkPermissionForAction(action, param1) {
     if(action == "loadModule") {
         const moduleName = param1;
-        const userdata = JSON.parse(localStorage.getItem("userdata"));
+        const userdata = getStoredUserData();
 
         if(userdata == null) {
             if(moduleName == "Login") {
                 return true;
             } else return false;
+        }
+
+        if(moduleName == "ServerConfig") {
+            return canEditServerConfig();
         }
 
         if(userdata.role == "4") return true;

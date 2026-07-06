@@ -1,7 +1,6 @@
-const TARGET_URL = "https://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com"
-
 async function initMod7() { // Assuming this is your entry point for this module
-    const API_URL = TARGET_URL+"/system-stats/live"; // Your FastAPI endpoint
+    const serverConfig = await window.serverConfigService.load();
+    const API_URL = serverConfig.targetUrl+"/system-stats/live"; // Your FastAPI endpoint
 
     const ramChartCtx = document.getElementById('ramChart').getContext('2d');
     let ramChart = new Chart(ramChartCtx, {

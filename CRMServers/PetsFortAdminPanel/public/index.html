@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="modules/mod6/style.css">
     <link rel="stylesheet" href="modules/mod7/style.css">
     <link rel="stylesheet" href="modules/mod9/style.css">
+    <link rel="stylesheet" href="modules/mod10/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <script src="https://www.gstatic.com/firebasejs/11.6.0/firebase-app-compat.js"></script>
@@ -52,6 +53,7 @@
                     <!-- <li><a href="#Server" data-module="Server" data-module-path="mod7" class="nav-link"><i data-feather="server"></i> Server</a></li> -->
                     <!-- <li><a href="#Cmd" data-module="Cmd" data-module-path="mod8" class="nav-link"><i data-feather="cpu"></i> Cmd</a></li> -->
                     <li><a href="#GST" data-module="GST" data-module-path="mod9" class="nav-link"><i data-feather="book"></i> GST Billing</a></li>
+                    <li id="server-config-nav" style="display: none;"><a href="#ServerConfig" data-module="ServerConfig" data-module-path="mod10" class="nav-link"><i data-feather="settings"></i> Server Config</a></li>
                 </ul>
 
                 <div class="sidebar-bottom" style="margin-top: auto; text-align: center; padding: 10px; font-size: 0.9em; color: #777;">
@@ -101,6 +103,7 @@
      <script src="modules/mod7/script.js"></script>
      <script src="modules/mod8/script.js"></script>
      <script src="modules/mod9/script.js"></script>
+     <script src="modules/mod10/script.js"></script>
 
     <script>
 
@@ -175,6 +178,9 @@
             }
 
             window.loadModuleByName = loadModuleByName
+            if (window.serverConfigService?.syncNavVisibility) {
+                window.serverConfigService.syncNavVisibility();
+            }
             
 
             // --- Module Loading Logic --- (as before, slightly adapted variable names)

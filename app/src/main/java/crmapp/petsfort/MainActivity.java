@@ -43,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
 		setContentView(R.layout.main);
 		initialize(_savedInstanceState);
 		FirebaseApp.initializeApp(this);
+		Business.initializeServerUrl(getApplicationContext());
 		initializeLogic();
 	}
 	
