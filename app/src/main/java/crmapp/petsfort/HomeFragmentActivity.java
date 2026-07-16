@@ -1,6 +1,9 @@
 package crmapp.petsfort;
 
 import android.animation.Animator;
+import android.animation.ObjectAnimator;
+import android.animation.PropertyValuesHolder;
+import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.*;
 import android.content.Intent;
@@ -41,6 +44,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -575,6 +579,9 @@ public class HomeFragmentActivity extends Fragment {
 			final TextView offerBadge = _view.findViewById(R.id.offerBannerBadge);
 			final TextView offerAction = _view.findViewById(R.id.offerBannerAction);
 			final ImageView offerImage = _view.findViewById(R.id.offerBannerImage);
+			final ImageView announcementIcon = _view.findViewById(R.id.offerAnnouncementIcon);
+			final ImageView celebrationIcon = _view.findViewById(R.id.offerCelebrationIcon);
+			final FrameLayout confettiOverlay = _view.findViewById(R.id.offerConfettiOverlay);
 
 			String imageUrl = _data.get((int)_position).get("img");
 			String title = _data.get((int)_position).get("title");
@@ -582,6 +589,9 @@ public class HomeFragmentActivity extends Fragment {
 			if (title != null && !title.isEmpty()) {
 				imageview1.setVisibility(View.GONE);
 				offerContainer.setVisibility(View.VISIBLE);
+				announcementIcon.setVisibility(View.VISIBLE);
+				celebrationIcon.setVisibility(View.VISIBLE);
+				confettiOverlay.setVisibility(View.VISIBLE);
 				offerTitle.setText(title);
 				offerSubtitle.setText(_data.get((int)_position).get("subtitle"));
 				offerBadge.setText(groupId != null && !groupId.isEmpty() ? "GROUP OFFER" : "PRODUCT OFFER");
@@ -591,8 +601,28 @@ public class HomeFragmentActivity extends Fragment {
 				} else {
 					offerImage.setImageResource(R.drawable.default_image);
 				}
+				announcementIcon.setAlpha(0f);
+				announcementIcon.setTranslationX(-70f);
+				announcementIcon.setRotation(-18f);
+				announcementIcon.animate().alpha(1f).translationX(0f).rotation(0f).setDuration(480)
+						.setInterpolator(new android.view.animation.OvershootInterpolator(1.4f)).start();
+				celebrationIcon.setAlpha(0f);
+				celebrationIcon.setTranslationX(55f);
+				celebrationIcon.setTranslationY(-20f);
+				celebrationIcon.setRotation(24f);
+				celebrationIcon.animate().alpha(1f).translationX(0f).translationY(0f).rotation(0f).setStartDelay(100).setDuration(430)
+						.setInterpolator(new android.view.animation.OvershootInterpolator(1.6f)).start();
+				confettiOverlay.setAlpha(0f);
+				confettiOverlay.setScaleX(0.72f);
+				confettiOverlay.setScaleY(0.72f);
+				confettiOverlay.animate().alpha(1f).scaleX(1f).scaleY(1f).setStartDelay(80).setDuration(520)
+						.setInterpolator(new android.view.animation.OvershootInterpolator(1.2f)).start();
+				startLoopingOfferAnimations(_view, announcementIcon, celebrationIcon, confettiOverlay);
 			} else {
 				offerContainer.setVisibility(View.GONE);
+				announcementIcon.setVisibility(View.GONE);
+				celebrationIcon.setVisibility(View.GONE);
+				confettiOverlay.setVisibility(View.GONE);
 				imageview1.setVisibility(View.VISIBLE);
 				if (imageUrl != null && !imageUrl.isEmpty()) {
 					Glide.with(getContext().getApplicationContext()).load(Uri.parse(imageUrl)).placeholder(R.drawable.default_image).centerCrop().into(imageview1);
@@ -623,6 +653,107 @@ public class HomeFragmentActivity extends Fragment {
 
 			_container.addView(_view);
 			return _view;
+		}
+	}
+
+	private void startLoopingOfferAnimations(View bannerView, ImageView announcementIcon,
+			ImageView celebrationIcon, FrameLayout confettiOverlay) {
+		ObjectAnimator announcementPulse = ObjectAnimator.ofPropertyValuesHolder(
+				announcementIcon,
+				PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.1f, 1f),
+				PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.1f, 1f),
+				PropertyValuesHolder.ofFloat(View.ROTATION, 0f, -7f, 5f, 0f));
+		announcementPulse.setDuration(1050);
+		announcementPulse.setRepeatCount(ValueAnimator.INFINITE);
+		announcementPulse.setRepeatMode(ValueAnimator.RESTART);
+
+		ObjectAnimator popperBounce = ObjectAnimator.ofPropertyValuesHolder(
+				celebrationIcon,
+				PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, -9f, 0f),
+				PropertyValuesHolder.ofFloat(View.ROTATION, 0f, 8f, -4f, 0f),
+				PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.12f, 1f),
+				PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.12f, 1f));
+		popperBounce.setDuration(1200);
+		popperBounce.setStartDelay(150);
+		popperBounce.setRepeatCount(ValueAnimator.INFINITE);
+		popperBounce.setRepeatMode(ValueAnimator.RESTART);
+
+		ArrayList<Animator> animationList = new ArrayList<>();
+		animationList.add(announcementPulse);
+		animationList.add(popperBounce);
+		createIndependentConfetti(confettiOverlay, animationList);
+		final Animator[] animations = animationList.toArray(new Animator[0]);
+		final boolean[] entranceComplete = {false};
+		Runnable startAnimations = () -> {
+			if (!bannerView.isAttachedToWindow()) return;
+			for (Animator animation : animations) {
+				if (!animation.isRunning()) animation.start();
+			}
+		};
+		bannerView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+			@Override
+			public void onViewAttachedToWindow(View v) {
+				if (entranceComplete[0]) startAnimations.run();
+			}
+
+			@Override
+			public void onViewDetachedFromWindow(View v) {
+				for (Animator animation : animations) animation.cancel();
+			}
+		});
+		bannerView.postDelayed(() -> {
+			entranceComplete[0] = true;
+			startAnimations.run();
+		}, 650);
+	}
+
+	private void createIndependentConfetti(FrameLayout layer, ArrayList<Animator> animations) {
+		layer.removeAllViews();
+		final float density = getResources().getDisplayMetrics().density;
+		final int[] colors = {0xFFFDE047, 0xFFFFFFFF, 0xFFFB7185, 0xFF67E8F9, 0xFFA7F3D0, 0xFFC4B5FD};
+		Random random = new Random(7419);
+
+		for (int i = 0; i < 22; i++) {
+			View paper = new View(getContext());
+			int width = Math.round((3 + random.nextInt(4)) * density);
+			int height = Math.round((6 + random.nextInt(7)) * density);
+			FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
+			layer.addView(paper, params);
+			paper.setAlpha(0f);
+
+			GradientDrawable shape = new GradientDrawable();
+			shape.setColor(colors[random.nextInt(colors.length)]);
+			shape.setCornerRadius((random.nextBoolean() ? 1.5f : 5f) * density);
+			paper.setBackground(shape);
+
+			final float horizontalVelocity = -(70 + random.nextInt(245)) * density;
+			final float verticalVelocity = -(45 + random.nextInt(145)) * density;
+			final float gravity = (170 + random.nextInt(150)) * density;
+			final float curve = (random.nextFloat() * 32f - 16f) * density;
+			final float spin = (random.nextBoolean() ? 1f : -1f) * (380 + random.nextInt(1080));
+			final float startRotation = random.nextInt(180);
+			final float originYOffset = (8 + random.nextInt(28)) * density;
+
+			ValueAnimator flight = ValueAnimator.ofFloat(0f, 1f);
+			flight.setDuration(1050 + random.nextInt(1050));
+			flight.setStartDelay(random.nextInt(950));
+			flight.setRepeatCount(ValueAnimator.INFINITE);
+			flight.setRepeatMode(ValueAnimator.RESTART);
+			flight.setInterpolator(new android.view.animation.LinearInterpolator());
+			flight.addUpdateListener(animation -> {
+				float time = (float) animation.getAnimatedValue();
+				float originX = Math.max(0f, layer.getWidth() - 18f * density);
+				float x = originX + horizontalVelocity * time + curve * time * time;
+				float y = originYOffset + verticalVelocity * time + gravity * time * time;
+				paper.setX(x);
+				paper.setY(y);
+				paper.setRotation(startRotation + spin * time);
+				paper.setRotationX((spin * 0.7f) * time);
+				paper.setScaleX(0.55f + 0.45f * Math.abs((float) Math.cos(time * Math.PI * (2.5f + Math.abs(spin) / 700f))));
+				float alpha = time < 0.08f ? time / 0.08f : (time > 0.72f ? (1f - time) / 0.28f : 1f);
+				paper.setAlpha(Math.max(0f, Math.min(1f, alpha)));
+			});
+			animations.add(flight);
 		}
 	}
 
