@@ -402,9 +402,10 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			CartProduct product = listmap.get((int)_position);
 
 			rateTextView.setText("₹".concat(df.format(product.getCostRate())));
-			totalTextView.setText("₹".concat(df.format(product.getCostRate()*product.productCount)));
+			double unitGst = (product.getCostGst() * product.getCostRate()) / 100;
+			totalTextView.setText("₹".concat(df.format(product.getCostRate() * product.productCount)));
 
-			double gst = (product.getCostGst()*product.getCostRate())/100;
+			double gst = unitGst;
 			gstTextView.setText("+".concat(df.format(product.getCostGst())).concat(" % GST"));//.concat("₹".concat(String.valueOf(gst))).concat(")"));
 			gstTotalTextView.setText("+".concat(df.format(gst*product.productCount)).concat(" ₹"));
 

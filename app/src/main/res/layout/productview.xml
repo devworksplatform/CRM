@@ -169,6 +169,28 @@
                         </LinearLayout>
 
                         <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="15dp"
+                            android:background="@drawable/total_price_background"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingStart="13dp"
+                            android:paddingTop="11dp"
+                            android:paddingEnd="13dp"
+                            android:paddingBottom="11dp">
+
+                            <TextView
+                                android:id="@+id/totalTextView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="end"
+                                android:text="₹0"
+                                android:textColor="#047857"
+                                android:textSize="22sp" />
+                        </LinearLayout>
+
+                        <LinearLayout
                             android:id="@+id/offerContainer"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

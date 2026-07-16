@@ -45,7 +45,7 @@ public class ProductviewActivity extends AppCompatActivity {
 
 	private EditText edittext1;
 	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear, offerContainer;
-	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,offerTextView,offerSummaryTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
+	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,totalTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,offerTextView,offerSummaryTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
 	private TextView mrpLabel,rateLabel,discountLabel,gstLabel;
 	private Button addButton;
 	private ImageView productImageView,plus,minus;
@@ -80,6 +80,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		productNameTextView = (TextView) findViewById(R.id.productNameTextView);
 		mrpTextView = (TextView) findViewById(R.id.mrpTextView);
 		rateTextView = (TextView) findViewById(R.id.rateTextView);
+		totalTextView = (TextView) findViewById(R.id.totalTextView);
 		gstTextView = (TextView) findViewById(R.id.gstTextView);
 		gstRsTextView = (TextView) findViewById(R.id.gstRsTextView);
 		productDescriptionTextView = (TextView) findViewById(R.id.productDescriptionTextView);
@@ -111,6 +112,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		productNameTextView.setTypeface(boldTypeface, 0);
 		mrpTextView.setTypeface(boldTypeface, 0);
 		rateTextView.setTypeface(boldTypeface, 0);
+		totalTextView.setTypeface(boldTypeface, 0);
 		gstTextView.setTypeface(boldTypeface, 0);
 		discountTextView.setTypeface(boldTypeface, 0);
 		productDescriptionTextviewLabel.setTypeface(boldTypeface, 0);
@@ -212,6 +214,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		}
 
 		edittext1.setText(String.valueOf(currentCount));
+		updateDisplayedTotal();
 		updateOfferSummary();
 
 		if(isViewOnly) {
@@ -394,6 +397,7 @@ public class ProductviewActivity extends AppCompatActivity {
 			Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
 			edittext1.setText(String.valueOf(currentCount));
 		}
+		updateDisplayedTotal();
 		updateOfferSummary();
 
 		if (currentCount <= 0) {
@@ -403,6 +407,10 @@ public class ProductviewActivity extends AppCompatActivity {
 			map.put("count", currentCount);
 			Business.localDB_SharedPref.updateCartProduct(localDB,userId,product.getProductId(),map);
 		}
+	}
+
+	private void updateDisplayedTotal() {
+		totalTextView.setText("₹".concat(df.format(product.getCostRate() * currentCount)));
 	}
 
 	private void updateOfferSummary() {
