@@ -64,9 +64,24 @@ TABLE_SCHEMAS = {
             offer_buy_qty INTEGER NOT NULL DEFAULT 0,
             offer_free_qty INTEGER NOT NULL DEFAULT 0,
             offer_active INTEGER NOT NULL DEFAULT 0,
+            offer_group_id TEXT DEFAULT NULL,
             stock INTEGER,
             created_at TIMESTAMP,
             updated_at TIMESTAMP
+        )
+        """,
+    "offer_groups": """
+        CREATE TABLE IF NOT EXISTS offer_groups (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            buy_qty INTEGER NOT NULL,
+            free_qty INTEGER NOT NULL,
+            product_ids TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'DRAFT',
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            canceled_at TEXT
         )
         """,
     "orders": """
@@ -276,7 +291,15 @@ class Product(BaseModel):
     offer_buy_qty: int = Field(default=0, ge=0)
     offer_free_qty: int = Field(default=0, ge=0)
     offer_active: bool = False
+    offer_group_id: Optional[str] = None
     stock: int
+
+class OfferGroupPayload(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    description: str = Field(default="", max_length=500)
+    buy_qty: int = Field(ge=1)
+    free_qty: int = Field(ge=1)
+    product_ids: List[str] = Field(min_length=1)
 
 class ProductResponse(Product):
     id: str
@@ -362,6 +385,7 @@ def dict_to_product(row: aiosqlite.Row):
     row_dict['offer_buy_qty'] = int(row_dict.get('offer_buy_qty') or 0)
     row_dict['offer_free_qty'] = int(row_dict.get('offer_free_qty') or 0)
     row_dict['offer_active'] = bool(row_dict.get('offer_active') or 0)
+    row_dict['offer_group_id'] = row_dict.get('offer_group_id') or None
     # Handle the product_img list stored as JSON
     row_dict['cost_rate'] = row_dict['cost_mrp'] - (row_dict['cost_mrp'] * row_dict['cost_dis'] / 100)
 
@@ -511,6 +535,33 @@ def publish_offer(product: dict, notify: bool = False):
             {"type": "offer", "product_id": product_id}
         )
 
+def dict_to_offer_group(row):
+    data = dict(row)
+    try:
+        data["product_ids"] = json.loads(data.get("product_ids") or "[]")
+    except (TypeError, json.JSONDecodeError):
+        data["product_ids"] = []
+    return data
+
+def publish_offer_group(group: dict, first_product: dict = None, notify: bool = False):
+    key = "offer_group_" + group["id"]
+    ref = firebaseAuth.db.reference(f"datas/announcement/all/{key}")
+    if group.get("status") != "ACTIVE":
+        ref.delete()
+        return
+    first_product = first_product or {}
+    images = first_product.get("product_img") or []
+    if isinstance(images, str):
+        try: images = json.loads(images)
+        except Exception: images = []
+    title = f"{group['name']} · Buy {group['buy_qty']}, get {group['free_qty']} FREE"
+    body = group.get("description") or f"Available on {len(group['product_ids'])} selected products. Tap to view them all."
+    ref.set({"type":"offer_group", "group_id":group["id"], "product_count":len(group["product_ids"]),
+             "title":title, "subtitle":body, "img":images[0] if images else ""})
+    if notify:
+        firebaseAuth.send_topic_notification("all_users", group["name"], body,
+                                             {"type":"offer_group", "group_id":group["id"]})
+
 
 # Initialize database (Run once on startup)
 async def init_db():
@@ -524,6 +575,7 @@ async def init_db():
             await cursor.execute(TABLE_SCHEMAS["subcategory"])
             await cursor.execute(TABLE_SCHEMAS["userdata"])
             await cursor.execute(TABLE_SCHEMAS["bills"])
+            await cursor.execute(TABLE_SCHEMAS["offer_groups"])
             # Migrate existing installations without requiring a manual DB rebuild.
             await cursor.execute("PRAGMA table_info(products)")
             product_columns = {row[1] for row in await cursor.fetchall()}
@@ -531,6 +583,7 @@ async def init_db():
                 ("offer_buy_qty", "INTEGER NOT NULL DEFAULT 0"),
                 ("offer_free_qty", "INTEGER NOT NULL DEFAULT 0"),
                 ("offer_active", "INTEGER NOT NULL DEFAULT 0"),
+                ("offer_group_id", "TEXT DEFAULT NULL"),
             ):
                 if column_name not in product_columns:
                     await cursor.execute(f"ALTER TABLE products ADD COLUMN {column_name} {definition}")
@@ -892,6 +945,9 @@ async def update_product(product_identifier: str, product_update: Product): # Ma
                 raise HTTPException(status_code=404, detail="Product not found")
 
             existing_product = dict(result)
+            existing_product_normalized = dict_to_product(result)
+            detached_group = None
+            detached_group_first_product = None
             db_id = existing_product["id"] # Use the primary key 'id' for update
 
             # Prepare update data
@@ -900,6 +956,41 @@ async def update_product(product_identifier: str, product_update: Product): # Ma
             # Convert list to JSON string
             if "product_img" in update_data:
                 update_data["product_img"] = json.dumps(update_data["product_img"])
+
+            original_group_id = existing_product_normalized.get("offer_group_id")
+            if original_group_id:
+                requested_offer = {
+                    "offer_active": bool(update_data.get("offer_active", existing_product_normalized.get("offer_active"))),
+                    "offer_buy_qty": int(update_data.get("offer_buy_qty", existing_product_normalized.get("offer_buy_qty")) or 0),
+                    "offer_free_qty": int(update_data.get("offer_free_qty", existing_product_normalized.get("offer_free_qty")) or 0),
+                }
+                grouped_offer_changed = offer_changed(existing_product_normalized, requested_offer)
+                if grouped_offer_changed:
+                    update_data["offer_group_id"] = None
+                    await cursor.execute("SELECT * FROM offer_groups WHERE id = ?", (original_group_id,))
+                    group_row = await cursor.fetchone()
+                    if group_row:
+                        detached_group = dict_to_offer_group(group_row)
+                        old_product_id = str(existing_product_normalized.get("product_id"))
+                        remaining_ids = [pid for pid in detached_group["product_ids"] if str(pid) != old_product_id]
+                        now = datetime.utcnow().isoformat() + "Z"
+                        detached_group["product_ids"] = remaining_ids
+                        detached_group["updated_at"] = now
+                        if remaining_ids:
+                            await cursor.execute(
+                                "UPDATE offer_groups SET product_ids = ?, updated_at = ? WHERE id = ?",
+                                (json.dumps(remaining_ids), now, original_group_id)
+                            )
+                        else:
+                            detached_group["status"] = "CANCELED"
+                            detached_group["canceled_at"] = now
+                            await cursor.execute(
+                                "UPDATE offer_groups SET product_ids = ?, status = 'CANCELED', updated_at = ?, canceled_at = ? WHERE id = ?",
+                                (json.dumps([]), now, now, original_group_id)
+                            )
+                else:
+                    # Non-offer product edits must not accidentally detach group ownership.
+                    update_data["offer_group_id"] = original_group_id
 
             # Add updated timestamp
             update_data["updated_at"] = datetime.now().isoformat()
@@ -929,11 +1020,22 @@ async def update_product(product_identifier: str, product_update: Product): # Ma
 
 
             updated_product = dict_to_product(updated_result)
+            if detached_group and detached_group.get("product_ids"):
+                await cursor.execute("SELECT * FROM products WHERE product_id = ?", (detached_group["product_ids"][0],))
+                first_row = await cursor.fetchone()
+                if first_row:
+                    detached_group_first_product = dict_to_product(first_row)
             try:
-                publish_offer(
-                    updated_product,
-                    notify=updated_product.get("offer_active") and offer_changed(dict_to_product(result), updated_product)
-                )
+                if detached_group:
+                    publish_offer_group(detached_group, detached_group_first_product, notify=False)
+                if updated_product.get("offer_group_id"):
+                    product_key = "offer_" + "".join(c if c.isalnum() or c in "-_" else "_" for c in str(updated_product.get("product_id")))
+                    firebaseAuth.db.reference(f"datas/announcement/all/{product_key}").delete()
+                else:
+                    publish_offer(
+                        updated_product,
+                        notify=updated_product.get("offer_active") and offer_changed(existing_product_normalized, updated_product)
+                    )
             except Exception as e:
                 print(f"Warning: product updated but offer announcement failed: {e}")
             return updated_product
@@ -989,6 +1091,110 @@ async def delete_product(product_identifier: str): # Made async
         await conn.close()
 
 # --- Schema Manipulation Routes (Modified for Async) ---
+
+@app.get("/offer-groups")
+async def list_offer_groups():
+    conn = await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT * FROM offer_groups ORDER BY created_at DESC")
+            return [dict_to_offer_group(row) for row in await cursor.fetchall()]
+    finally:
+        await conn.close()
+
+@app.post("/offer-groups")
+async def create_offer_group(payload: OfferGroupPayload):
+    conn = await get_db_connection(); group_id = generate_id(); now = datetime.utcnow().isoformat() + "Z"
+    product_ids = list(dict.fromkeys(payload.product_ids))
+    try:
+        async with conn.cursor() as cursor:
+            placeholders = ",".join("?" for _ in product_ids)
+            await cursor.execute(f"SELECT product_id FROM products WHERE product_id IN ({placeholders})", product_ids)
+            found = {row[0] for row in await cursor.fetchall()}
+            missing = [pid for pid in product_ids if pid not in found]
+            if missing: raise HTTPException(status_code=404, detail={"message":"Products not found", "product_ids":missing})
+            await cursor.execute("""INSERT INTO offer_groups
+                (id,name,description,buy_qty,free_qty,product_ids,status,created_at,updated_at)
+                VALUES (?,?,?,?,?,?,'DRAFT',?,?)""",
+                (group_id,payload.name.strip(),payload.description.strip(),payload.buy_qty,payload.free_qty,json.dumps(product_ids),now,now))
+            await conn.commit()
+            await cursor.execute("SELECT * FROM offer_groups WHERE id=?", (group_id,))
+            return dict_to_offer_group(await cursor.fetchone())
+    finally: await conn.close()
+
+@app.put("/offer-groups/{group_id}")
+async def update_offer_group(group_id: str, payload: OfferGroupPayload):
+    conn = await get_db_connection(); product_ids = list(dict.fromkeys(payload.product_ids))
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT * FROM offer_groups WHERE id=?", (group_id,)); current = await cursor.fetchone()
+            if not current: raise HTTPException(status_code=404, detail="Offer group not found")
+            if current["status"] == "ACTIVE": raise HTTPException(status_code=409, detail="Cancel the active offer before editing its group")
+            placeholders = ",".join("?" for _ in product_ids)
+            await cursor.execute(f"SELECT product_id FROM products WHERE product_id IN ({placeholders})", product_ids)
+            found = {row[0] for row in await cursor.fetchall()}; missing = [pid for pid in product_ids if pid not in found]
+            if missing: raise HTTPException(status_code=404, detail={"message":"Products not found", "product_ids":missing})
+            await cursor.execute("""UPDATE offer_groups SET name=?,description=?,buy_qty=?,free_qty=?,product_ids=?,
+                status='DRAFT',updated_at=?,canceled_at=NULL WHERE id=?""",
+                (payload.name.strip(),payload.description.strip(),payload.buy_qty,payload.free_qty,json.dumps(product_ids),datetime.utcnow().isoformat()+"Z",group_id))
+            await conn.commit(); await cursor.execute("SELECT * FROM offer_groups WHERE id=?", (group_id,))
+            return dict_to_offer_group(await cursor.fetchone())
+    finally: await conn.close()
+
+@app.post("/offer-groups/{group_id}/apply")
+async def apply_offer_group(group_id: str):
+    conn = await get_db_connection(); first_product = None
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT * FROM offer_groups WHERE id=?", (group_id,)); row = await cursor.fetchone()
+            if not row: raise HTTPException(status_code=404, detail="Offer group not found")
+            group = dict_to_offer_group(row); ids = group["product_ids"]
+            placeholders = ",".join("?" for _ in ids)
+            await cursor.execute(f"SELECT product_id,offer_group_id FROM products WHERE product_id IN ({placeholders})", ids)
+            conflicts = [r[0] for r in await cursor.fetchall() if r[1] and r[1] != group_id]
+            if conflicts: raise HTTPException(status_code=409, detail={"message":"Products already belong to another offer group", "product_ids":conflicts})
+            await cursor.execute("UPDATE products SET offer_active=0,offer_buy_qty=0,offer_free_qty=0,offer_group_id=NULL WHERE offer_group_id=?", (group_id,))
+            await cursor.execute(f"UPDATE products SET offer_active=1,offer_buy_qty=?,offer_free_qty=?,offer_group_id=? WHERE product_id IN ({placeholders})",
+                                 [group["buy_qty"],group["free_qty"],group_id,*ids])
+            now=datetime.utcnow().isoformat()+"Z"; await cursor.execute("UPDATE offer_groups SET status='ACTIVE',updated_at=?,canceled_at=NULL WHERE id=?",(now,group_id))
+            await conn.commit(); await cursor.execute("SELECT * FROM products WHERE product_id=?",(ids[0],)); first_product=dict_to_product(await cursor.fetchone())
+            group["status"]="ACTIVE"; group["updated_at"]=now
+        try:
+            for pid in ids:
+                firebaseAuth.db.reference(f"datas/announcement/all/offer_{pid}").delete()
+            publish_offer_group(group, first_product, notify=True)
+        except Exception as e: print(f"Warning: group applied but announcement failed: {e}")
+        return group
+    finally: await conn.close()
+
+@app.post("/offer-groups/{group_id}/cancel")
+async def cancel_offer_group(group_id: str):
+    conn=await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT * FROM offer_groups WHERE id=?",(group_id,)); row=await cursor.fetchone()
+            if not row: raise HTTPException(status_code=404,detail="Offer group not found")
+            group=dict_to_offer_group(row); now=datetime.utcnow().isoformat()+"Z"
+            await cursor.execute("UPDATE products SET offer_active=0,offer_buy_qty=0,offer_free_qty=0,offer_group_id=NULL WHERE offer_group_id=?",(group_id,))
+            await cursor.execute("UPDATE offer_groups SET status='CANCELED',updated_at=?,canceled_at=? WHERE id=?",(now,now,group_id)); await conn.commit()
+            group["status"]="CANCELED"; group["updated_at"]=now; group["canceled_at"]=now
+        try: publish_offer_group(group)
+        except Exception as e: print(f"Warning: group canceled but banner cleanup failed: {e}")
+        return group
+    finally: await conn.close()
+
+@app.delete("/offer-groups/{group_id}")
+async def delete_offer_group(group_id: str):
+    conn=await get_db_connection()
+    try:
+        async with conn.cursor() as cursor:
+            await cursor.execute("SELECT status FROM offer_groups WHERE id=?",(group_id,)); row=await cursor.fetchone()
+            if not row: raise HTTPException(status_code=404,detail="Offer group not found")
+            if row[0] != "CANCELED": raise HTTPException(status_code=409,detail="Cancel the offer before deleting its group")
+            await cursor.execute("DELETE FROM offer_groups WHERE id=?",(group_id,)); await conn.commit()
+            return {"message":"Offer group deleted"}
+    finally: await conn.close()
+
 
 @app.post("/schema/add-columns", response_model=Dict[str, Any])
 async def add_columns(request: AddColumnRequest): # Made async

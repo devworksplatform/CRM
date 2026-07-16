@@ -210,6 +210,10 @@ public class SearchActivity extends AppCompatActivity {
 		circle2.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
 		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
 		recyclerview1.setLayoutManager(gridlayoutManager);
+		if (getIntent().hasExtra("offer_group_id")) {
+			recyclerviewLeft.setVisibility(View.GONE);
+			edittext1.setHint("Search products in this group offer");
+		}
 
 
 		findViewById(R.id.init_loading).setOnClickListener(new OnClickListener() {
@@ -564,8 +568,18 @@ public class SearchActivity extends AppCompatActivity {
 
 		// Create filters list
 		List<HashMap<String, String>> filters = new ArrayList<>();
+		boolean isOfferGroup = getIntent().hasExtra("offer_group_id")
+				&& getIntent().getStringExtra("offer_group_id") != null
+				&& !getIntent().getStringExtra("offer_group_id").isEmpty();
+		if (isOfferGroup) {
+			HashMap<String, String> groupFilter = new HashMap<>();
+			groupFilter.put("field", "offer_group_id");
+			groupFilter.put("operator", "eq");
+			groupFilter.put("value", getIntent().getStringExtra("offer_group_id"));
+			filters.add(groupFilter);
+		}
 
-		if (getIntent().hasExtra("category") && !getIntent().getStringExtra("category").equals("")) {
+		if (!isOfferGroup && getIntent().hasExtra("category") && !getIntent().getStringExtra("category").equals("")) {
 			//Main Category
 			HashMap<String, String> filterAND = new HashMap<>();
 			filterAND.put("field", "cat_id");
@@ -588,7 +602,7 @@ public class SearchActivity extends AppCompatActivity {
 
 				filters.addAll(filters_t);
 			}
-		} else {
+		} else if (!isOfferGroup) {
 			//Main Category
 			HashMap<String, String> filterAND = new HashMap<>();
 			filterAND.put("field", "cat_id");

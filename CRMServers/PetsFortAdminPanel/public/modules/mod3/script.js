@@ -46,6 +46,7 @@ async function initMod3() {
     const offerActiveInput = document.getElementById('product-offer-active');
     const offerBuyQtyInput = document.getElementById('product-offer-buy-qty');
     const offerFreeQtyInput = document.getElementById('product-offer-free-qty');
+    const offerGroupInfo = document.getElementById('product-offer-group-info');
     const newImageUrlInput = document.getElementById('product-new-image-url');
     const addImageBtn = document.getElementById('product-add-image-btn');
     const imagePreviewList = document.getElementById('product-image-preview-list');
@@ -75,6 +76,7 @@ async function initMod3() {
     const saveProducts = (products) => StorageHelper.save(PRODUCT_KEY, products);
     const getCategories = () => StorageHelper.load(CATEGORY_KEY, []);
     const getSubcategories = () => StorageHelper.load(SUBCATEGORY_KEY, []);
+    let offerGroups = [];
 
     // --- State ---
     let currentImageUrls = []; // Store image URLs for the product being edited/added
@@ -107,7 +109,7 @@ async function initMod3() {
                 <td>${escapeHtml(prod.product_name)}</td>
                 <td>${escapeHtml(categoryName)}</td>
                 <td class="text-right">${escapeHtml(prod.stock)}</td>
-                <td>${prod.offer_active ? `Buy ${escapeHtml(prod.offer_buy_qty)} + ${escapeHtml(prod.offer_free_qty)} free` : '—'}</td>
+                <td>${prod.offer_active ? `Buy ${escapeHtml(prod.offer_buy_qty)} + ${escapeHtml(prod.offer_free_qty)} free${prod.offer_group_id ? '<br><small>Group offer</small>' : ''}` : '—'}</td>
                 <td class="text-right">${escapeHtml(prod.cost_rate.toFixed(2))}</td>
                 <td class="text-right">${escapeHtml(prod.cost_mrp.toFixed(2))}</td>
                 <td class="actions-cell">
@@ -194,6 +196,8 @@ async function initMod3() {
         saveButton.innerHTML = '<i data-feather="save"></i> Save Product'; // Default text
         cancelButton.style.display = 'none';
         currentImageUrls = []; // Clear image array
+        offerGroupInfo.style.display = 'none';
+        offerGroupInfo.textContent = '';
         renderImagePreviews();
         productSubcategoriesContainer.innerHTML = '<p class="text-muted">Select a category first.</p>'; // Reset subcats
         feather.replace();
@@ -217,6 +221,15 @@ async function initMod3() {
         offerActiveInput.checked = Boolean(product.offer_active);
         offerBuyQtyInput.value = product.offer_buy_qty || 10;
         offerFreeQtyInput.value = product.offer_free_qty || 1;
+        if (product.offer_group_id) {
+            const group = offerGroups.find(item => item.id === product.offer_group_id);
+            const groupName = group?.name || 'an active offer group';
+            offerGroupInfo.style.display = 'block';
+            offerGroupInfo.textContent = `Included in "${groupName}" (Buy ${product.offer_buy_qty}, get ${product.offer_free_qty} free). Changing the offer here will remove this product from that group.`;
+        } else {
+            offerGroupInfo.style.display = 'none';
+            offerGroupInfo.textContent = '';
+        }
 
         // Populate subcategories
         const checkedSubIds = product.cat_sub ? product.cat_sub.filter(id => id) : []; // Handle empty string/null
@@ -284,6 +297,7 @@ async function initMod3() {
     async function processProductSaveFromForm() {
         const editId = productIdInput.value;
         const isUpdating = Boolean(editId);
+        const existingProduct = isUpdating ? getProducts().find(p => p.product_id === editId) : null;
 
         // Get selected subcategory IDs from the current form state
         const selectedSubcategoryCheckboxes = productSubcategoriesContainer.querySelectorAll('input[name="product-subcategories"]:checked');
@@ -307,6 +321,7 @@ async function initMod3() {
             offer_active: offerActiveInput.checked,
             offer_buy_qty: offerActiveInput.checked ? (parseInt(offerBuyQtyInput.value, 10) || 0) : 0,
             offer_free_qty: offerActiveInput.checked ? (parseInt(offerFreeQtyInput.value, 10) || 0) : 0,
+            offer_group_id: existingProduct?.offer_group_id || null,
             stock: parseInt(stockInput.value, 10) || 0,
             // Assign a unique local storage ID if it's a new product
             id: editId ? getProducts().find(p=>p.product_id === editId)?.id : generateId(),
@@ -330,14 +345,25 @@ async function initMod3() {
                 return false;
            }
 
+           const groupedOfferChanged = Boolean(existingProduct?.offer_group_id) && (
+               Boolean(existingProduct.offer_active) !== product.offer_active ||
+               Number(existingProduct.offer_buy_qty) !== product.offer_buy_qty ||
+               Number(existingProduct.offer_free_qty) !== product.offer_free_qty
+           );
+           if (groupedOfferChanged && !confirm('Changing this offer will remove the product from its offer group and make it a standalone product offer. Continue?')) {
+               return false;
+           }
+
         let products = getProducts();
 
         try {
             if (isUpdating) {
-                await callApi("PUT", "products/" + editId, product);
-                 // Update local storage list - convert cat_sub back to array
-                 product.cat_sub = product.cat_sub.split(',').filter(Boolean);
-                products = products.map(p => (p.product_id === editId ? product : p));
+                const savedProduct = await callApi("PUT", "products/" + editId, product);
+                const normalizedProduct = {
+                    ...savedProduct,
+                    cat_sub: Array.isArray(savedProduct.cat_sub) ? savedProduct.cat_sub : (savedProduct.cat_sub || '').split(',').filter(Boolean)
+                };
+                products = products.map(p => (p.product_id === editId ? normalizedProduct : p));
                 saveProducts(products);
                 // showToast(`Product "${product.product_name}" updated.`, 'success'); // Toast handled by caller or specific logic
                 return true; // Indicate success
@@ -957,13 +983,17 @@ async function initMod3() {
     // Load initial product data from API and save to local storage
      showLoading("Loading products..."); // Show loading indicator
      try {
-         const productData = await callApi('POST', 'products/query', {
-             filters: [],
-             limit: 10000, // Adjust limit as needed
-             offset: 0,
-             order_by: "product_name",
-             order_direction: "ASC"
-         });
+         const [productData, groupData] = await Promise.all([
+             callApi('POST', 'products/query', {
+                 filters: [],
+                 limit: 10000, // Adjust limit as needed
+                 offset: 0,
+                 order_by: "product_name",
+                 order_direction: "ASC"
+             }),
+             callApi('GET', 'offer-groups')
+         ]);
+         offerGroups = Array.isArray(groupData) ? groupData : [];
 
          const productList = Array.isArray(productData) ? productData.map(p => ({
              id: p.id, // Assuming this is the local storage UUID-like ID
@@ -979,11 +1009,24 @@ async function initMod3() {
              cost_mrp: parseFloat(p.cost_mrp) || 0,
              cost_gst: parseFloat(p.cost_gst) || 0,
              cost_dis: parseFloat(p.cost_dis) || 0,
+             offer_active: Boolean(p.offer_active),
+             offer_buy_qty: parseInt(p.offer_buy_qty, 10) || 0,
+             offer_free_qty: parseInt(p.offer_free_qty, 10) || 0,
+             offer_group_id: p.offer_group_id || null,
              stock: parseInt(p.stock, 10) || 0
          })) : [];
 
          saveProducts(productList); // Save loaded products to local storage
          renderProductTable(); // Load and display products from local storage
+         const pendingEditId = sessionStorage.getItem('admin-edit-product-id');
+         if (pendingEditId) {
+             sessionStorage.removeItem('admin-edit-product-id');
+             const pendingProduct = productList.find(product => product.product_id === pendingEditId);
+             if (pendingProduct) {
+                 populateForm(pendingEditId);
+                 productForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+             }
+         }
           showToast(`Loaded ${productList.length} products.`, 'info', 3000);
 
      } catch (error) {

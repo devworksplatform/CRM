@@ -20,6 +20,7 @@ public class Product implements Serializable {
     private int offerBuyQty;
     private int offerFreeQty;
     private boolean offerActive;
+    private String offerGroupId;
     private int stock;
     private String id;
 
@@ -76,6 +77,7 @@ public class Product implements Serializable {
             this.setOfferBuyQty(product.offerBuyQty);
             this.setOfferFreeQty(product.offerFreeQty);
             this.setOfferActive(product.offerActive);
+            this.setOfferGroupId(product.offerGroupId);
             this.setStock(product.stock);
             this.setId(product.id);
         }
@@ -197,6 +199,8 @@ public class Product implements Serializable {
     public void setOfferFreeQty(int offerFreeQty) { this.offerFreeQty = Math.max(0, offerFreeQty); }
     public boolean isOfferActive() { return offerActive && offerBuyQty > 0 && offerFreeQty > 0; }
     public void setOfferActive(boolean offerActive) { this.offerActive = offerActive; }
+    public String getOfferGroupId() { return offerGroupId == null ? "" : offerGroupId; }
+    public void setOfferGroupId(String offerGroupId) { this.offerGroupId = offerGroupId == null ? "" : offerGroupId; }
     public long getFreeQuantity(long paidQuantity) {
         return isOfferActive() ? (paidQuantity / offerBuyQty) * offerFreeQty : 0L;
     }

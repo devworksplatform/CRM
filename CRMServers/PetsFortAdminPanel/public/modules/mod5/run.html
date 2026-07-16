@@ -1,62 +1,63 @@
-<div class="module-container mod3-container">
+<style>
+  .standalone-panel { margin: 0; }
+  .standalone-tools { display: flex; align-items: center; gap: 10px; }
+  .standalone-tools input { width: 260px; }
+  .standalone-count { white-space: nowrap; border-radius: 999px; padding: 5px 10px; background: #ecfdf5; color: #047857; font-size: 12px; font-weight: 800; }
+  .standalone-offer-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; padding: 14px 18px 18px; }
+  .standalone-offer-card { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 11px; align-items: center; border: 1px solid #e2e8f0; border-radius: 12px; padding: 11px; background: #fff; }
+  .standalone-offer-card img, .standalone-offer-image { width: 48px; height: 48px; border-radius: 9px; object-fit: cover; background: #e2e8f0; }
+  .standalone-offer-main strong, .standalone-offer-main small { display: block; }
+  .standalone-offer-main small { color: #64748b; margin-top: 2px; }
+  .standalone-offer-bottom { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid #eef2f7; padding-top: 9px; }
+  .standalone-rule { font-weight: 800; color: #047857; }
+  @media (max-width: 650px) { .standalone-panel .card-header, .standalone-tools { align-items: stretch; flex-direction: column; } .standalone-tools input { width: 100%; } }
+</style>
+<div class="module-container offers-manager">
+  <section class="offers-hero">
+    <div><span class="eyebrow">CAMPAIGN MANAGER</span><h2>Offer groups</h2><p>Build one offer from multiple searches, then notify every shop once.</p></div>
+    <div class="hero-stat"><strong id="offer-selected-count">0</strong><span>products selected</span></div>
+  </section>
 
-    <div class="card">
-         <div class="card-header"> <h3 id="product-form-title">Modify Banners</h3> </div>
-        <form id="product-form">
+  <div class="offers-grid">
+    <section class="card offer-builder">
+      <div class="card-header"><div><h3>Create an offer group</h3><p class="text-muted">Selections remain while you change filters.</p></div><button id="offer-clear-selection" class="btn btn-outline btn-sm">Clear selection</button></div>
+      <div class="offer-fields">
+        <div class="form-group"><label for="offer-group-name">Group name</label><input id="offer-group-name" maxlength="120" placeholder="July wholesale offer"></div>
+        <div class="form-group"><label for="offer-buy-qty">Buy quantity</label><input id="offer-buy-qty" type="number" min="1" value="10"></div>
+        <div class="form-group"><label for="offer-free-qty">Free quantity</label><input id="offer-free-qty" type="number" min="1" value="1"></div>
+      </div>
+      <div class="form-group"><label for="offer-description">Notification message</label><textarea id="offer-description" maxlength="500" placeholder="Buy more and save on selected products."></textarea><small>This becomes the single push notification and app banner message.</small></div>
 
+      <div class="offer-filterbar">
+        <input id="offer-product-search" type="search" placeholder="Search name, code, HSN…">
+        <select id="offer-category-filter"><option value="">All categories</option></select>
+        <select id="offer-status-filter"><option value="">Any offer status</option><option value="none">No active offer</option><option value="active">Has an offer</option></select>
+        <select id="offer-stock-filter"><option value="">Any stock</option><option value="in">In stock</option><option value="out">Out of stock</option></select>
+      </div>
+      <div class="selection-toolbar"><label><input type="checkbox" id="offer-select-all"> Select all matching products</label><span id="offer-filter-count">0 matching</span></div>
+      <div id="offer-product-list" class="offer-product-list"><p class="empty-state">Loading products…</p></div>
+      <div class="selected-tray"><div><strong>Selected across all filters</strong><span id="offer-selection-summary">No products selected</span></div><div id="offer-selected-chips" class="selected-chips"></div></div>
+      <div class="form-actions"><button id="offer-create-apply" class="btn btn-primary"><i data-feather="send"></i> Create group & activate</button></div>
+    </section>
 
-            <div class="form-group">
-                 <label>Offer Banner Images (Enter URLs)</label>
-                 <div class="d-flex gap-1 align-center">
-                    <input type="url" id="product-new-image-url" placeholder="https://example.com/image.jpg" style="flex-grow: 1;">
-                    <button type="button" id="product-add-image-btn" onclick="window.addImage()" class="btn btn-secondary btn-sm"><i data-feather="plus"></i> Add URL</button>
-                 </div>
-                 
-                 <div id="product-image-preview-list" class="img-preview-list-banner">
-                     <p class="text-muted" id="no-images-text">No images added yet.</p>
-                 </div>
-            </div>
-            <div id="image-picker-container">
-                <style>
-                    @import url('https://cdn.tailwindcss.com');
-                    @import url('https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css');
-                    /* Modal animations */
-                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                    @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                  </style>
-                
-                  <div class="bg-white rounded-2xl shadow-lg p-6 w-full max-w-lg">
-                    <h1 class="text-2xl font-semibold text-gray-800 mb-4">Upload Image</h1>
-                    <label class="block">
-                      <span class="sr-only">Choose image</span>
-                      <input type="file" id="fileInput" accept="image/*"
-                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-                    </label>
-                    <div id="preview" class="mt-6 flex justify-center items-center"></div>
-                  </div>
-                
-                  <div id="cropModal"
-                    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-                    <div
-                      class="bg-white rounded-2xl shadow-xl w-11/12 max-w-2xl p-6 animate-[fadeIn_0.3s] animate-[scaleIn_0.3s]">
-                      <h2 class="text-xl font-medium text-gray-800 mb-4">Adjust Crop (Square)</h2>
-                      <div
-                        class="crop-container w-full h-64 md:h-80 bg-gray-50 flex items-center justify-center overflow-hidden rounded-lg">
-                        <img id="cropImage" src="" alt="To crop" class="max-w-full max-h-full" />
-                      </div>
-                      <div class="mt-4 flex justify-end space-x-3">
-                        <button type="button" id="cancelBtn"
-                          class="px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition">Cancel</button>
-                        <button type="button" id="cropBtn"
-                          class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">Crop & Use</button>
-                      </div>
-                    </div>
-                  </div>
+    <aside class="card group-panel">
+      <div class="card-header"><div><h3>Managed groups</h3><p class="text-muted">Cancel before deleting.</p></div><button id="offer-refresh" class="btn btn-outline btn-sm"><i data-feather="refresh-cw"></i></button></div>
+      <div id="offer-group-list" class="offer-group-list"><p class="empty-state">Loading groups…</p></div>
+    </aside>
+  </div>
 
-            </div>
-
-        </form>
+  <section class="card standalone-panel">
+    <div class="card-header">
+      <div><h3>Standalone product offers</h3><p class="text-muted">Active offers that are not controlled by an offer group.</p></div>
+      <div class="standalone-tools"><span id="standalone-offer-count" class="standalone-count">0 offers</span><input id="standalone-offer-search" type="search" placeholder="Search standalone offers"></div>
     </div>
+    <div id="standalone-offer-list" class="standalone-offer-list"><p class="empty-state">Loading standalone offers...</p></div>
+  </section>
 
-
+  <details class="card manual-banners">
+    <summary>Manual banner images</summary>
+    <p class="text-muted">Optional image-only banners. Group offer banners are managed automatically.</p>
+    <div class="manual-banner-add"><input type="url" id="manual-banner-url" placeholder="https://example.com/banner.jpg"><button id="manual-banner-add" class="btn btn-secondary">Add banner</button></div>
+    <div id="manual-banner-list" class="manual-banner-list"></div>
+  </details>
 </div>

@@ -260,6 +260,8 @@ public class HomeFragmentActivity extends Fragment {
 									announcementMap.put("title", String.valueOf(child.child("title").getValue() == null ? "" : child.child("title").getValue()));
 									announcementMap.put("subtitle", String.valueOf(child.child("subtitle").getValue() == null ? "" : child.child("subtitle").getValue()));
 									announcementMap.put("product_id", String.valueOf(child.child("product_id").getValue() == null ? "" : child.child("product_id").getValue()));
+									announcementMap.put("type", String.valueOf(child.child("type").getValue() == null ? "" : child.child("type").getValue()));
+									announcementMap.put("group_id", String.valueOf(child.child("group_id").getValue() == null ? "" : child.child("group_id").getValue()));
 								} else {
 									announcementMap.put("img", String.valueOf(child.getValue()));
 								}
@@ -577,7 +579,12 @@ public class HomeFragmentActivity extends Fragment {
 			cardview1.setRadius((float)15);
 			cardview1.setCardElevation((float)5);
 			String productId = _data.get((int)_position).get("product_id");
-			if (productId != null && !productId.isEmpty()) {
+			String groupId = _data.get((int)_position).get("group_id");
+			if (groupId != null && !groupId.isEmpty()) {
+				cardview1.setClickable(true);
+				cardview1.setForeground(getResources().getDrawable(android.R.drawable.list_selector_background));
+				cardview1.setOnClickListener(v -> openOfferGroup(groupId, title));
+			} else if (productId != null && !productId.isEmpty()) {
 				cardview1.setClickable(true);
 				cardview1.setForeground(getResources().getDrawable(android.R.drawable.list_selector_background));
 				cardview1.setOnClickListener(v -> openOfferProduct(productId));
@@ -586,6 +593,13 @@ public class HomeFragmentActivity extends Fragment {
 			_container.addView(_view);
 			return _view;
 		}
+	}
+
+	private void openOfferGroup(String groupId, String title) {
+		Intent intent = new Intent(getContext(), SearchActivity.class);
+		intent.putExtra("offer_group_id", groupId);
+		intent.putExtra("offer_group_title", title == null ? "Group offer" : title);
+		startActivity(intent);
 	}
 
 	private void openOfferProduct(String productId) {

@@ -816,6 +816,7 @@ public class Business {
                 product.setOfferBuyQty(jsonObject.optInt("offer_buy_qty", 0));
                 product.setOfferFreeQty(jsonObject.optInt("offer_free_qty", 0));
                 product.setOfferActive(jsonObject.optBoolean("offer_active", false));
+                product.setOfferGroupId(jsonObject.optString("offer_group_id", ""));
                 product.setStock(jsonObject.optInt("stock"));
                 product.setId(jsonObject.optString("id"));
 
@@ -908,6 +909,7 @@ public class Business {
                     product.setOfferBuyQty(productJson.optInt("offer_buy_qty", 0));
                     product.setOfferFreeQty(productJson.optInt("offer_free_qty", 0));
                     product.setOfferActive(productJson.optBoolean("offer_active", false));
+                    product.setOfferGroupId(productJson.optString("offer_group_id", ""));
                     product.setStock(productJson.optInt("stock"));
                     product.setId(productJson.optString("id"));
 //                    product.setCreatedAt(productJson.optString("created_at"));
@@ -1250,6 +1252,7 @@ public class Business {
                         product.setOfferBuyQty(itemDetailJson.optInt("offer_buy_qty", 0));
                         product.setOfferFreeQty(itemDetailJson.optInt("offer_free_qty", 0));
                         product.setOfferActive(itemDetailJson.optInt("free_count", 0) > 0);
+                        product.setOfferGroupId(itemDetailJson.optString("offer_group_id", ""));
                         product.setStock(itemDetailJson.optInt("stock"));
                         itemsDetailList.add(product);
                     }
