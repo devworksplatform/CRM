@@ -38,18 +38,18 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:paddingStart="61dp"
-                android:paddingTop="12dp"
+                android:paddingTop="7dp"
                 android:paddingEnd="10dp"
-                android:paddingBottom="12dp"
+                android:paddingBottom="7dp"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:paddingEnd="12dp">
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
+                        android:paddingEnd="9dp">
 
                     <TextView
                         android:id="@+id/offerBannerBadge"
@@ -59,39 +59,39 @@
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.08"
                         android:paddingStart="9dp"
-                        android:paddingTop="4dp"
+                        android:paddingTop="3dp"
                         android:paddingEnd="9dp"
-                        android:paddingBottom="4dp"
+                        android:paddingBottom="3dp"
                         android:text="GROUP OFFER"
                         android:textColor="#4C1D95"
-                        android:textSize="9sp" />
+                        android:textSize="8sp" />
 
                     <TextView
                         android:id="@+id/offerBannerTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
+                        android:layout_marginTop="4dp"
                         android:ellipsize="end"
                         android:fontFamily="sans-serif-medium"
                         android:maxLines="2"
                         android:textColor="#FFFFFF"
-                        android:textSize="16sp" />
+                        android:textSize="15sp" />
 
                     <TextView
                         android:id="@+id/offerBannerSubtitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="1dp"
                         android:ellipsize="end"
                         android:maxLines="1"
                         android:textColor="#FFF7ED"
-                        android:textSize="11sp" />
+                        android:textSize="10sp" />
 
                     <TextView
                         android:id="@+id/offerBannerAction"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="5dp"
+                        android:layout_marginTop="2dp"
                         android:fontFamily="sans-serif-medium"
                         android:text="View products  →"
                         android:textColor="#FDE047"
@@ -138,6 +138,7 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginEnd="5dp"
                 android:contentDescription="Offer celebration"
+                android:rotation="-90"
                 android:src="@drawable/offer_party_popper_icon"
                 android:visibility="gone" />
         </FrameLayout>

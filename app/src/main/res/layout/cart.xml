@@ -146,7 +146,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Unit price"
                                     android:textColor="#84928C"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
 
                                 <TextView
                                     android:id="@+id/rateTextView"
@@ -154,21 +154,21 @@
                                     android:layout_height="wrap_content"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="#047857"
-                                    android:textSize="15sp" />
+                                    android:textSize="19sp" />
 
                                 <TextView
                                     android:id="@+id/gstTextView"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textColor="#718078"
-                                    android:textSize="10sp" />
+                                    android:textSize="12sp" />
 
                                 <TextView
                                     android:id="@+id/discountTextView"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textColor="#BE123C"
-                                    android:textSize="10sp" />
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
                             <LinearLayout
@@ -183,7 +183,7 @@
                                     android:layout_height="wrap_content"
                                     android:text="Total"
                                     android:textColor="#84928C"
-                                    android:textSize="9sp" />
+                                    android:textSize="10sp" />
 
                                 <TextView
                                     android:id="@+id/totalTextView"
@@ -191,21 +191,21 @@
                                     android:layout_height="wrap_content"
                                     android:fontFamily="sans-serif-medium"
                                     android:textColor="#17372C"
-                                    android:textSize="15sp" />
+                                    android:textSize="19sp" />
 
                                 <TextView
                                     android:id="@+id/gstTotalTextView"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textColor="#718078"
-                                    android:textSize="10sp" />
+                                    android:textSize="12sp" />
 
                                 <TextView
                                     android:id="@+id/discountTotalTextView"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:textColor="#BE123C"
-                                    android:textSize="10sp" />
+                                    android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
 

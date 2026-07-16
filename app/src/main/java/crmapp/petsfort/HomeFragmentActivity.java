@@ -609,8 +609,8 @@ public class HomeFragmentActivity extends Fragment {
 				celebrationIcon.setAlpha(0f);
 				celebrationIcon.setTranslationX(55f);
 				celebrationIcon.setTranslationY(-20f);
-				celebrationIcon.setRotation(24f);
-				celebrationIcon.animate().alpha(1f).translationX(0f).translationY(0f).rotation(0f).setStartDelay(100).setDuration(430)
+				celebrationIcon.setRotation(-66f);
+				celebrationIcon.animate().alpha(1f).translationX(0f).translationY(0f).rotation(-90f).setStartDelay(100).setDuration(430)
 						.setInterpolator(new android.view.animation.OvershootInterpolator(1.6f)).start();
 				confettiOverlay.setAlpha(0f);
 				confettiOverlay.setScaleX(0.72f);
@@ -670,7 +670,7 @@ public class HomeFragmentActivity extends Fragment {
 		ObjectAnimator popperBounce = ObjectAnimator.ofPropertyValuesHolder(
 				celebrationIcon,
 				PropertyValuesHolder.ofFloat(View.TRANSLATION_Y, 0f, -9f, 0f),
-				PropertyValuesHolder.ofFloat(View.ROTATION, 0f, 8f, -4f, 0f),
+				PropertyValuesHolder.ofFloat(View.ROTATION, -90f, -82f, -94f, -90f),
 				PropertyValuesHolder.ofFloat(View.SCALE_X, 1f, 1.12f, 1f),
 				PropertyValuesHolder.ofFloat(View.SCALE_Y, 1f, 1.12f, 1f));
 		popperBounce.setDuration(1200);

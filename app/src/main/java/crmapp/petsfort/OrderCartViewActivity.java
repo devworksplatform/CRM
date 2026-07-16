@@ -436,12 +436,12 @@ public class OrderCartViewActivity extends AppCompatActivity {
 			discountShow.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
 			textview8.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
 			textview11.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			totalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			rateTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+			totalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
+			rateTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/salesbold.ttf"), 0);
 			gstTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			gstTotalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+			gstTotalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), Typeface.BOLD);
 			discountTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
-			discountTotalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), 0);
+			discountTotalTextView.setTypeface(Typeface.createFromAsset(getAssets(),"fonts/sailes.ttf"), Typeface.BOLD);
 
 
 			if (product.getCostDis() <= 0) {
