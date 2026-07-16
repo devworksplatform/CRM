@@ -8,7 +8,7 @@
 	<androidx.cardview.widget.CardView
 		android:id="@+id/cardview1"
 		android:layout_width="match_parent"
-		android:layout_height="125dp"
+		android:layout_height="match_parent"
 		android:layout_marginTop="5dp"
 		android:layout_marginBottom="5dp"
 		android:orientation="vertical"
@@ -20,28 +20,41 @@
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
 			android:src="@drawable/default_image"
-			android:scaleType="fitXY" />
+			android:scaleType="centerCrop" />
 		<LinearLayout
 			android:id="@+id/offerBannerTextContainer"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:layout_gravity="bottom"
-			android:background="#CC123B2A"
+			android:background="@drawable/offer_banner_scrim"
 			android:orientation="vertical"
-			android:padding="10dp"
+			android:paddingStart="16dp"
+			android:paddingTop="22dp"
+			android:paddingEnd="16dp"
+			android:paddingBottom="12dp"
 			android:visibility="gone">
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="3dp"
+				android:background="@drawable/offer_badge_background"
+				android:text="LIMITED OFFER"
+				android:textColor="#FFFFFF"
+				android:textSize="9sp"
+				android:textStyle="bold" />
 			<TextView
 				android:id="@+id/offerBannerTitle"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
 				android:textColor="#FFFFFF"
-				android:textSize="17sp"
+				android:textSize="18sp"
 				android:textStyle="bold" />
 			<TextView
 				android:id="@+id/offerBannerSubtitle"
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
-				android:maxLines="2"
+				android:maxLines="1"
+				android:ellipsize="end"
 				android:textColor="#E8FFFFFF"
 				android:textSize="12sp" />
 		</LinearLayout>

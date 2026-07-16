@@ -39,6 +39,20 @@
                     android:scaleType="centerCrop" />
 
                 <TextView
+                    android:id="@+id/offerSearchBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="start|top"
+                    android:layout_margin="10dp"
+                    android:background="@drawable/offer_badge_background"
+                    android:elevation="4dp"
+                    android:text="BUY 10  •  GET 1 FREE"
+                    android:textColor="#FFFFFF"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
                     android:id="@+id/discountShow"
                     android:focusable="false"
                     android:gravity="center"

@@ -109,17 +109,33 @@
 							android:ellipsize="end"/>
 					</LinearLayout>
 
-					<TextView
-						android:id="@+id/offerTextView"
+					<LinearLayout
+						android:id="@+id/offerContainer"
 						android:layout_width="match_parent"
 						android:layout_height="wrap_content"
-						android:gravity="center"
-						android:paddingTop="3dp"
-						android:text="Buy 10, get 1 FREE"
-						android:textColor="#15803D"
-						android:textSize="12sp"
-						android:textStyle="bold"
-						android:visibility="gone" />
+						android:layout_marginTop="6dp"
+						android:background="@drawable/offer_card_background"
+						android:gravity="start|center_vertical"
+						android:orientation="vertical"
+						android:padding="8dp"
+						android:visibility="gone">
+						<TextView
+							android:id="@+id/offerTextView"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content"
+							android:text="BUY 10  •  GET 1 FREE"
+							android:textColor="#047857"
+							android:textSize="12sp"
+							android:textStyle="bold" />
+						<TextView
+							android:id="@+id/offerSummaryTextView"
+							android:layout_width="match_parent"
+							android:layout_height="wrap_content"
+							android:layout_marginTop="2dp"
+							android:text="11 delivered · Pay for 10"
+							android:textColor="#4B5563"
+							android:textSize="11sp" />
+					</LinearLayout>
 
 					<LinearLayout
 						android:id="@+id/linear5"

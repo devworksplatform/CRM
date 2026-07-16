@@ -269,8 +269,51 @@
 
 								</LinearLayout>
 
+							<LinearLayout
+								android:id="@+id/offerContainer"
+								android:layout_width="match_parent"
+								android:layout_height="wrap_content"
+								android:layout_marginBottom="12dp"
+								android:background="@drawable/offer_card_background"
+								android:orientation="horizontal"
+								android:padding="12dp"
+								android:visibility="gone">
+								<TextView
+									android:layout_width="wrap_content"
+									android:layout_height="wrap_content"
+									android:layout_gravity="center_vertical"
+									android:background="@drawable/offer_badge_background"
+									android:text="FREE"
+									android:textColor="#FFFFFF"
+									android:textSize="11sp"
+									android:textStyle="bold" />
 								<LinearLayout
-									android:id="@+id/countLinear"
+									android:layout_width="0dp"
+									android:layout_height="wrap_content"
+									android:layout_marginStart="12dp"
+									android:layout_weight="1"
+									android:orientation="vertical">
+									<TextView
+										android:id="@+id/offerTextView"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content"
+										android:text="Buy 10 • Get 1 free"
+										android:textColor="#065F46"
+										android:textSize="15sp"
+										android:textStyle="bold" />
+									<TextView
+										android:id="@+id/offerSummaryTextView"
+										android:layout_width="match_parent"
+										android:layout_height="wrap_content"
+										android:layout_marginTop="2dp"
+										android:text="11 delivered · Pay for 10"
+										android:textColor="#4B5563"
+										android:textSize="12sp" />
+								</LinearLayout>
+							</LinearLayout>
+
+							<LinearLayout
+								android:id="@+id/countLinear"
 									android:layout_width="match_parent"
 									android:layout_height="wrap_content"
 									android:layout_marginBottom="5dp"
@@ -292,17 +335,7 @@
 											android:textColor="#F44336"
 											android:textSize="16sp" />
 
-										<TextView
-											android:id="@+id/offerTextView"
-											android:layout_width="wrap_content"
-											android:layout_height="wrap_content"
-											android:layout_marginTop="4dp"
-											android:textColor="#15803D"
-											android:textSize="14sp"
-											android:textStyle="bold"
-											android:visibility="gone" />
-
-									</LinearLayout>
+							</LinearLayout>
 
 
 									<LinearLayout

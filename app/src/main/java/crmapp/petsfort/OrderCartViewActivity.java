@@ -378,7 +378,9 @@ public class OrderCartViewActivity extends AppCompatActivity {
 
 			final ImageView imageview1 = _view.findViewById(R.id.imageview1);
 			final TextView name = _view.findViewById(R.id.name);
+			final LinearLayout offerContainer = _view.findViewById(R.id.offerContainer);
 			final TextView offerTextView = _view.findViewById(R.id.offerTextView);
+			final TextView offerSummaryTextView = _view.findViewById(R.id.offerSummaryTextView);
 
 			final View middleView = _view.findViewById(R.id.middleView);
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
@@ -416,11 +418,11 @@ public class OrderCartViewActivity extends AppCompatActivity {
 
 			name.setText(JHelpers.capitalize(JHelpers.capitalize(product.getProductName())));
 			if (product.isOfferActive()) {
-				long free = product.getFreeQuantity(product.productCount);
-				offerTextView.setVisibility(View.VISIBLE);
-				offerTextView.setText(product.productCount + " paid + " + free + " free = " + product.getFulfilledQuantity(product.productCount) + " delivered");
+				offerContainer.setVisibility(View.VISIBLE);
+				offerTextView.setText("BUY " + product.getOfferBuyQty() + "  •  GET " + product.getOfferFreeQty() + " FREE");
+				offerSummaryTextView.setText(product.getFulfilledQuantity(product.productCount) + " delivered  ·  Paid quantity " + product.productCount);
 			} else {
-				offerTextView.setVisibility(View.GONE);
+				offerContainer.setVisibility(View.GONE);
 			}
 			if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
 				Glide.with(getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);

@@ -44,8 +44,8 @@ public class ProductviewActivity extends AppCompatActivity {
 	Integer currentCount = 0;
 
 	private EditText edittext1;
-	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear;
-	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,offerTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
+	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear, offerContainer;
+	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,offerTextView,offerSummaryTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
 	private TextView mrpLabel,rateLabel,discountLabel,gstLabel;
 	private Button addButton;
 	private ImageView productImageView,plus,minus;
@@ -83,7 +83,9 @@ public class ProductviewActivity extends AppCompatActivity {
 		gstRsTextView = (TextView) findViewById(R.id.gstRsTextView);
 		productDescriptionTextView = (TextView) findViewById(R.id.productDescriptionTextView);
 		hurryUpTextView = (TextView) findViewById(R.id.hurryUpTextView);
+		offerContainer = (LinearLayout) findViewById(R.id.offerContainer);
 		offerTextView = (TextView) findViewById(R.id.offerTextView);
+		offerSummaryTextView = (TextView) findViewById(R.id.offerSummaryTextView);
 		productIdTextView = (TextView) findViewById(R.id.productIdTextView);
 		discountTextView = (TextView) findViewById(R.id.discountTextView);
 		discountRsTextView = (TextView) findViewById(R.id.discountRsTextView);
@@ -169,10 +171,11 @@ public class ProductviewActivity extends AppCompatActivity {
 
 		productDescriptionTextView.setText(product.getProductDesc());
 		if (product.isOfferActive()) {
-			offerTextView.setVisibility(View.VISIBLE);
-			offerTextView.setText(product.getOfferLabel());
+			offerContainer.setVisibility(View.VISIBLE);
+			offerTextView.setText("Buy " + product.getOfferBuyQty() + "  •  Get " + product.getOfferFreeQty() + " free");
+			offerSummaryTextView.setText("Add " + product.getOfferBuyQty() + " to unlock the offer");
 		} else {
-			offerTextView.setVisibility(View.GONE);
+			offerContainer.setVisibility(View.GONE);
 		}
 		productSecondaryNameTextView.setText("");
 		productSecondaryNameTextView.setVisibility(View.GONE);
@@ -207,6 +210,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		}
 
 		edittext1.setText(String.valueOf(currentCount));
+		updateOfferSummary();
 
 		if(isViewOnly) {
 			hurryUpTextView.setText("Thanks for purchasing this product from us!");
@@ -417,10 +421,7 @@ public class ProductviewActivity extends AppCompatActivity {
 			Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
 			edittext1.setText(String.valueOf(currentCount));
 		}
-		if (product.isOfferActive()) {
-			long free = product.getFreeQuantity(currentCount);
-			offerTextView.setText(product.getOfferLabel() + " • " + currentCount + " paid + " + free + " free = " + product.getFulfilledQuantity(currentCount) + " delivered");
-		}
+		updateOfferSummary();
 
 		if (currentCount <= 0) {
 			Business.localDB_SharedPref.deleteCartProduct(localDB,userId,product.getProductId());
@@ -429,6 +430,14 @@ public class ProductviewActivity extends AppCompatActivity {
 			map.put("count", currentCount);
 			Business.localDB_SharedPref.updateCartProduct(localDB,userId,product.getProductId(),map);
 		}
+	}
+
+	private void updateOfferSummary() {
+		if (!product.isOfferActive()) return;
+		long free = product.getFreeQuantity(currentCount);
+		offerSummaryTextView.setText(free > 0
+				? product.getFulfilledQuantity(currentCount) + " delivered  ·  Pay for " + currentCount
+				: "Add " + Math.max(0, product.getOfferBuyQty() - currentCount) + " more to unlock");
 	}
 
 	public void _Custom_Loading(final boolean _ifShow) {

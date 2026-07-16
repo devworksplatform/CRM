@@ -468,7 +468,9 @@ public class CartFragmentActivity extends Fragment {
 			final LinearLayout linear5 = _view.findViewById(R.id.linear5);
 			final LinearLayout linear21 = _view.findViewById(R.id.linear21);
 			final TextView name = _view.findViewById(R.id.name);
+			final LinearLayout offerContainer = _view.findViewById(R.id.offerContainer);
 			final TextView offerTextView = _view.findViewById(R.id.offerTextView);
+			final TextView offerSummaryTextView = _view.findViewById(R.id.offerSummaryTextView);
 
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
 			final TextView rateTextView = _view.findViewById(R.id.rateTextView);
@@ -518,10 +520,11 @@ public class CartFragmentActivity extends Fragment {
 			name.setText(JHelpers.capitalize(product.getProductName()));
 			long freeQuantity = product.getFreeQuantity(product.productCount);
 			if (product.isOfferActive()) {
-				offerTextView.setVisibility(View.VISIBLE);
-				offerTextView.setText(product.getOfferLabel() + " • " + product.productCount + " paid + " + freeQuantity + " free = " + product.getFulfilledQuantity(product.productCount) + " delivered");
+				offerContainer.setVisibility(View.VISIBLE);
+				offerTextView.setText("BUY " + product.getOfferBuyQty() + "  •  GET " + product.getOfferFreeQty() + " FREE");
+				offerSummaryTextView.setText(product.getFulfilledQuantity(product.productCount) + " delivered  ·  Pay for " + product.productCount);
 			} else {
-				offerTextView.setVisibility(View.GONE);
+				offerContainer.setVisibility(View.GONE);
 			}
 			if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
 				Glide.with(getContext().getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);

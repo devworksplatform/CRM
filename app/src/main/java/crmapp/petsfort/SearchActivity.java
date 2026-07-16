@@ -308,6 +308,7 @@ public class SearchActivity extends AppCompatActivity {
 			final TextView textviewRate = _view.findViewById(R.id.rateTextView);
 			final TextView textviewGST = _view.findViewById(R.id.gstTextView);
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
+			final TextView offerSearchBadge = _view.findViewById(R.id.offerSearchBadge);
 //			final LottieAnimationView addToCart = _view.findViewById(R.id.addToCart);
 
 
@@ -359,7 +360,13 @@ public class SearchActivity extends AppCompatActivity {
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
-			discountShow.setText(product.isOfferActive() ? product.getOfferLabel() : df.format(product.getCostDis()).concat("% OFF"));
+			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
+			if (product.isOfferActive()) {
+				offerSearchBadge.setVisibility(View.VISIBLE);
+				offerSearchBadge.setText("BUY " + product.getOfferBuyQty() + "  •  GET " + product.getOfferFreeQty() + " FREE");
+			} else {
+				offerSearchBadge.setVisibility(View.GONE);
+			}
 
 			textviewRefId.setTypeface(typeface, 0);
 			textviewName.setTypeface(typeface, 0);
@@ -369,7 +376,7 @@ public class SearchActivity extends AppCompatActivity {
 			discountShow.setTypeface(typeface, 0);
 
 
-			if (product.getCostDis() <= 0 && !product.isOfferActive()) {
+			if (product.getCostDis() <= 0) {
 				discountShow.setVisibility(View.GONE);
 			} else {
 				discountShow.setVisibility(View.VISIBLE);

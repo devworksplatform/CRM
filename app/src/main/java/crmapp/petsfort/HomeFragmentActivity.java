@@ -49,6 +49,7 @@ import androidx.core.widget.NestedScrollView;
 import crmapp.petsfort.JLogics.Business;
 import crmapp.petsfort.JLogics.Callbacker;
 import crmapp.petsfort.JLogics.JHelpers;
+import crmapp.petsfort.JLogics.Models.Product;
 import crmapp.petsfort.JLogics.Models.User;
 
 
@@ -258,6 +259,7 @@ public class HomeFragmentActivity extends Fragment {
 									announcementMap.put("img", String.valueOf(child.child("img").getValue() == null ? "" : child.child("img").getValue()));
 									announcementMap.put("title", String.valueOf(child.child("title").getValue() == null ? "" : child.child("title").getValue()));
 									announcementMap.put("subtitle", String.valueOf(child.child("subtitle").getValue() == null ? "" : child.child("subtitle").getValue()));
+									announcementMap.put("product_id", String.valueOf(child.child("product_id").getValue() == null ? "" : child.child("product_id").getValue()));
 								} else {
 									announcementMap.put("img", String.valueOf(child.getValue()));
 								}
@@ -574,10 +576,44 @@ public class HomeFragmentActivity extends Fragment {
 			}
 			cardview1.setRadius((float)15);
 			cardview1.setCardElevation((float)5);
+			String productId = _data.get((int)_position).get("product_id");
+			if (productId != null && !productId.isEmpty()) {
+				cardview1.setClickable(true);
+				cardview1.setForeground(getResources().getDrawable(android.R.drawable.list_selector_background));
+				cardview1.setOnClickListener(v -> openOfferProduct(productId));
+			}
 
 			_container.addView(_view);
 			return _view;
 		}
+	}
+
+	private void openOfferProduct(String productId) {
+		HashMap<String, String> filter = new HashMap<>();
+		filter.put("field", "product_id");
+		filter.put("operator", "eq");
+		filter.put("value", productId);
+		ArrayList<HashMap<String, String>> filters = new ArrayList<>();
+		filters.add(filter);
+		HashMap<String, Object> request = new HashMap<>();
+		request.put("filters", filters);
+		request.put("limit", 1);
+		request.put("offset", 0);
+
+		new Business.QueryApiClient().callApi(request, new Callbacker.ApiResponseWaiters.QueryApiCallback() {
+			@Override
+			public void onReceived(Business.QueryApiClient.QueryApiResponse response) {
+				if (!isAdded()) return;
+				if (response.getStatusCode() == 200 && !response.getProducts().isEmpty()) {
+					Product offerProduct = response.getProducts().get(0);
+					Intent intent = new Intent(getContext(), ProductviewActivity.class);
+					intent.putExtra("product", offerProduct);
+					startActivity(intent);
+				} else {
+					Toast.makeText(getContext(), "This offer is no longer available", Toast.LENGTH_SHORT).show();
+				}
+			}
+		});
 	}
 
 	public class Recyclerview1Adapter extends RecyclerView.Adapter<Recyclerview1Adapter.ViewHolder> {
