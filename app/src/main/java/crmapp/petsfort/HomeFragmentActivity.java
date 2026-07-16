@@ -563,30 +563,52 @@ public class HomeFragmentActivity extends Fragment {
 			final LinearLayout offerContainer = _view.findViewById(R.id.offerBannerTextContainer);
 			final TextView offerTitle = _view.findViewById(R.id.offerBannerTitle);
 			final TextView offerSubtitle = _view.findViewById(R.id.offerBannerSubtitle);
+			final TextView offerBadge = _view.findViewById(R.id.offerBannerBadge);
+			final TextView offerAction = _view.findViewById(R.id.offerBannerAction);
+			final ImageView offerImage = _view.findViewById(R.id.offerBannerImage);
 
 			String imageUrl = _data.get((int)_position).get("img");
-			if (imageUrl != null && !imageUrl.isEmpty()) {
-				Glide.with(getContext().getApplicationContext()).load(Uri.parse(imageUrl)).into(imageview1);
-			}
 			String title = _data.get((int)_position).get("title");
+			String groupId = _data.get((int)_position).get("group_id");
 			if (title != null && !title.isEmpty()) {
+				imageview1.setVisibility(View.GONE);
 				offerContainer.setVisibility(View.VISIBLE);
 				offerTitle.setText(title);
 				offerSubtitle.setText(_data.get((int)_position).get("subtitle"));
+				offerBadge.setText(groupId != null && !groupId.isEmpty() ? "GROUP OFFER" : "PRODUCT OFFER");
+				offerAction.setText(groupId != null && !groupId.isEmpty() ? "View products  →" : "View product  →");
+				if (imageUrl != null && !imageUrl.isEmpty()) {
+					Glide.with(getContext().getApplicationContext()).load(Uri.parse(imageUrl)).placeholder(R.drawable.default_image).centerCrop().into(offerImage);
+				} else {
+					offerImage.setImageResource(R.drawable.default_image);
+				}
 			} else {
 				offerContainer.setVisibility(View.GONE);
+				imageview1.setVisibility(View.VISIBLE);
+				if (imageUrl != null && !imageUrl.isEmpty()) {
+					Glide.with(getContext().getApplicationContext()).load(Uri.parse(imageUrl)).placeholder(R.drawable.default_image).centerCrop().into(imageview1);
+				}
 			}
-			cardview1.setRadius((float)15);
-			cardview1.setCardElevation((float)5);
+			cardview1.setRadius((float)18);
+			cardview1.setCardElevation((float)2);
+			cardview1.setForeground(null);
 			String productId = _data.get((int)_position).get("product_id");
-			String groupId = _data.get((int)_position).get("group_id");
+			boolean hasOfferTarget = (groupId != null && !groupId.isEmpty()) || (productId != null && !productId.isEmpty());
+			if (hasOfferTarget) {
+				cardview1.setOnTouchListener((view, event) -> {
+					if (event.getAction() == MotionEvent.ACTION_DOWN) {
+						view.animate().scaleX(0.985f).scaleY(0.985f).setDuration(80).start();
+					} else if (event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_CANCEL) {
+						view.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+					}
+					return false;
+				});
+			}
 			if (groupId != null && !groupId.isEmpty()) {
 				cardview1.setClickable(true);
-				cardview1.setForeground(getResources().getDrawable(android.R.drawable.list_selector_background));
 				cardview1.setOnClickListener(v -> openOfferGroup(groupId, title));
 			} else if (productId != null && !productId.isEmpty()) {
 				cardview1.setClickable(true);
-				cardview1.setForeground(getResources().getDrawable(android.R.drawable.list_selector_background));
 				cardview1.setOnClickListener(v -> openOfferProduct(productId));
 			}
 
@@ -600,6 +622,7 @@ public class HomeFragmentActivity extends Fragment {
 		intent.putExtra("offer_group_id", groupId);
 		intent.putExtra("offer_group_title", title == null ? "Group offer" : title);
 		startActivity(intent);
+		requireActivity().overridePendingTransition(R.anim.offer_page_enter, R.anim.offer_page_exit);
 	}
 
 	private void openOfferProduct(String productId) {
@@ -623,6 +646,7 @@ public class HomeFragmentActivity extends Fragment {
 					Intent intent = new Intent(getContext(), ProductviewActivity.class);
 					intent.putExtra("product", offerProduct);
 					startActivity(intent);
+					requireActivity().overridePendingTransition(R.anim.offer_page_enter, R.anim.offer_page_exit);
 				} else {
 					Toast.makeText(getContext(), "This offer is no longer available", Toast.LENGTH_SHORT).show();
 				}

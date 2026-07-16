@@ -88,6 +88,8 @@ public class SearchActivity extends AppCompatActivity {
 	private LinearLayout linear10;
 	private LinearLayout linear11;
 	private TextView textview1;
+	private LinearLayout offerGroupHeader;
+	private TextView offerGroupTitle, offerGroupSubtitle;
 
 	private CardView cardview1;
 	
@@ -150,6 +152,9 @@ public class SearchActivity extends AppCompatActivity {
 		linear10 = findViewById(R.id.linear10);
 		linear11 = findViewById(R.id.linear11);
 		textview1 = findViewById(R.id.textview1);
+		offerGroupHeader = findViewById(R.id.offerGroupHeader);
+		offerGroupTitle = findViewById(R.id.offerGroupTitle);
+		offerGroupSubtitle = findViewById(R.id.offerGroupSubtitle);
 
 		cardview1 = findViewById(R.id.cartview1);
 
@@ -208,11 +213,19 @@ public class SearchActivity extends AppCompatActivity {
 		linear15.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
 		linear16.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)100, 0xFFE8E8E8));
 		circle2.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b) { this.setCornerRadius(a); this.setColor(b); return this; } }.getIns((int)360, 0xFFE8E8E8));
-		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false); 
+		GridLayoutManager gridlayoutManager= new GridLayoutManager(getApplicationContext(), 2, GridLayoutManager.VERTICAL,true); gridlayoutManager.setReverseLayout(false);
 		recyclerview1.setLayoutManager(gridlayoutManager);
+		recyclerview1.setClipToPadding(false);
+		recyclerview1.setPadding(3, 0, 3, (int) (80 * getResources().getDisplayMetrics().density));
 		if (getIntent().hasExtra("offer_group_id")) {
 			recyclerviewLeft.setVisibility(View.GONE);
-			edittext1.setHint("Search products in this group offer");
+			offerGroupHeader.setVisibility(View.VISIBLE);
+			offerGroupTitle.setText(getIntent().getStringExtra("offer_group_title") == null ? "Group offer" : getIntent().getStringExtra("offer_group_title"));
+			offerGroupSubtitle.setText("Loading products included in this offer…");
+			edittext1.setHint("Search within this offer");
+			textview1.setText("No products are currently available in this offer");
+		} else {
+			offerGroupHeader.setVisibility(View.GONE);
 		}
 
 
@@ -234,7 +247,7 @@ public class SearchActivity extends AppCompatActivity {
 				@Override
 				public void onSearchCompleted() {
 					long elapsed = System.currentTimeMillis() - loadingStartTime;
-					long delay = Math.max(0, 1000 - elapsed);
+					long delay = Math.max(0, 350 - elapsed);
 
 					new Handler(Looper.getMainLooper()).postDelayed(() -> {
 						loadingView.animate()
@@ -354,9 +367,9 @@ public class SearchActivity extends AppCompatActivity {
 //			}
 
 			if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
-				text += "Code-(".concat(product.getProductCid()).concat(")");
+				text += "Code ".concat(product.getProductCid());
 			} else {
-				text += "Code-(NONE)";
+				text += "Product code unavailable";
 			}
 			textviewRefId.setText(text);
 //			textviewRefId.setText("HSN-("+String.valueOf(product.getProductHsn()).concat(") Code-(").concat(product.getProductCid()).concat(")"));
@@ -364,6 +377,7 @@ public class SearchActivity extends AppCompatActivity {
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
+			textviewMRP.setPaintFlags(textviewMRP.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
 			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
 			if (product.isOfferActive()) {
 				offerSearchBadge.setVisibility(View.VISIBLE);
@@ -373,9 +387,9 @@ public class SearchActivity extends AppCompatActivity {
 			}
 
 			textviewRefId.setTypeface(typeface, 0);
-			textviewName.setTypeface(typeface, 0);
+			textviewName.setTypeface(typeface, Typeface.BOLD);
 			textviewMRP.setTypeface(typeface, 0);
-			textviewRate.setTypeface(typeface, 0);
+			textviewRate.setTypeface(typeface, Typeface.BOLD);
 			textviewGST.setTypeface(typeface, 0);
 			discountShow.setTypeface(typeface, 0);
 
@@ -656,6 +670,15 @@ public class SearchActivity extends AppCompatActivity {
 					main.setVisibility(View.VISIBLE);
 				} else {
 					main.setVisibility(View.GONE);
+				}
+				if (isOfferGroup && offerGroupSubtitle != null) {
+					if (product_name.isEmpty()) {
+						offerGroupSubtitle.setText(listmap.size() == 1
+								? "1 product included in this offer"
+								: listmap.size() + " products included in this offer");
+					} else {
+						offerGroupSubtitle.setText(listmap.size() == 1 ? "1 matching product" : listmap.size() + " matching products");
+					}
 				}
 
 //				System.out.println(listmap);
