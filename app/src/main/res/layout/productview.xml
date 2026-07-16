@@ -173,21 +173,61 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="15dp"
                             android:background="@drawable/total_price_background"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal"
+                            android:orientation="vertical"
                             android:paddingStart="13dp"
                             android:paddingTop="11dp"
                             android:paddingEnd="13dp"
                             android:paddingBottom="11dp">
 
-                            <TextView
-                                android:id="@+id/totalTextView"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="end"
-                                android:text="₹0"
-                                android:textColor="#047857"
-                                android:textSize="22sp" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="Total incl. GST"
+                                    android:textColor="#17372C"
+                                    android:textSize="13sp" />
+
+                                <TextView
+                                    android:id="@+id/totalTextView"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="end"
+                                    android:text="₹0"
+                                    android:textColor="#047857"
+                                    android:textSize="22sp" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="9dp"
+                                android:orientation="horizontal">
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="GST total" android:textColor="#718078" android:textSize="10sp" />
+                                    <TextView android:id="@+id/gstTotalDetailTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="₹0" android:textColor="#047857" android:textSize="14sp" />
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:gravity="end"
+                                    android:orientation="vertical">
+                                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Discount total" android:textColor="#718078" android:textSize="10sp" />
+                                    <TextView android:id="@+id/discountTotalDetailTextView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:text="-₹0" android:textColor="#BE123C" android:textSize="14sp" />
+                                </LinearLayout>
+                            </LinearLayout>
                         </LinearLayout>
 
                         <LinearLayout

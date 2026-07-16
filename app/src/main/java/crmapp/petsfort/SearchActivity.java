@@ -323,6 +323,7 @@ public class SearchActivity extends AppCompatActivity {
 			final TextView textviewName = _view.findViewById(R.id.productNameTextView);
 			final TextView textviewMRP = _view.findViewById(R.id.mrpTextView);
 			final TextView textviewRate = _view.findViewById(R.id.rateTextView);
+			final TextView totalTextView = _view.findViewById(R.id.totalTextView);
 			final TextView textviewGST = _view.findViewById(R.id.gstTextView);
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
 			final TextView offerSearchBadge = _view.findViewById(R.id.offerSearchBadge);
@@ -376,6 +377,13 @@ public class SearchActivity extends AppCompatActivity {
 			textviewName.setText(JHelpers.capitalize(product.getProductName()));
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
+			totalTextView.setText("₹".concat(df.format(product.getCostRate() * product.productCount)));
+			totalTextView.animate().cancel();
+			totalTextView.setAlpha(1f);
+			totalTextView.setScaleX(1f);
+			totalTextView.setScaleY(1f);
+			totalTextView.setVisibility(product.productCount > 0 ? View.VISIBLE : View.INVISIBLE);
+			totalTextView.setTag(product.productCount > 0);
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
 			textviewMRP.setPaintFlags(textviewMRP.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
 			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
@@ -390,6 +398,7 @@ public class SearchActivity extends AppCompatActivity {
 			textviewName.setTypeface(typeface, Typeface.BOLD);
 			textviewMRP.setTypeface(typeface, 0);
 			textviewRate.setTypeface(typeface, Typeface.BOLD);
+			totalTextView.setTypeface(typeface, Typeface.BOLD);
 			textviewGST.setTypeface(typeface, 0);
 			discountShow.setTypeface(typeface, 0);
 
@@ -497,6 +506,9 @@ public class SearchActivity extends AppCompatActivity {
 						return;
 					}
 
+					totalTextView.setText("₹".concat(df.format(product.getCostRate() * currentCount)));
+					animateAmountVisibility(totalTextView, currentCount > 0);
+
 					if(currentCount <= 0) {
 						if(!_charSeq.equals("")) {
 							edittext1Count.setText("");
@@ -557,6 +569,40 @@ public class SearchActivity extends AppCompatActivity {
 			edittext1Count.addTextChangedListener(_holder.watcher);
 		}
 		private int lastAnimatedPosition = -1;
+
+		private void animateAmountVisibility(TextView amountView, boolean show) {
+			Object currentTarget = amountView.getTag();
+			if (currentTarget instanceof Boolean && ((Boolean) currentTarget) == show) {
+				return;
+			}
+			amountView.setTag(show);
+			amountView.animate().cancel();
+			if (show) {
+				amountView.setVisibility(View.VISIBLE);
+				amountView.setAlpha(0f);
+				amountView.setScaleX(0.88f);
+				amountView.setScaleY(0.88f);
+				amountView.animate()
+						.alpha(1f)
+						.scaleX(1f)
+						.scaleY(1f)
+						.setDuration(180)
+						.start();
+			} else {
+				amountView.animate()
+						.alpha(0f)
+						.scaleX(0.88f)
+						.scaleY(0.88f)
+						.setDuration(140)
+						.withEndAction(() -> {
+							amountView.setVisibility(View.INVISIBLE);
+							amountView.setAlpha(1f);
+							amountView.setScaleX(1f);
+							amountView.setScaleY(1f);
+						})
+						.start();
+			}
+		}
 
 
 		@Override

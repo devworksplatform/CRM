@@ -53,7 +53,7 @@
                     android:text="BUY 10 · GET 1 FREE"
                     android:textColor="#FFFFFF"
                     android:textSize="9sp"
-                    android:visibility="gone" />
+                    android:visibility="invisible" />
 
                 <TextView
                     android:id="@+id/discountShow"
@@ -138,6 +138,24 @@
                     android:text="+12% GST"
                     android:textColor="#718078"
                     android:textSize="10sp" />
+
+                <TextView
+                    android:id="@+id/totalTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:layout_gravity="end"
+                    android:background="@drawable/list_total_amount_background"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center"
+                    android:paddingStart="11dp"
+                    android:paddingTop="6dp"
+                    android:paddingEnd="11dp"
+                    android:paddingBottom="6dp"
+                    android:text="₹0"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:visibility="gone" />
 
                 <LinearLayout
                     android:id="@+id/linear21"
