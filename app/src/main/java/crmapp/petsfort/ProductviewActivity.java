@@ -57,6 +57,7 @@ public class ProductviewActivity extends AppCompatActivity {
 	protected void onCreate(Bundle _savedInstanceState) {
 		super.onCreate(_savedInstanceState);
 		setContentView(R.layout.productview);
+		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
 		userId = Business.localDB_SharedPref.getProxyUID(getSharedPreferences("logindata", Activity.MODE_PRIVATE), userId);
 
 		initialize(_savedInstanceState);
@@ -139,9 +140,9 @@ public class ProductviewActivity extends AppCompatActivity {
 //		}
 
 		if(product.getProductCid() != null && !product.getProductCid().isEmpty()) {
-			text += "Code-(".concat(product.getProductCid()).concat(")");
+			text += "Code ".concat(product.getProductCid());
 		} else {
-			text += "Code-(NONE)";
+			text += "Product code unavailable";
 		}
 
 		productImageView.setOnClickListener(new OnClickListener() {
@@ -160,6 +161,7 @@ public class ProductviewActivity extends AppCompatActivity {
 
 		mrpTextView.setText("₹".concat(df.format(product.getCostMrp())));
 		rateTextView.setText("₹".concat(df.format(product.getCostRate())));
+		mrpTextView.setPaintFlags(mrpTextView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
 
 		double gst = (product.getCostGst()*product.getCostRate())/100;
 		gstTextView.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
@@ -253,7 +255,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		});
 
 
-		edittext1.requestFocus();
+		edittext1.clearFocus();
 		edittext1.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
@@ -304,39 +306,10 @@ public class ProductviewActivity extends AppCompatActivity {
 			}
 		});
 
-		gstDiscountLinear.setVisibility(View.GONE);
-		mrpRateLinear.setVisibility(View.GONE);
-		countLinear.setVisibility(View.GONE);
-		productDescriptionTextView.setVisibility(View.GONE);
-
-
-		Activity activity = this;
-
-		JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
-			@Override
-			public void onEnd() {
-				JHelpers.TransitionManager(rootLinear, 200);
-				mrpRateLinear.setVisibility(View.VISIBLE);
-
-				JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
-					@Override
-					public void onEnd() {
-						JHelpers.TransitionManager(rootLinear, 200);
-						gstDiscountLinear.setVisibility(View.VISIBLE);
-						productDescriptionTextView.setVisibility(View.VISIBLE);
-
-						JHelpers.runAfterDelay(activity,300, new Callbacker.Timer(){
-							@Override
-							public void onEnd() {
-								JHelpers.TransitionManager(rootLinear, 200);
-								countLinear.setVisibility(View.VISIBLE);
-							}
-						});
-					}
-				});
-
-			}
-		});
+		gstDiscountLinear.setVisibility(View.VISIBLE);
+		mrpRateLinear.setVisibility(View.VISIBLE);
+		countLinear.setVisibility(View.VISIBLE);
+		productDescriptionTextView.setVisibility(View.VISIBLE);
 
 
 		Business.CategoriesApiClient.getCategoriesCallApi(new Callbacker.ApiResponseWaiters.CategoriesApiCallback(){

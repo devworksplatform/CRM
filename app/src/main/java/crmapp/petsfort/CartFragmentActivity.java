@@ -532,8 +532,8 @@ public class CartFragmentActivity extends Fragment {
 //			textview9.setText("Variants : ".concat(listmap.get((int)_position).get("size").toString()));
 
 			//------------------------------------design
-			_rippleRoundStroke(textview8, "#4b69ff", "#40FFFFFF", 16, 0, "#000000");
-			textview8.setElevation((float)2);
+			textview8.setBackgroundResource(R.drawable.cart_primary_button_background);
+			textview8.setElevation(0f);
 			name.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 			discountShow.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/salesbold.ttf"), Typeface.NORMAL);
 			textview8.setTypeface(Typeface.createFromAsset(getContext().getAssets(),"fonts/sailes.ttf"), Typeface.NORMAL);
@@ -552,10 +552,10 @@ public class CartFragmentActivity extends Fragment {
 				discountShow.setVisibility(View.VISIBLE);
 			}
 
-			linear22.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)16, (int)2, 0xFFBDBDBD, 0xFFFFFFFF));
-			linear22.setElevation((float)1);
-			textview11.setBackground(new GradientDrawable() { public GradientDrawable getIns(int a, int b, int c, int d) { this.setCornerRadius(a); this.setStroke(b, c); this.setColor(d); return this; } }.getIns((int)16, (int)2, 0xFFBDBDBD, 0xFFFFFFFF));
-			textview11.setElevation((float)1);
+			linear22.setBackgroundResource(R.drawable.quantity_editor_background);
+			linear22.setElevation(0f);
+			textview11.setBackgroundResource(R.drawable.cart_secondary_button_background);
+			textview11.setElevation(0f);
 			textview11.setOnClickListener(new View.OnClickListener() {
 				@Override
 				public void onClick(View _view) {

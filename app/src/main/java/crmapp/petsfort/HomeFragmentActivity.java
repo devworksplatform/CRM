@@ -234,7 +234,11 @@ public class HomeFragmentActivity extends Fragment {
 		recyclerview1.setHasFixedSize(true);
 		recyclerview1.setAdapter(new Recyclerview1Adapter(listmap));
 
-		final float scaleFactor = 0.99f; viewpager_slider.setPageMargin(-0); viewpager_slider.setOffscreenPageLimit(2); viewpager_slider.setPageTransformer(false, new ViewPager.PageTransformer() { @Override public void transformPage(@NonNull View page1, float position) { page1.setScaleY((1 - Math.abs(position) * (1 - scaleFactor))); page1.setScaleX(scaleFactor + Math.abs(position) * (1 - scaleFactor)); } });
+		final float scaleFactor = 0.985f;
+		viewpager_slider.setClipToPadding(false);
+		viewpager_slider.setPageMargin((int) (8 * getResources().getDisplayMetrics().density));
+		viewpager_slider.setOffscreenPageLimit(2);
+		viewpager_slider.setPageTransformer(false, new ViewPager.PageTransformer() { @Override public void transformPage(@NonNull View page1, float position) { page1.setScaleY((1 - Math.abs(position) * (1 - scaleFactor))); page1.setScaleX(scaleFactor + Math.abs(position) * (1 - scaleFactor)); } });
 		viewpager_slider.setAdapter(new Viewpager_sliderAdapter(listmap));
 
 		linear26.setVisibility(View.VISIBLE);
@@ -531,6 +535,11 @@ public class HomeFragmentActivity extends Fragment {
 		@Override
 		public int getCount() {
 			return _data.size();
+		}
+
+		@Override
+		public float getPageWidth(int position) {
+			return _data.size() > 1 ? 0.92f : 1f;
 		}
 
 		@Override
