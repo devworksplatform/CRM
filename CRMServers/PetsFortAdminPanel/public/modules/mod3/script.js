@@ -80,11 +80,36 @@ async function initMod3() {
 
     // --- State ---
     let currentImageUrls = []; // Store image URLs for the product being edited/added
+    const productImageObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            if (!entry.isIntersecting || !entry.target.dataset.src) return;
+            const image = entry.target;
+            image.src = image.dataset.src;
+            image.removeAttribute('data-src');
+            productImageObserver.unobserve(image);
+        });
+    }, { threshold: 0.01 }) : null;
+
+    function observeProductImages(root = productTableBody) {
+        root.querySelectorAll('img[data-src]').forEach(image => {
+            if (productImageObserver) productImageObserver.observe(image);
+            else {
+                image.src = image.dataset.src;
+                image.removeAttribute('data-src');
+            }
+        });
+    }
+
+    function stopObservingProductImages(root = productTableBody) {
+        if (!productImageObserver) return;
+        root.querySelectorAll('img[data-src]').forEach(image => productImageObserver.unobserve(image));
+    }
 
     // --- Rendering ---
     function renderProductTable(filteredProducts = null) {
         const products = filteredProducts !== null ? filteredProducts : getProducts();
         const categories = getCategories(); // Get categories for display name
+        stopObservingProductImages();
         productTableBody.innerHTML = '';
         noProductsMessage.style.display = products.length === 0 ? 'block' : 'none';
 
@@ -99,7 +124,7 @@ async function initMod3() {
             const category = categories.find(c => c.id === prod.cat_id);
             const categoryName = category ? category.name : 'N/A';
             const firstImage = prod.product_img && prod.product_img.length > 0 ? prod.product_img[0] : null;
-             const imgHtml = firstImage ? `<img src="${escapeHtml(firstImage)}" loading="lazy" alt="${escapeHtml(prod.product_name)}" class="table-img-preview" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"> <span style="display:none;"><i data-feather='package'></i></span>` : `<span><i data-feather='package'></i></span>`;
+             const imgHtml = firstImage ? `<img data-src="${escapeHtml(firstImage)}" loading="lazy" decoding="async" alt="${escapeHtml(prod.product_name)}" class="table-img-preview" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';"> <span style="display:none;"><i data-feather='package'></i></span>` : `<span><i data-feather='package'></i></span>`;
 
             const row = productTableBody.insertRow();
             row.dataset.productId = prod.product_id; // Use product_id from data
@@ -121,6 +146,7 @@ async function initMod3() {
             row.querySelector('.btn-delete-product').onclick = () => handleDeleteProduct(prod.product_id, prod.product_name);
         });
         feather.replace();
+        observeProductImages();
     }
 
     function populateCategoryDropdowns() {
@@ -167,6 +193,7 @@ async function initMod3() {
      }
 
      function renderImagePreviews() {
+         stopObservingProductImages(imagePreviewList);
          imagePreviewList.innerHTML = ''; // Clear existing
          if (currentImageUrls.length === 0) {
              noImagesText.style.display = 'block';
@@ -179,13 +206,14 @@ async function initMod3() {
              const item = document.createElement('div');
              item.className = 'img-preview-item';
              item.innerHTML = `
-                 <img src="${escapeHtml(url)}" class="img-preview" alt="Preview ${index+1}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" >
+                 <img data-src="${escapeHtml(url)}" loading="lazy" decoding="async" class="img-preview" alt="Preview ${index+1}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" >
                  <span style="display: none; font-size: 0.7em; color: var(--text-muted);">Invalid URL or image</span>
                  <button type="button" class="remove-img-btn" data-index="${index}"></button>
              `;
              item.querySelector('.remove-img-btn').onclick = () => removeImage(index);
              imagePreviewList.appendChild(item);
          });
+         observeProductImages(imagePreviewList);
      }
 
     // --- Form Handling ---

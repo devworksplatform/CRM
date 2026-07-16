@@ -5,6 +5,30 @@ async function initMod5() {
   let filtered = [];
   let editingGroupId = null;
   const selected = new Set();
+  const lazyImageObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting || !entry.target.dataset.src) return;
+      const image = entry.target;
+      image.src = image.dataset.src;
+      image.removeAttribute('data-src');
+      lazyImageObserver.unobserve(image);
+    });
+  }, { threshold: 0.01 }) : null;
+
+  function observeLazyImages(root) {
+    root.querySelectorAll('img[data-src]').forEach(image => {
+      if (lazyImageObserver) lazyImageObserver.observe(image);
+      else {
+        image.src = image.dataset.src;
+        image.removeAttribute('data-src');
+      }
+    });
+  }
+
+  function stopObservingLazyImages(root) {
+    if (!lazyImageObserver) return;
+    root.querySelectorAll('img[data-src]').forEach(image => lazyImageObserver.unobserve(image));
+  }
 
   const els = {
     name: $('offer-group-name'), description: $('offer-description'), buy: $('offer-buy-qty'), free: $('offer-free-qty'),
@@ -41,6 +65,7 @@ async function initMod5() {
   }
 
   function renderProducts() {
+    stopObservingLazyImages(els.productList);
     const selectable = filtered.filter(product => !isOwnedByAnotherGroup(product));
     const unavailableCount = filtered.length - selectable.length;
     els.filterCount.textContent = `${filtered.length} matching${unavailableCount ? ` - ${unavailableCount} in another group` : ''}`;
@@ -54,7 +79,7 @@ async function initMod5() {
       const owner = locked ? groupById(p.offer_group_id) : null;
       return `<label class="offer-product-row ${selected.has(p.product_id) ? 'selected' : ''} ${locked ? 'locked' : ''}" data-id="${escapeHtml(p.product_id)}">
         <input type="checkbox" ${selected.has(p.product_id) ? 'checked' : ''} ${locked ? 'disabled' : ''}>
-        ${image ? `<img src="${escapeHtml(image)}" alt="">` : '<span></span>'}
+        ${image ? `<img data-src="${escapeHtml(image)}" loading="lazy" decoding="async" alt="">` : '<span></span>'}
         <span class="offer-product-main"><strong>${escapeHtml(p.product_name)}</strong><small>${escapeHtml(p.product_cid || p.product_id)} · ${escapeHtml(categoryName(p.cat_id))}${locked ? ` · In ${escapeHtml(owner?.name || 'another group')}` : ''}</small></span>
         <span class="offer-product-meta">Stock ${Number(p.stock) || 0}<br>${locked ? `<span class="offer-pill group-owner">${escapeHtml(owner?.name || 'Another group')}</span>` : (p.offer_active ? `<span class="offer-pill">Buy ${p.offer_buy_qty} + ${p.offer_free_qty}</span>` : 'No offer')}</span>
       </label>`;
@@ -63,6 +88,7 @@ async function initMod5() {
       if (event.target.disabled) return;
       const id = row.dataset.id; event.target.checked ? selected.add(id) : selected.delete(id); updateSelection(); renderProducts();
     }));
+    observeLazyImages(els.productList);
   }
 
   function updateSelection() {
@@ -134,6 +160,7 @@ async function initMod5() {
   }
 
   function renderStandaloneOffers() {
+    stopObservingLazyImages(els.standaloneList);
     const term = els.standaloneSearch.value.trim().toLowerCase();
     const standalone = products.filter(product => {
       if (!product.offer_active || product.offer_group_id) return false;
@@ -149,7 +176,7 @@ async function initMod5() {
     els.standaloneList.innerHTML = standalone.map(product => {
       const image = Array.isArray(product.product_img) ? product.product_img[0] : '';
       return `<article class="standalone-offer-card">
-        ${image ? `<img src="${escapeHtml(image)}" alt="">` : '<span class="standalone-offer-image"></span>'}
+        ${image ? `<img data-src="${escapeHtml(image)}" loading="lazy" decoding="async" alt="">` : '<span class="standalone-offer-image"></span>'}
         <div class="standalone-offer-main"><strong>${escapeHtml(product.product_name)}</strong><small>${escapeHtml(product.product_cid || product.product_id)} - ${escapeHtml(categoryName(product.cat_id))}</small></div>
         <div class="standalone-offer-bottom"><span class="standalone-rule">Buy ${Number(product.offer_buy_qty)} - Get ${Number(product.offer_free_qty)} free</span><button class="btn btn-outline btn-sm standalone-edit" data-id="${escapeHtml(product.product_id)}">Edit product</button></div>
       </article>`;
@@ -158,6 +185,7 @@ async function initMod5() {
       sessionStorage.setItem('admin-edit-product-id', button.dataset.id);
       loadModuleByName('Products');
     });
+    observeLazyImages(els.standaloneList);
   }
 
   function editGroup(id) {
@@ -182,8 +210,11 @@ async function initMod5() {
   async function loadManualBanners() {
     const snapshot = await database.ref('datas/announcement/all').once('value'); const data = snapshot.val() || {};
     const entries = Object.entries(data).filter(([,value]) => typeof value === 'string');
-    $('manual-banner-list').innerHTML = entries.map(([key,url]) => `<div class="manual-banner"><img src="${escapeHtml(url)}"><button class="btn btn-danger btn-sm" data-key="${escapeHtml(key)}">×</button></div>`).join('');
-    $('manual-banner-list').querySelectorAll('button').forEach(b => b.onclick = async () => { await database.ref(`datas/announcement/all/${b.dataset.key}`).remove(); await loadManualBanners(); });
+    const bannerList = $('manual-banner-list');
+    stopObservingLazyImages(bannerList);
+    bannerList.innerHTML = entries.map(([key,url]) => `<div class="manual-banner"><img data-src="${escapeHtml(url)}" loading="lazy" decoding="async" alt=""><button class="btn btn-danger btn-sm" data-key="${escapeHtml(key)}">×</button></div>`).join('');
+    bannerList.querySelectorAll('button').forEach(b => b.onclick = async () => { await database.ref(`datas/announcement/all/${b.dataset.key}`).remove(); await loadManualBanners(); });
+    observeLazyImages(bannerList);
   }
 
   async function loadData() {
