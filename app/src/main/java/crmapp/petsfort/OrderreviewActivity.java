@@ -246,8 +246,8 @@ public class OrderreviewActivity extends AppCompatActivity {
 										} catch (Exception e) { }
 									}
 
-									if (cartCount > 0 && cartCount > product.getStock()) {
-										long newCount = (long) product.getStock();
+									if (cartCount > 0 && product.getFulfilledQuantity(cartCount) > product.getStock()) {
+										long newCount = product.getMaxPaidQuantityForStock(product.getStock());
 										String productName = JHelpers.capitalize(product.getProductName());
 
 										if (newCount <= 0) {

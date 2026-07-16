@@ -359,7 +359,7 @@ public class SearchActivity extends AppCompatActivity {
 			textviewMRP.setText("₹".concat(df.format(product.getCostMrp())));
 			textviewRate.setText("₹".concat(df.format(product.getCostRate())));
 			textviewGST.setText("+".concat(df.format(product.getCostGst())).concat("% GST"));
-			discountShow.setText(df.format(product.getCostDis()).concat("% OFF"));
+			discountShow.setText(product.isOfferActive() ? product.getOfferLabel() : df.format(product.getCostDis()).concat("% OFF"));
 
 			textviewRefId.setTypeface(typeface, 0);
 			textviewName.setTypeface(typeface, 0);
@@ -369,7 +369,7 @@ public class SearchActivity extends AppCompatActivity {
 			discountShow.setTypeface(typeface, 0);
 
 
-			if (product.getCostDis() <= 0) {
+			if (product.getCostDis() <= 0 && !product.isOfferActive()) {
 				discountShow.setVisibility(View.GONE);
 			} else {
 				discountShow.setVisibility(View.VISIBLE);
@@ -505,8 +505,8 @@ public class SearchActivity extends AppCompatActivity {
 						Business.localDB_SharedPref.deleteCartProduct(localDB,userId,product.getProductId());
 					} else {
 
-						if(currentCount > product.getStock()){
-							edittext1Count.setText(String.valueOf(product.getStock()));
+						if(product.getFulfilledQuantity(currentCount) > product.getStock()){
+							edittext1Count.setText(String.valueOf(product.getMaxPaidQuantityForStock(product.getStock())));
 							Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
 							return;
 						}

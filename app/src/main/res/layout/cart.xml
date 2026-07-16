@@ -95,7 +95,7 @@
 						android:gravity="center_vertical"
 						android:orientation="horizontal">
 
-						<TextView
+					<TextView
 							android:id="@+id/name"
 							android:focusable="false"
 							android:layout_width="0dp"
@@ -108,6 +108,18 @@
 							android:maxLines="2"
 							android:ellipsize="end"/>
 					</LinearLayout>
+
+					<TextView
+						android:id="@+id/offerTextView"
+						android:layout_width="match_parent"
+						android:layout_height="wrap_content"
+						android:gravity="center"
+						android:paddingTop="3dp"
+						android:text="Buy 10, get 1 FREE"
+						android:textColor="#15803D"
+						android:textSize="12sp"
+						android:textStyle="bold"
+						android:visibility="gone" />
 
 					<LinearLayout
 						android:id="@+id/linear5"

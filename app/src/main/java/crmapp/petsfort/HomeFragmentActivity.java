@@ -254,8 +254,13 @@ public class HomeFragmentActivity extends Fragment {
 						if(_dataSnapshot.exists()) {
 							for (DataSnapshot child : _dataSnapshot.getChildren()) {
 								HashMap<String, String> announcementMap = new HashMap<>();
-								String value = String.valueOf(child.getValue());
-								announcementMap.put("img", value);
+								if (child.child("type").exists()) {
+									announcementMap.put("img", String.valueOf(child.child("img").getValue() == null ? "" : child.child("img").getValue()));
+									announcementMap.put("title", String.valueOf(child.child("title").getValue() == null ? "" : child.child("title").getValue()));
+									announcementMap.put("subtitle", String.valueOf(child.child("subtitle").getValue() == null ? "" : child.child("subtitle").getValue()));
+								} else {
+									announcementMap.put("img", String.valueOf(child.getValue()));
+								}
 								listmap.add(announcementMap);
 							}
 							recyclerview1.getAdapter().notifyDataSetChanged();
@@ -551,8 +556,22 @@ public class HomeFragmentActivity extends Fragment {
 
 			final androidx.cardview.widget.CardView cardview1 = _view.findViewById(R.id.cardview1);
 			final ImageView imageview1 = _view.findViewById(R.id.imageview1);
+			final LinearLayout offerContainer = _view.findViewById(R.id.offerBannerTextContainer);
+			final TextView offerTitle = _view.findViewById(R.id.offerBannerTitle);
+			final TextView offerSubtitle = _view.findViewById(R.id.offerBannerSubtitle);
 
-			Glide.with(getContext().getApplicationContext()).load(Uri.parse(_data.get((int)_position).get("img").toString())).into(imageview1);
+			String imageUrl = _data.get((int)_position).get("img");
+			if (imageUrl != null && !imageUrl.isEmpty()) {
+				Glide.with(getContext().getApplicationContext()).load(Uri.parse(imageUrl)).into(imageview1);
+			}
+			String title = _data.get((int)_position).get("title");
+			if (title != null && !title.isEmpty()) {
+				offerContainer.setVisibility(View.VISIBLE);
+				offerTitle.setText(title);
+				offerSubtitle.setText(_data.get((int)_position).get("subtitle"));
+			} else {
+				offerContainer.setVisibility(View.GONE);
+			}
 			cardview1.setRadius((float)15);
 			cardview1.setCardElevation((float)5);
 

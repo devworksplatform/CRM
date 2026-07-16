@@ -17,6 +17,9 @@ public class Product implements Serializable {
     private double costMrp;
     private double costGst;
     private double costDis;
+    private int offerBuyQty;
+    private int offerFreeQty;
+    private boolean offerActive;
     private int stock;
     private String id;
 
@@ -70,6 +73,9 @@ public class Product implements Serializable {
             this.setCostMrp(product.costMrp);
             this.setCostGst(product.costGst);
             this.setCostDis(product.costDis);
+            this.setOfferBuyQty(product.offerBuyQty);
+            this.setOfferFreeQty(product.offerFreeQty);
+            this.setOfferActive(product.offerActive);
             this.setStock(product.stock);
             this.setId(product.id);
         }
@@ -183,6 +189,32 @@ public class Product implements Serializable {
 
     public void setCostDis(double costDis) {
         this.costDis = costDis;
+    }
+
+    public int getOfferBuyQty() { return offerBuyQty; }
+    public void setOfferBuyQty(int offerBuyQty) { this.offerBuyQty = Math.max(0, offerBuyQty); }
+    public int getOfferFreeQty() { return offerFreeQty; }
+    public void setOfferFreeQty(int offerFreeQty) { this.offerFreeQty = Math.max(0, offerFreeQty); }
+    public boolean isOfferActive() { return offerActive && offerBuyQty > 0 && offerFreeQty > 0; }
+    public void setOfferActive(boolean offerActive) { this.offerActive = offerActive; }
+    public long getFreeQuantity(long paidQuantity) {
+        return isOfferActive() ? (paidQuantity / offerBuyQty) * offerFreeQty : 0L;
+    }
+    public long getFulfilledQuantity(long paidQuantity) {
+        return paidQuantity + getFreeQuantity(paidQuantity);
+    }
+    public long getMaxPaidQuantityForStock(long availableStock) {
+        long low = 0L;
+        long high = Math.max(0L, availableStock);
+        while (low < high) {
+            long mid = low + (high - low + 1L) / 2L;
+            if (getFulfilledQuantity(mid) <= availableStock) low = mid;
+            else high = mid - 1L;
+        }
+        return low;
+    }
+    public String getOfferLabel() {
+        return isOfferActive() ? "Buy " + offerBuyQty + ", get " + offerFreeQty + " FREE" : "";
     }
 
     public int getStock() {

@@ -315,9 +315,9 @@ public class CartFragmentActivity extends Fragment {
 				ArrayList<String> stockAdjustments = new ArrayList<>();
 				for (int i = listmap.size() - 1; i >= 0; i--) {
 					CartProduct cartProduct = listmap.get(i);
-					if (cartProduct.productCount > cartProduct.getStock()) {
+					if (cartProduct.getFulfilledQuantity(cartProduct.productCount) > cartProduct.getStock()) {
 						long oldCount = cartProduct.productCount;
-						long newCount = (long) cartProduct.getStock();
+						long newCount = cartProduct.getMaxPaidQuantityForStock(cartProduct.getStock());
 						String productName = JHelpers.capitalize(cartProduct.getProductName());
 
 						if (newCount <= 0) {
@@ -468,6 +468,7 @@ public class CartFragmentActivity extends Fragment {
 			final LinearLayout linear5 = _view.findViewById(R.id.linear5);
 			final LinearLayout linear21 = _view.findViewById(R.id.linear21);
 			final TextView name = _view.findViewById(R.id.name);
+			final TextView offerTextView = _view.findViewById(R.id.offerTextView);
 
 			final TextView discountShow = _view.findViewById(R.id.discountShow);
 			final TextView rateTextView = _view.findViewById(R.id.rateTextView);
@@ -515,6 +516,13 @@ public class CartFragmentActivity extends Fragment {
 
 
 			name.setText(JHelpers.capitalize(product.getProductName()));
+			long freeQuantity = product.getFreeQuantity(product.productCount);
+			if (product.isOfferActive()) {
+				offerTextView.setVisibility(View.VISIBLE);
+				offerTextView.setText(product.getOfferLabel() + " • " + product.productCount + " paid + " + freeQuantity + " free = " + product.getFulfilledQuantity(product.productCount) + " delivered");
+			} else {
+				offerTextView.setVisibility(View.GONE);
+			}
 			if (product.getProductImg() != null && !product.getProductImg().isEmpty() && product.getProductImg().get(0) != null && !product.getProductImg().get(0).equals("")) {
 				Glide.with(getContext().getApplicationContext()).load(Uri.parse(product.getProductImg().get(0))).into(imageview1);
 			}
@@ -560,7 +568,7 @@ public class CartFragmentActivity extends Fragment {
 				@Override
 				public void onClick(View _view) {
 
-					if(product.getStock() < product.productCount+1) {
+					if(product.getFulfilledQuantity(product.productCount + 1) > product.getStock()) {
 						Toast.makeText(getContext().getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
 						return;
 					}

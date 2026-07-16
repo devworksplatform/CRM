@@ -813,6 +813,9 @@ public class Business {
                 product.setCostMrp(jsonObject.optDouble("cost_mrp"));
                 product.setCostGst(jsonObject.optDouble("cost_gst"));
                 product.setCostDis(jsonObject.optDouble("cost_dis"));
+                product.setOfferBuyQty(jsonObject.optInt("offer_buy_qty", 0));
+                product.setOfferFreeQty(jsonObject.optInt("offer_free_qty", 0));
+                product.setOfferActive(jsonObject.optBoolean("offer_active", false));
                 product.setStock(jsonObject.optInt("stock"));
                 product.setId(jsonObject.optString("id"));
 
@@ -892,8 +895,8 @@ public class Business {
                     Product product = new Product();
                     product.setProductId(productJson.optString("product_id"));
                     product.setProductName(productJson.optString("product_name"));
-                    product.setProductCid(jsonObject.optString("product_cid"));
-                    product.setProductHsn(jsonObject.optString("product_hsn"));
+                    product.setProductCid(productJson.optString("product_cid"));
+                    product.setProductHsn(productJson.optString("product_hsn"));
                     product.setProductDesc(productJson.optString("product_desc"));
                     product.setProductImg(parseJsonArrayToList(productJson.optJSONArray("product_img")));
                     product.setCatId(productJson.optString("cat_id"));
@@ -902,6 +905,9 @@ public class Business {
                     product.setCostMrp(productJson.optDouble("cost_mrp"));
                     product.setCostGst(productJson.optDouble("cost_gst"));
                     product.setCostDis(productJson.optDouble("cost_dis"));
+                    product.setOfferBuyQty(productJson.optInt("offer_buy_qty", 0));
+                    product.setOfferFreeQty(productJson.optInt("offer_free_qty", 0));
+                    product.setOfferActive(productJson.optBoolean("offer_active", false));
                     product.setStock(productJson.optInt("stock"));
                     product.setId(productJson.optString("id"));
 //                    product.setCreatedAt(productJson.optString("created_at"));
@@ -1204,7 +1210,8 @@ public class Business {
                         JSONObject countJson = itemsJson.optJSONObject(productId);
                         if (countJson != null) {
                             Map<String, Object> countMap = new HashMap<>();
-                            countMap.put("count", countJson.optInt("count"));
+                            countMap.put("count", countJson.has("paid_count") ? countJson.optInt("paid_count") : countJson.optInt("count"));
+                            countMap.put("free_count", countJson.optInt("free_count", 0));
                             itemsMap.put(productId, countMap);
                         }
                     }
@@ -1240,6 +1247,9 @@ public class Business {
                         product.setCostMrp(itemDetailJson.optDouble("cost_mrp"));
                         product.setCostGst(itemDetailJson.optDouble("cost_gst"));
                         product.setCostDis(itemDetailJson.optDouble("cost_dis"));
+                        product.setOfferBuyQty(itemDetailJson.optInt("offer_buy_qty", 0));
+                        product.setOfferFreeQty(itemDetailJson.optInt("offer_free_qty", 0));
+                        product.setOfferActive(itemDetailJson.optInt("free_count", 0) > 0);
                         product.setStock(itemDetailJson.optInt("stock"));
                         itemsDetailList.add(product);
                     }

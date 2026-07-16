@@ -43,6 +43,9 @@ async function initMod3() {
     const costGstInput = document.getElementById('product-cost-gst');
     const costDisInput = document.getElementById('product-cost-dis');
     const stockInput = document.getElementById('product-stock');
+    const offerActiveInput = document.getElementById('product-offer-active');
+    const offerBuyQtyInput = document.getElementById('product-offer-buy-qty');
+    const offerFreeQtyInput = document.getElementById('product-offer-free-qty');
     const newImageUrlInput = document.getElementById('product-new-image-url');
     const addImageBtn = document.getElementById('product-add-image-btn');
     const imagePreviewList = document.getElementById('product-image-preview-list');
@@ -84,10 +87,10 @@ async function initMod3() {
         noProductsMessage.style.display = products.length === 0 ? 'block' : 'none';
 
         if (products.length === 0 && filteredProducts === null) {
-             productTableBody.innerHTML = `<tr><td colspan="7" class="no-data-message">No products added yet.</td></tr>`; return;
+             productTableBody.innerHTML = `<tr><td colspan="8" class="no-data-message">No products added yet.</td></tr>`; return;
         }
          if (products.length === 0 && filteredProducts !== null) {
-             productTableBody.innerHTML = `<tr><td colspan="7" class="no-data-message">No products match your filters.</td></tr>`; return;
+             productTableBody.innerHTML = `<tr><td colspan="8" class="no-data-message">No products match your filters.</td></tr>`; return;
          }
 
         products.forEach(prod => {
@@ -104,6 +107,7 @@ async function initMod3() {
                 <td>${escapeHtml(prod.product_name)}</td>
                 <td>${escapeHtml(categoryName)}</td>
                 <td class="text-right">${escapeHtml(prod.stock)}</td>
+                <td>${prod.offer_active ? `Buy ${escapeHtml(prod.offer_buy_qty)} + ${escapeHtml(prod.offer_free_qty)} free` : '—'}</td>
                 <td class="text-right">${escapeHtml(prod.cost_rate.toFixed(2))}</td>
                 <td class="text-right">${escapeHtml(prod.cost_mrp.toFixed(2))}</td>
                 <td class="actions-cell">
@@ -210,6 +214,9 @@ async function initMod3() {
         costGstInput.value = product.cost_gst || 0;
         costDisInput.value = product.cost_dis || 0;
         stockInput.value = product.stock;
+        offerActiveInput.checked = Boolean(product.offer_active);
+        offerBuyQtyInput.value = product.offer_buy_qty || 10;
+        offerFreeQtyInput.value = product.offer_free_qty || 1;
 
         // Populate subcategories
         const checkedSubIds = product.cat_sub ? product.cat_sub.filter(id => id) : []; // Handle empty string/null
@@ -297,6 +304,9 @@ async function initMod3() {
             cost_mrp: parseFloat(costMrpInput.value) || 0,
             cost_gst: parseFloat(costGstInput.value) || 0,
             cost_dis: parseFloat(costDisInput.value) || 0,
+            offer_active: offerActiveInput.checked,
+            offer_buy_qty: offerActiveInput.checked ? (parseInt(offerBuyQtyInput.value, 10) || 0) : 0,
+            offer_free_qty: offerActiveInput.checked ? (parseInt(offerFreeQtyInput.value, 10) || 0) : 0,
             stock: parseInt(stockInput.value, 10) || 0,
             // Assign a unique local storage ID if it's a new product
             id: editId ? getProducts().find(p=>p.product_id === editId)?.id : generateId(),
@@ -313,6 +323,10 @@ async function initMod3() {
            }
            if (product.cost_gst < 0 || product.cost_dis < 0 || product.stock < 0) {
                 showToast('Validation Failed: GST, Discount, and Stock cannot be negative.', 'error');
+                return false;
+           }
+           if (product.offer_active && (product.offer_buy_qty < 1 || product.offer_free_qty < 1)) {
+                showToast('Validation Failed: enabled offers need paid and free quantities of at least 1.', 'error');
                 return false;
            }
 

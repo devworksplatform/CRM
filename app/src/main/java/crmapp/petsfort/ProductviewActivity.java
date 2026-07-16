@@ -45,7 +45,7 @@ public class ProductviewActivity extends AppCompatActivity {
 
 	private EditText edittext1;
 	private LinearLayout linear22,rootLinear,mrpRateLinear,gstDiscountLinear, linear5, countLinear;
-	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
+	private TextView productSecondaryNameTextView,productNameTextView,mrpTextView,rateTextView,gstTextView,gstRsTextView,productDescriptionTextView,hurryUpTextView,offerTextView,productIdTextView,discountTextView,discountRsTextView,productDescriptionTextviewLabel;
 	private TextView mrpLabel,rateLabel,discountLabel,gstLabel;
 	private Button addButton;
 	private ImageView productImageView,plus,minus;
@@ -83,6 +83,7 @@ public class ProductviewActivity extends AppCompatActivity {
 		gstRsTextView = (TextView) findViewById(R.id.gstRsTextView);
 		productDescriptionTextView = (TextView) findViewById(R.id.productDescriptionTextView);
 		hurryUpTextView = (TextView) findViewById(R.id.hurryUpTextView);
+		offerTextView = (TextView) findViewById(R.id.offerTextView);
 		productIdTextView = (TextView) findViewById(R.id.productIdTextView);
 		discountTextView = (TextView) findViewById(R.id.discountTextView);
 		discountRsTextView = (TextView) findViewById(R.id.discountRsTextView);
@@ -167,6 +168,12 @@ public class ProductviewActivity extends AppCompatActivity {
 		discountRsTextView.setText(df.format(discount).concat(" ₹"));
 
 		productDescriptionTextView.setText(product.getProductDesc());
+		if (product.isOfferActive()) {
+			offerTextView.setVisibility(View.VISIBLE);
+			offerTextView.setText(product.getOfferLabel());
+		} else {
+			offerTextView.setVisibility(View.GONE);
+		}
 		productSecondaryNameTextView.setText("");
 		productSecondaryNameTextView.setVisibility(View.GONE);
 //		productSecondaryNameTextView.setText(String.format("%s > %s", product.getCatId(), product.getProductName()));
@@ -405,10 +412,14 @@ public class ProductviewActivity extends AppCompatActivity {
 
 
 	private void updateCountToCart() {
-		if(product.getStock() < currentCount) {
-			currentCount = product.getStock();
+		if(product.getFulfilledQuantity(currentCount) > product.getStock()) {
+			currentCount = (int) product.getMaxPaidQuantityForStock(product.getStock());
 			Toast.makeText(getApplicationContext(),"Maximum Purchase Count Reached",Toast.LENGTH_SHORT).show();
 			edittext1.setText(String.valueOf(currentCount));
+		}
+		if (product.isOfferActive()) {
+			long free = product.getFreeQuantity(currentCount);
+			offerTextView.setText(product.getOfferLabel() + " • " + currentCount + " paid + " + free + " free = " + product.getFulfilledQuantity(currentCount) + " delivered");
 		}
 
 		if (currentCount <= 0) {

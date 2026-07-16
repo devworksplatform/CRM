@@ -45,7 +45,8 @@ async function initMod5() {
 
     async function removeImage(index) {
         showLoading();
-        const imageUrl = currentImageUrls[index];  // Get the image URL
+        const entry = currentImageUrls[index];
+        const imageUrl = typeof entry === 'string' ? entry : (entry?.img || '');
         const imageKey = Object.keys(data)[index];  // Get the unique key for the image in Firebase
     
         try {
@@ -83,14 +84,18 @@ async function initMod5() {
         noImagesText.style.display = 'none';
     
     
-        currentImageUrls.forEach((url, index) => {
+        currentImageUrls.forEach((entry, index) => {
+            const url = typeof entry === 'string' ? entry : (entry?.img || '');
+            const title = typeof entry === 'object' ? (entry.title || '') : '';
+            const subtitle = typeof entry === 'object' ? (entry.subtitle || '') : '';
             const item = document.createElement('div');
             item.className = 'img-preview-item';
             item.innerHTML = `
-            <a href="${escapeHtml(url)}" target="_blank">
+            ${url ? `<a href="${escapeHtml(url)}" target="_blank">
                 <img src="${escapeHtml(url)}" class="img-preview" alt="Preview ${index+1}" 
                      style="width: 100%; height: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-            </a>
+            </a>` : ''}
+            ${title ? `<strong>${escapeHtml(title)}</strong><small>${escapeHtml(subtitle)}</small>` : ''}
             <span style="display: none; font-size: 0.7em; color: var(--text-muted);">Invalid URL or image</span>
             <button type="button" class="remove-img-btn" data-index="${index}"></button>
         `;
@@ -129,7 +134,7 @@ async function initMod5() {
         if (!isValidHttpUrl(url)) {
              showToast('Invalid URL format. Please enter a valid HTTP/HTTPS URL.', 'error'); return;
         }
-        if (currentImageUrls.includes(url)) {
+        if (currentImageUrls.some(entry => (typeof entry === 'string' ? entry : entry?.img) === url)) {
              showToast('This image URL has already been added.', 'error'); return;
         }
 

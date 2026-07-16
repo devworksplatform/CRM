@@ -61,6 +61,9 @@ TABLE_SCHEMAS = {
             cost_mrp REAL,
             cost_gst REAL,
             cost_dis REAL,
+            offer_buy_qty INTEGER NOT NULL DEFAULT 0,
+            offer_free_qty INTEGER NOT NULL DEFAULT 0,
+            offer_active INTEGER NOT NULL DEFAULT 0,
             stock INTEGER,
             created_at TIMESTAMP,
             updated_at TIMESTAMP
@@ -270,6 +273,9 @@ class Product(BaseModel):
     cost_mrp: float
     cost_gst: float
     cost_dis: float
+    offer_buy_qty: int = Field(default=0, ge=0)
+    offer_free_qty: int = Field(default=0, ge=0)
+    offer_active: bool = False
     stock: int
 
 class ProductResponse(Product):
@@ -353,6 +359,9 @@ def dict_to_product(row: aiosqlite.Row):
     if not row:
         return None
     row_dict = dict(row)
+    row_dict['offer_buy_qty'] = int(row_dict.get('offer_buy_qty') or 0)
+    row_dict['offer_free_qty'] = int(row_dict.get('offer_free_qty') or 0)
+    row_dict['offer_active'] = bool(row_dict.get('offer_active') or 0)
     # Handle the product_img list stored as JSON
     row_dict['cost_rate'] = row_dict['cost_mrp'] - (row_dict['cost_mrp'] * row_dict['cost_dis'] / 100)
 
@@ -454,6 +463,55 @@ def generate_short_random_id():
     return f"{date_str}{letters}{random_num:02d}"
 
 
+def offer_quantities(product: dict, paid_count: int):
+    """Return (free, fulfilled) quantities for a paid cart quantity."""
+    buy_qty = int(product.get("offer_buy_qty") or 0)
+    free_qty = int(product.get("offer_free_qty") or 0)
+    active = bool(product.get("offer_active")) and buy_qty > 0 and free_qty > 0
+    free_count = (paid_count // buy_qty) * free_qty if active else 0
+    return free_count, paid_count + free_count
+
+
+def offer_changed(existing: dict, updated: dict) -> bool:
+    fields = ("offer_active", "offer_buy_qty", "offer_free_qty")
+    return any(existing.get(field) != updated.get(field) for field in fields)
+
+
+def publish_offer(product: dict, notify: bool = False):
+    """Keep the app-start banner in sync and optionally announce to every shop."""
+    product_id = str(product.get("product_id") or product.get("id"))
+    key = "offer_" + "".join(c if c.isalnum() or c in "-_" else "_" for c in product_id)
+    buy_qty = int(product.get("offer_buy_qty") or 0)
+    free_qty = int(product.get("offer_free_qty") or 0)
+    active = bool(product.get("offer_active")) and buy_qty > 0 and free_qty > 0
+    ref = firebaseAuth.db.reference(f"datas/announcement/all/{key}")
+    if not active:
+        ref.delete()
+        return
+
+    images = product.get("product_img") or []
+    if isinstance(images, str):
+        try:
+            images = json.loads(images)
+        except (TypeError, json.JSONDecodeError):
+            images = []
+    product_name = product.get("product_name") or "selected product"
+    title = f"Buy {buy_qty}, get {free_qty} FREE"
+    body = f"{product_name}: every {buy_qty} paid items includes {free_qty} extra free."
+    ref.set({
+        "type": "offer",
+        "product_id": product_id,
+        "title": title,
+        "subtitle": body,
+        "img": images[0] if images else "",
+    })
+    if notify:
+        firebaseAuth.send_topic_notification(
+            "all_users", "New Petsfort offer", body,
+            {"type": "offer", "product_id": product_id}
+        )
+
+
 # Initialize database (Run once on startup)
 async def init_db():
     """Initializes the database tables asynchronously."""
@@ -466,6 +524,16 @@ async def init_db():
             await cursor.execute(TABLE_SCHEMAS["subcategory"])
             await cursor.execute(TABLE_SCHEMAS["userdata"])
             await cursor.execute(TABLE_SCHEMAS["bills"])
+            # Migrate existing installations without requiring a manual DB rebuild.
+            await cursor.execute("PRAGMA table_info(products)")
+            product_columns = {row[1] for row in await cursor.fetchall()}
+            for column_name, definition in (
+                ("offer_buy_qty", "INTEGER NOT NULL DEFAULT 0"),
+                ("offer_free_qty", "INTEGER NOT NULL DEFAULT 0"),
+                ("offer_active", "INTEGER NOT NULL DEFAULT 0"),
+            ):
+                if column_name not in product_columns:
+                    await cursor.execute(f"ALTER TABLE products ADD COLUMN {column_name} {definition}")
             # await cursor.execute("""
             # CREATE TABLE IF NOT EXISTS products (
             #     id TEXT PRIMARY KEY,
@@ -707,8 +775,13 @@ async def create_product(product: Product): # Made async
             result = await cursor.fetchone()
             if not result:
                  raise HTTPException(status_code=500, detail="Failed to retrieve created product.")
-
-            return dict_to_product(result)
+            created_product = dict_to_product(result)
+            if created_product.get("offer_active"):
+                try:
+                    publish_offer(created_product, notify=True)
+                except Exception as e:
+                    print(f"Warning: product saved but offer announcement failed: {e}")
+            return created_product
     except HTTPException:
         raise # Re-raise HTTP exceptions
     except Exception as e:
@@ -853,7 +926,15 @@ async def update_product(product_identifier: str, product_update: Product): # Ma
                  raise HTTPException(status_code=404, detail="Updated product not found after update.")
 
 
-            return dict_to_product(updated_result)
+            updated_product = dict_to_product(updated_result)
+            try:
+                publish_offer(
+                    updated_product,
+                    notify=updated_product.get("offer_active") and offer_changed(dict_to_product(result), updated_product)
+                )
+            except Exception as e:
+                print(f"Warning: product updated but offer announcement failed: {e}")
+            return updated_product
     except HTTPException:
         raise
     except aiosqlite.IntegrityError as e:
@@ -887,6 +968,11 @@ async def delete_product(product_identifier: str): # Made async
             # Delete the product
             await cursor.execute("DELETE FROM products WHERE id = ?", (db_id,))
             await conn.commit()
+            try:
+                product_data["offer_active"] = False
+                publish_offer(product_data)
+            except Exception as e:
+                print(f"Warning: product deleted but offer banner cleanup failed: {e}")
 
             return {
                 "message": "Product deleted successfully",
@@ -1201,6 +1287,10 @@ async def get_products_bulk(data: dict): # Made async
 
                 product = dict_to_product(row)
                 product['requested_count'] = count # Add requested count to details
+                free_count, fulfilled_count = offer_quantities(product, count)
+                product['paid_count'] = count
+                product['free_count'] = free_count
+                product['fulfilled_count'] = fulfilled_count
                 product_details.append(product)
 
                 # Calculation based on fetched product data
@@ -1366,7 +1456,9 @@ def generate_invoice_data(
         s_no = index + 1
         mrp = prod.get("cost_mrp", 0.0)
         rate = prod.get("cost_rate", 0.0)
-        count = prod.get("count", 0)
+        shipped_count = prod.get("count", 0)
+        count = prod.get("paid_count", shipped_count)
+        free_count = prod.get("free_count", 0)
         discount_percent = prod.get("cost_dis", 0.0)
         gst_percent = prod.get("cost_gst", 0.0)
         hsn_sac = prod.get("product_hsn", "N/A")
@@ -1383,10 +1475,10 @@ def generate_invoice_data(
         prod_cid = prod.get("product_cid", "N/A")
         invoice_data['items'].append({
             'sNo': s_no,
-            'description': prod.get("product_name", "N/A"),
+            'description': prod.get("product_name", "N/A") + (f" ({free_count} free)" if free_count else ""),
             'hsnSac': hsn_sac,
             'partNo': prod_cid,
-            'quantityShipped': f'{count} No',
+            'quantityShipped': f'{shipped_count} No',
             'quantityBilled': f'{count} No',
             'mrp': round(mrp, 2),
             'discount': f'{discount_percent} %',
@@ -1505,19 +1597,22 @@ async def store_order(user_id: str, data: dict): # Made async
 
                     prod = dict(row)
 
-                    requested_count = item_info.get("count", 0)
+                    requested_count = item_info.get("count", 0) # paid quantity selected in the cart
+                    free_count, fulfilled_count = offer_quantities(prod, requested_count)
                     available_stock = prod.get("stock", 0)
 
-                    # Check stock
-                    if available_stock < requested_count:
+                    # Free units are real stock and must be reserved with paid units.
+                    if available_stock < fulfilled_count:
                         return {
                             "message" : "OutOfStock",
                             "product_available_stock" : available_stock,
                             "product_id" : pid,
-                            "product_name" : prod.get("product_name", "product")
+                            "product_name" : prod.get("product_name", "product"),
+                            "requested_paid_count": requested_count,
+                            "requested_free_count": free_count
                         }
                     else:
-                        products_to_update_stock.append((pid,available_stock-requested_count))
+                        products_to_update_stock.append((pid,available_stock-fulfilled_count))
 
 
 
@@ -1539,10 +1634,18 @@ async def store_order(user_id: str, data: dict): # Made async
                         "cost_gst": prod.get("cost_gst", 0.0),
                         "stock": prod.get("stock", 0.0),
                         "cost_dis": prod.get("cost_dis", 0.0),
-                        "count": count # Store the count for this item in the order details
+                        "count": fulfilled_count,
+                        "paid_count": count,
+                        "free_count": free_count,
+                        "offer_buy_qty": int(prod.get("offer_buy_qty") or 0),
+                        "offer_free_qty": int(prod.get("offer_free_qty") or 0)
                     })
                     
-                    order_items_payload[pid] = {"count": count} # Rebuild payload with only valid items
+                    order_items_payload[pid] = {
+                        "count": fulfilled_count,
+                        "paid_count": count,
+                        "free_count": free_count
+                    }
 
                     # Recalculate totals based on DB data for valid items
                     # rate = prod.get("cost_rate", 0.0)
