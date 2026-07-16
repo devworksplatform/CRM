@@ -1107,10 +1107,13 @@ async def create_offer_group(payload: OfferGroupPayload):
     try:
         async with conn.cursor() as cursor:
             placeholders = ",".join("?" for _ in product_ids)
-            await cursor.execute(f"SELECT product_id FROM products WHERE product_id IN ({placeholders})", product_ids)
-            found = {row[0] for row in await cursor.fetchall()}
+            await cursor.execute(f"SELECT product_id,offer_group_id FROM products WHERE product_id IN ({placeholders})", product_ids)
+            product_rows = await cursor.fetchall()
+            found = {row[0] for row in product_rows}
             missing = [pid for pid in product_ids if pid not in found]
             if missing: raise HTTPException(status_code=404, detail={"message":"Products not found", "product_ids":missing})
+            conflicts = [row[0] for row in product_rows if row[1]]
+            if conflicts: raise HTTPException(status_code=409, detail={"message":"Products already belong to another offer group", "product_ids":conflicts})
             await cursor.execute("""INSERT INTO offer_groups
                 (id,name,description,buy_qty,free_qty,product_ids,status,created_at,updated_at)
                 VALUES (?,?,?,?,?,?,'DRAFT',?,?)""",
@@ -1129,9 +1132,12 @@ async def update_offer_group(group_id: str, payload: OfferGroupPayload):
             if not current: raise HTTPException(status_code=404, detail="Offer group not found")
             if current["status"] == "ACTIVE": raise HTTPException(status_code=409, detail="Cancel the active offer before editing its group")
             placeholders = ",".join("?" for _ in product_ids)
-            await cursor.execute(f"SELECT product_id FROM products WHERE product_id IN ({placeholders})", product_ids)
-            found = {row[0] for row in await cursor.fetchall()}; missing = [pid for pid in product_ids if pid not in found]
+            await cursor.execute(f"SELECT product_id,offer_group_id FROM products WHERE product_id IN ({placeholders})", product_ids)
+            product_rows = await cursor.fetchall()
+            found = {row[0] for row in product_rows}; missing = [pid for pid in product_ids if pid not in found]
             if missing: raise HTTPException(status_code=404, detail={"message":"Products not found", "product_ids":missing})
+            conflicts = [row[0] for row in product_rows if row[1] and row[1] != group_id]
+            if conflicts: raise HTTPException(status_code=409, detail={"message":"Products already belong to another offer group", "product_ids":conflicts})
             await cursor.execute("""UPDATE offer_groups SET name=?,description=?,buy_qty=?,free_qty=?,product_ids=?,
                 status='DRAFT',updated_at=?,canceled_at=NULL WHERE id=?""",
                 (payload.name.strip(),payload.description.strip(),payload.buy_qty,payload.free_qty,json.dumps(product_ids),datetime.utcnow().isoformat()+"Z",group_id))
@@ -1188,7 +1194,7 @@ async def delete_offer_group(group_id: str):
         async with conn.cursor() as cursor:
             await cursor.execute("SELECT status FROM offer_groups WHERE id=?",(group_id,)); row=await cursor.fetchone()
             if not row: raise HTTPException(status_code=404,detail="Offer group not found")
-            if row[0] != "CANCELED": raise HTTPException(status_code=409,detail="Cancel the offer before deleting its group")
+            if row[0] not in ("DRAFT", "CANCELED"): raise HTTPException(status_code=409,detail="Only draft or canceled groups can be deleted")
             await cursor.execute("DELETE FROM offer_groups WHERE id=?",(group_id,)); await conn.commit()
             return {"message":"Offer group deleted"}
     finally: await conn.close()

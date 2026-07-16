@@ -319,7 +319,18 @@ async function callApi(method, url, body = null, parseJson = true) {
       const response = await fetch(SERVER_URL+url, options);
 
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status} - ${response.statusText}`);
+          let detail = null;
+          try {
+            const errorBody = await response.json();
+            detail = errorBody.detail ?? errorBody.message ?? null;
+          } catch (_) {
+            // Some endpoints return no JSON body on failure.
+          }
+          const detailMessage = typeof detail === 'string' ? detail : detail?.message;
+          const error = new Error(detailMessage || `HTTP ${response.status} - ${response.statusText}`);
+          error.status = response.status;
+          error.detail = detail;
+          throw error;
         }
 
         if(parseJson) {

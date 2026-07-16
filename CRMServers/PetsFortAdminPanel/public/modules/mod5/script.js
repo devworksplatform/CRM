@@ -22,6 +22,8 @@ async function initMod5() {
   });
   const categoryName = id => categories.find(c => c.id === id)?.name || 'Uncategorized';
   const productById = id => products.find(p => p.product_id === id);
+  const groupById = id => groups.find(group => group.id === id);
+  const isOwnedByAnotherGroup = product => Boolean(product.offer_group_id && product.offer_group_id !== editingGroupId);
 
   function applyFilters() {
     const term = els.search.value.trim().toLowerCase();
@@ -39,20 +41,26 @@ async function initMod5() {
   }
 
   function renderProducts() {
-    els.filterCount.textContent = `${filtered.length} matching`;
-    els.selectAll.checked = filtered.length > 0 && filtered.every(p => selected.has(p.product_id));
-    els.selectAll.indeterminate = filtered.some(p => selected.has(p.product_id)) && !els.selectAll.checked;
+    const selectable = filtered.filter(product => !isOwnedByAnotherGroup(product));
+    const unavailableCount = filtered.length - selectable.length;
+    els.filterCount.textContent = `${filtered.length} matching${unavailableCount ? ` - ${unavailableCount} in another group` : ''}`;
+    els.selectAll.disabled = selectable.length === 0;
+    els.selectAll.checked = selectable.length > 0 && selectable.every(p => selected.has(p.product_id));
+    els.selectAll.indeterminate = selectable.some(p => selected.has(p.product_id)) && !els.selectAll.checked;
     if (!filtered.length) { els.productList.innerHTML = '<p class="empty-state">No products match these filters.</p>'; return; }
     els.productList.innerHTML = filtered.map(p => {
       const image = Array.isArray(p.product_img) ? p.product_img[0] : '';
-      return `<label class="offer-product-row ${selected.has(p.product_id) ? 'selected' : ''}" data-id="${escapeHtml(p.product_id)}">
-        <input type="checkbox" ${selected.has(p.product_id) ? 'checked' : ''}>
+      const locked = isOwnedByAnotherGroup(p);
+      const owner = locked ? groupById(p.offer_group_id) : null;
+      return `<label class="offer-product-row ${selected.has(p.product_id) ? 'selected' : ''} ${locked ? 'locked' : ''}" data-id="${escapeHtml(p.product_id)}">
+        <input type="checkbox" ${selected.has(p.product_id) ? 'checked' : ''} ${locked ? 'disabled' : ''}>
         ${image ? `<img src="${escapeHtml(image)}" alt="">` : '<span></span>'}
-        <span class="offer-product-main"><strong>${escapeHtml(p.product_name)}</strong><small>${escapeHtml(p.product_cid || p.product_id)} · ${escapeHtml(categoryName(p.cat_id))}</small></span>
-        <span class="offer-product-meta">Stock ${Number(p.stock) || 0}<br>${p.offer_active ? `<span class="offer-pill">Buy ${p.offer_buy_qty} + ${p.offer_free_qty}</span>` : 'No offer'}</span>
+        <span class="offer-product-main"><strong>${escapeHtml(p.product_name)}</strong><small>${escapeHtml(p.product_cid || p.product_id)} · ${escapeHtml(categoryName(p.cat_id))}${locked ? ` · In ${escapeHtml(owner?.name || 'another group')}` : ''}</small></span>
+        <span class="offer-product-meta">Stock ${Number(p.stock) || 0}<br>${locked ? `<span class="offer-pill group-owner">${escapeHtml(owner?.name || 'Another group')}</span>` : (p.offer_active ? `<span class="offer-pill">Buy ${p.offer_buy_qty} + ${p.offer_free_qty}</span>` : 'No offer')}</span>
       </label>`;
     }).join('');
     els.productList.querySelectorAll('.offer-product-row').forEach(row => row.addEventListener('change', event => {
+      if (event.target.disabled) return;
       const id = row.dataset.id; event.target.checked ? selected.add(id) : selected.delete(id); updateSelection(); renderProducts();
     }));
   }
@@ -75,6 +83,11 @@ async function initMod5() {
     if (!els.name.value.trim()) return 'Enter a group name.';
     if (Number(els.buy.value) < 1 || Number(els.free.value) < 1) return 'Buy and free quantities must be at least 1.';
     if (!selected.size) return 'Select at least one product.';
+    const conflicts = [...selected].map(productById).filter(product => product && isOwnedByAnotherGroup(product));
+    if (conflicts.length) {
+      const names = conflicts.slice(0, 3).map(product => `${product.product_name} (${groupById(product.offer_group_id)?.name || 'another group'})`);
+      return `Remove products already assigned to another group: ${names.join(', ')}${conflicts.length > 3 ? ` and ${conflicts.length - 3} more` : ''}.`;
+    }
     return '';
   }
 
@@ -93,7 +106,15 @@ async function initMod5() {
       await callApi('POST', `offer-groups/${group.id}/apply`, {});
       showToast(`Offer activated on ${selected.size} products. One notification was sent.`, 'success', 5000);
       resetBuilder(); await loadData();
-    } catch (error) { showToast(`Could not activate group: ${error.message}`, 'error', 6000); }
+    } catch (error) {
+      const conflictIds = Array.isArray(error.detail?.product_ids) ? error.detail.product_ids : [];
+      const conflictNames = conflictIds.slice(0, 4).map(id => productById(id)?.product_name || id);
+      const message = conflictNames.length
+        ? `These products are already in another offer group and were removed from this selection: ${conflictNames.join(', ')}${conflictIds.length > 4 ? ` and ${conflictIds.length - 4} more` : ''}.`
+        : error.message;
+      showToast(`Could not activate group: ${message}`, 'error', 7000);
+      if (error.status === 409) await loadData();
+    }
     finally { hideLoading(); els.apply.disabled = false; }
   }
 
@@ -105,7 +126,7 @@ async function initMod5() {
       <div class="group-meta">${escapeHtml(g.description || 'No custom notification message')}</div>
       <div class="group-actions">
         ${g.status === 'ACTIVE' ? `<button class="btn btn-warning btn-sm group-cancel" data-id="${g.id}">Cancel offer</button>` : `<button class="btn btn-outline btn-sm group-edit" data-id="${g.id}">Edit & reactivate</button>`}
-        ${g.status === 'CANCELED' ? `<button class="btn btn-danger btn-sm group-delete" data-id="${g.id}">Delete group</button>` : ''}
+        ${g.status === 'CANCELED' || g.status === 'DRAFT' ? `<button class="btn btn-danger btn-sm group-delete" data-id="${g.id}">Delete group</button>` : ''}
       </div></article>`).join('');
     els.groupList.querySelectorAll('.group-cancel').forEach(b => b.onclick = () => cancelGroup(b.dataset.id));
     els.groupList.querySelectorAll('.group-delete').forEach(b => b.onclick = () => deleteGroup(b.dataset.id));
@@ -153,7 +174,7 @@ async function initMod5() {
   }
 
   async function deleteGroup(id) {
-    const group = groups.find(g => g.id === id); if (!confirm(`Permanently delete the canceled group "${group?.name}"?`)) return;
+    const group = groups.find(g => g.id === id); if (!confirm(`Permanently delete the ${group?.status?.toLowerCase() || ''} group "${group?.name}"?`)) return;
     showLoading(); try { await callApi('DELETE', `offer-groups/${id}`); showToast('Group deleted.', 'success'); await loadData(); }
     catch (e) { showToast(`Delete failed: ${e.message}`, 'error'); } finally { hideLoading(); }
   }
@@ -170,12 +191,16 @@ async function initMod5() {
       callApi('POST', 'products/query', {filters:[],limit:10000,offset:0,order_by:'product_name',order_direction:'ASC'}),
       callApi('GET', 'offer-groups')
     ]);
+    [...selected].forEach(id => {
+      const product = productById(id);
+      if (!product || isOwnedByAnotherGroup(product)) selected.delete(id);
+    });
     applyFilters(); renderGroups(); renderStandaloneOffers(); updateSelection(); feather.replace();
   }
 
   [els.search, els.category, els.status, els.stock].forEach(input => input.addEventListener(input.tagName === 'INPUT' ? 'input' : 'change', applyFilters));
   els.standaloneSearch.addEventListener('input', renderStandaloneOffers);
-  els.selectAll.addEventListener('change', () => { filtered.forEach(p => els.selectAll.checked ? selected.add(p.product_id) : selected.delete(p.product_id)); updateSelection(); renderProducts(); });
+  els.selectAll.addEventListener('change', () => { filtered.filter(product => !isOwnedByAnotherGroup(product)).forEach(p => els.selectAll.checked ? selected.add(p.product_id) : selected.delete(p.product_id)); updateSelection(); renderProducts(); });
   $('offer-clear-selection').onclick = () => { selected.clear(); updateSelection(); renderProducts(); };
   $('offer-refresh').onclick = loadData; els.apply.onclick = createAndApply;
   $('manual-banner-add').onclick = async () => { const input=$('manual-banner-url'),url=input.value.trim(); if(!isValidHttpUrl(url)){showToast('Enter a valid URL.','warning');return;} await database.ref(`datas/announcement/all/${Date.now()}`).set(url); input.value=''; await loadManualBanners(); };
