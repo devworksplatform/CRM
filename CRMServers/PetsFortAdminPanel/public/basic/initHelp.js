@@ -175,9 +175,13 @@ function canEditServerConfig() {
 }
 
 function syncServerConfigNavVisibility() {
-    const navItem = document.getElementById("server-config-nav");
-    if (!navItem) return;
-    navItem.style.display = canEditServerConfig() ? "" : "none";
+    const navItems = [
+        document.getElementById("server-config-nav"),
+        document.getElementById("backup-manager-nav")
+    ];
+    navItems.forEach((navItem) => {
+        if (navItem) navItem.style.display = canEditServerConfig() ? "" : "none";
+    });
 }
 
 async function loadServerConfig(forceRefresh = false) {
@@ -283,7 +287,7 @@ function checkPermissionForAction(action, param1) {
             } else return false;
         }
 
-        if(moduleName == "ServerConfig") {
+        if(moduleName == "ServerConfig" || moduleName == "Backups") {
             return canEditServerConfig();
         }
 

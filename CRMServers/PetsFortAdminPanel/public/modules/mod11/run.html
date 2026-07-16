@@ -1,0 +1,55 @@
+<div class="backup-page">
+    <div id="backup-locked" class="backup-locked" style="display: none;">
+        Only <strong>dev@petsfort.in</strong> can view and manage backups.
+    </div>
+
+    <div id="backup-content">
+        <div class="backup-toolbar">
+            <div>
+                <h3>Backup Manager</h3>
+                <p>Review Firebase Realtime Database backups and create a fresh backup from the live SQLite database.</p>
+            </div>
+            <button id="backup-refresh" class="btn btn-outline">
+                <i data-feather="refresh-ccw"></i> Refresh
+            </button>
+        </div>
+
+        <div class="backup-actions">
+            <button id="backup-create" class="btn btn-primary">
+                <i data-feather="plus-circle"></i> Create Backup
+            </button>
+            <button id="backup-delete-selected" class="btn btn-warn" disabled>
+                <i data-feather="trash-2"></i> Delete Selected
+            </button>
+            <button id="backup-reset-current" class="btn btn-error">
+                <i data-feather="rotate-ccw"></i> Delete All & Create Now
+            </button>
+            <button id="backup-delete-old" class="btn btn-outline">
+                <i data-feather="calendar"></i> Delete Older Than 1 Week
+            </button>
+        </div>
+
+        <div class="backup-summary">
+            <span id="backup-count">0 backups</span>
+            <span id="backup-last">Last backup: -</span>
+        </div>
+
+        <div class="backup-table-wrap">
+            <table class="backup-table">
+                <thead>
+                    <tr>
+                        <th class="backup-check-col">
+                            <input type="checkbox" id="backup-select-all" aria-label="Select all backups">
+                        </th>
+                        <th>Backup</th>
+                        <th>Created</th>
+                        <th>Path</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="backup-table-body"></tbody>
+            </table>
+            <div id="backup-empty" class="backup-empty" style="display: none;">No backups found.</div>
+        </div>
+    </div>
+</div>
