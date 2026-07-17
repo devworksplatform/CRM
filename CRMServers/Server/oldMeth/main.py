@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import json
 import random, string
+import re
 import aiosqlite  # Replaced sqlite3 with aiosqlite
 
 import asyncio
@@ -1523,6 +1524,10 @@ async def get_products_bulk(data: dict): # Made async
                 total_discount += disc_amount * count
                 total += actual_rate * count
 
+        # The Android cart renders product_details in the order returned here.
+        # Use the same warehouse picking order as newly created orders.
+        product_details.sort(key=_order_item_pick_key)
+
         response = {
             "product_details": product_details,
             "cost": {
@@ -1602,6 +1607,34 @@ def amount_to_words_inr(amount: float) -> str:
         result += f" and {paise_words} Paise"
     result += " Only"
     return result
+
+
+def _natural_sort_key(value: Any):
+    """Return a case-insensitive key that orders embedded numbers numerically."""
+    return tuple(
+        (1, int(part)) if part.isdigit() else (0, part.casefold())
+        for part in re.split(r'(\d+)', str(value or ''))
+        if part
+    )
+
+
+def _normalized_subcategory_key(value: Any) -> str:
+    """Normalize comma-separated subcategory IDs so equivalent groups sort together."""
+    return ','.join(sorted(
+        part.strip().casefold()
+        for part in str(value or '').split(',')
+        if part.strip()
+    ))
+
+
+def _order_item_pick_key(product: Dict[str, Any]):
+    """Group order items by stock location, then naturally order product sizes."""
+    return (
+        str(product.get('cat_id') or '').casefold(),
+        _normalized_subcategory_key(product.get('cat_sub')),
+        _natural_sort_key(product.get('product_name')),
+        str(product.get('product_id') or product.get('id') or '').casefold()
+    )
 
 
 def generate_invoice_data(
@@ -1898,6 +1931,12 @@ async def store_order(user_id: str, data: dict): # Made async
                 # Check if there are any valid items to create an order
                 if not order_items_payload:
                     raise HTTPException(status_code=400, detail="No valid items found in the request to create an order.")
+
+                # Keep all products from the same warehouse category/subcategory
+                # together. Natural name sorting keeps numbered sizes in picking
+                # order (for example Muzzle 1, Muzzle 2, ... Muzzle 10).
+                # This list is used both by the Android order view and the bill.
+                product_details_for_order.sort(key=_order_item_pick_key)
 
                 # await cur.execute("SELECT * FROM userdata WHERE id=? OR uid=?", (user_id, user_id))
                 # user_row = await cur.fetchone()
