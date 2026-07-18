@@ -734,6 +734,69 @@ async def ram_data(request: Request):
 from datetime import datetime, timedelta, timezone
 import dbbackup
 
+BACKUP_ADMIN_EMAIL = "dev@petsfort.in"
+BACKUP_ID_FORMAT = "%Y-%m-%d--%H-%M-%S"
+
+
+def _verify_backup_admin(request: Request):
+    authorization = request.headers.get("Authorization", "")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing bearer token.")
+
+    token = authorization.split(" ", 1)[1].strip()
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing bearer token.")
+
+    try:
+        decoded_token = firebaseAuth.auth.verify_id_token(token)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired bearer token.")
+
+    if (decoded_token.get("email") or "").lower() != BACKUP_ADMIN_EMAIL:
+        raise HTTPException(status_code=403, detail="Only dev@petsfort.in can manage backups.")
+
+
+def _backup_created_at(backup_id: str):
+    if backup_id == "latest":
+        return None
+
+    try:
+        created_at = datetime.strptime(backup_id, BACKUP_ID_FORMAT)
+        ist = timezone(timedelta(hours=5, minutes=30))
+        return created_at.replace(tzinfo=ist).isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
+def _get_backup_ids():
+    backup_keys = firebaseAuth.db.reference("tables").get(shallow=True) or {}
+    if not isinstance(backup_keys, dict):
+        return []
+    return [str(backup_id) for backup_id in backup_keys.keys()]
+
+
+def _backup_list_item(backup_id: str):
+    return {
+        "id": backup_id,
+        "created_at": _backup_created_at(backup_id),
+        "path": f"tables/{backup_id}",
+        "is_latest": backup_id == "latest",
+    }
+
+
+def _validate_backup_id(backup_id: str):
+    if not backup_id or re.search(r"[.#$\[\]/\x00-\x1f\x7f]", backup_id):
+        raise HTTPException(status_code=400, detail="Invalid backup ID.")
+
+
+def _delete_backup(backup_id: str):
+    _validate_backup_id(backup_id)
+    backup_ref = firebaseAuth.db.reference("tables").child(backup_id)
+    if backup_ref.get(shallow=True) is None:
+        return False
+    backup_ref.delete()
+    return True
+
 @app.get("/restore/{restore_path}")
 async def restoreAPI(restore_path: str): # Made async
     errRdb = None
@@ -777,6 +840,105 @@ async def backupAPI(): # Made async
         "err":str(errRdb)
     },"storage":{"path":path,"url": url, "err": str(err)},
     "log":blog}
+
+
+@app.get("/backups/list")
+async def list_backups(request: Request):
+    _verify_backup_admin(request)
+
+    backup_ids = _get_backup_ids()
+    dated_ids = sorted(
+        (backup_id for backup_id in backup_ids if backup_id != "latest"),
+        key=lambda backup_id: _backup_created_at(backup_id) or "",
+        reverse=True,
+    )
+    ordered_ids = (["latest"] if "latest" in backup_ids else []) + dated_ids
+    return {"backups": [_backup_list_item(backup_id) for backup_id in ordered_ids]}
+
+
+@app.post("/backups/create")
+async def create_managed_backup(request: Request):
+    _verify_backup_admin(request)
+    result = await backupAPI()
+    return {"detail": "Backup created successfully.", "result": result}
+
+
+@app.delete("/backups/older-than-days/{days}")
+async def delete_old_backups(days: int, request: Request):
+    _verify_backup_admin(request)
+    if days < 0:
+        raise HTTPException(status_code=400, detail="Days must be zero or greater.")
+
+    ist = timezone(timedelta(hours=5, minutes=30))
+    cutoff = datetime.now(ist) - timedelta(days=days)
+    deleted_ids = []
+    for backup_id in _get_backup_ids():
+        if backup_id == "latest":
+            continue
+        try:
+            created_at = datetime.strptime(backup_id, BACKUP_ID_FORMAT).replace(tzinfo=ist)
+        except ValueError:
+            continue
+        if created_at < cutoff and _delete_backup(backup_id):
+            deleted_ids.append(backup_id)
+
+    return {"detail": "Old backups deleted.", "deleted_ids": deleted_ids}
+
+
+@app.delete("/backups/{backup_id}")
+async def delete_managed_backup(backup_id: str, request: Request):
+    _verify_backup_admin(request)
+    if not _delete_backup(backup_id):
+        raise HTTPException(status_code=404, detail="Backup not found.")
+    return {"detail": "Backup deleted.", "deleted_id": backup_id}
+
+
+@app.post("/backups/delete-selected")
+async def delete_selected_backups(request: Request):
+    _verify_backup_admin(request)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="A JSON request body is required.")
+
+    backup_ids = body.get("ids") if isinstance(body, dict) else None
+    if not isinstance(backup_ids, list) or not backup_ids:
+        raise HTTPException(status_code=400, detail="A non-empty ids array is required.")
+
+    if not all(isinstance(backup_id, str) for backup_id in backup_ids):
+        raise HTTPException(status_code=400, detail="Every backup ID must be a string.")
+
+    deleted_ids = []
+    for backup_id in dict.fromkeys(backup_ids):
+        if _delete_backup(backup_id):
+            deleted_ids.append(backup_id)
+
+    return {"detail": "Selected backups deleted.", "deleted_ids": deleted_ids}
+
+
+@app.post("/backups/reset-current")
+async def reset_managed_backups(request: Request):
+    _verify_backup_admin(request)
+
+    # Create the replacement first so a failed backup never erases the last good copy.
+    result = await backupAPI()
+    realtime_result = result.get("realtimeDb", {})
+    created_path = realtime_result.get("path", "")
+    created_id = created_path.rsplit("/", 1)[-1] if created_path else ""
+    if realtime_result.get("err") not in {None, "None"} or not created_id:
+        raise HTTPException(status_code=500, detail="Fresh backup failed; existing backups were kept.")
+
+    deleted_ids = []
+    for backup_id in _get_backup_ids():
+        if backup_id not in {"latest", created_id} and _delete_backup(backup_id):
+            deleted_ids.append(backup_id)
+
+    return {
+        "detail": "Backups reset and fresh backup created.",
+        "created_id": created_id,
+        "deleted_ids": deleted_ids,
+        "result": result,
+    }
 
 
 
