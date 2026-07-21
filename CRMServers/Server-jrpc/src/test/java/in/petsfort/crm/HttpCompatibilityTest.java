@@ -1,0 +1,45 @@
+package in.petsfort.crm;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.WebSocket;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+final class HttpCompatibilityTest {
+    @TempDir Path temp;CrmDatabase database;EmbeddedHttpServer server;HttpClient client;String base;
+    @BeforeEach void start()throws Exception{int port;try(ServerSocket socket=new ServerSocket(0)){port=socket.getLocalPort();}System.setProperty("crm.http.port",String.valueOf(port));System.setProperty("crm.log.path",temp.resolve("serverLogs.txt").toString());database=new CrmDatabase(temp.resolve("products.db"));database.initialize();InMemoryFirebaseService firebase=new InMemoryFirebaseService();CrmHandler handler=new CrmHandler(database,firebase);server=new EmbeddedHttpServer(handler,database,new BackupService(database,firebase));server.start();client=HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();base="http://127.0.0.1:"+port;}
+    @AfterEach void stop(){if(server!=null)server.close();if(database!=null)database.close();System.clearProperty("crm.http.port");System.clearProperty("crm.log.path");}
+
+    @Test void htmlHealthCorsSitemapLogsAndSystemStatsAreServed()throws Exception{HttpResponse<String>root=get("/");assertEquals(200,root.statusCode());assertTrue(root.body().contains("Hello From AWS Domain"));assertEquals("*",root.headers().firstValue("access-control-allow-origin").orElse(""));assertEquals(200,get("/analytics").statusCode());assertTrue(get("/analytics").body().contains("Petsfort Analytics"));assertEquals(200,get("/database").statusCode());assertEquals(200,get("/privacy_policy").statusCode());assertEquals(200,get("/sitemap.xml").statusCode());JsonObject metrics=com.google.gson.JsonParser.parseString(get("/system-stats/snapshot").body()).getAsJsonObject();assertTrue(metrics.getAsJsonObject("cpu").has("times"));assertTrue(metrics.getAsJsonObject("network").has("connections_sample"));Path log=temp.resolve("serverLogs.txt");assertEquals(500,get("/logs").statusCode());Files.writeString(log,"important log");assertEquals("important log",get("/logs").body());HttpRequest delete=HttpRequest.newBuilder(URI.create(base+"/logs")).DELETE().build();assertEquals(200,client.send(delete,HttpResponse.BodyHandlers.ofString()).statusCode());assertEquals("",Files.readString(log));}
+
+    @Test void originalPythonHttpCheckoutProducesBill()throws Exception{JsonObject product=new JsonObject();product.addProperty("product_id","SKU");product.addProperty("product_name","Food");product.addProperty("product_desc","");product.add("product_img",new JsonArray());product.addProperty("cat_id","CAT");product.addProperty("cat_sub","SUB");product.addProperty("cost_rate",90);product.addProperty("cost_mrp",100);product.addProperty("cost_gst",18);product.addProperty("cost_dis",10);product.addProperty("stock",10);assertEquals(200,post("/products/",product).statusCode());JsonObject user=new JsonObject();user.addProperty("id","SHOP");user.addProperty("uid","UID");user.addProperty("name","Shop");user.addProperty("email","x@y.z");user.addProperty("role","shop");user.addProperty("address","A");user.addProperty("credits",1000);user.addProperty("creditse","2099");assertEquals(200,post("/userdata",user).statusCode());JsonObject checkout=new JsonObject();JsonObject item=new JsonObject();item.addProperty("count",2);checkout.add("SKU",item);JsonObject other=new JsonObject();other.addProperty("address","Delivery");other.addProperty("notes","Call");checkout.add("otherData",other);HttpResponse<String>result=post("/orders/checkout/SHOP",checkout);assertEquals(200,result.statusCode(),result.body());String orderId=com.google.gson.JsonParser.parseString(result.body()).getAsJsonObject().get("order_id").getAsString();HttpResponse<String>bill=get("/bills/"+orderId);assertEquals(200,bill.statusCode());assertEquals("INV-"+orderId,com.google.gson.JsonParser.parseString(bill.body()).getAsJsonObject().getAsJsonObject("details").get("invoiceNo").getAsString());}
+
+    @Test void sseEmitsSystemSnapshot()throws Exception{HttpRequest request=HttpRequest.newBuilder(URI.create(base+"/system-stats/live")).timeout(Duration.ofSeconds(5)).build();HttpResponse<java.util.stream.Stream<String>>response=client.send(request,HttpResponse.BodyHandlers.ofLines());assertEquals(200,response.statusCode());try(java.util.stream.Stream<String>lines=response.body()){String first=lines.filter(line->line.startsWith("data: ")).findFirst().orElseThrow();assertTrue(first.contains("cpu"));}}
+
+    @Test void websocketTerminalAcceptsInput()throws Exception{CompletableFuture<String>seen=new CompletableFuture<>();StringBuilder output=new StringBuilder();WebSocket socket=client.newWebSocketBuilder().connectTimeout(Duration.ofSeconds(5)).buildAsync(URI.create(base.replace("http","ws")+"/ws/terminal"),new WebSocket.Listener(){public void onOpen(WebSocket ws){ws.request(1);}public CompletionStage<?> onText(WebSocket ws,CharSequence data,boolean last){output.append(data);if(output.toString().contains("WS_MARKER"))seen.complete(output.toString());ws.request(1);return null;}public void onError(WebSocket ws,Throwable error){seen.completeExceptionally(error);}}).get(5,TimeUnit.SECONDS);socket.sendText("{\"action\":\"input\",\"data\":\"echo WS_MARKER\\n\"}",true).get(5,TimeUnit.SECONDS);assertTrue(seen.get(10,TimeUnit.SECONDS).contains("WS_MARKER"));socket.sendClose(WebSocket.NORMAL_CLOSURE,"done").get(5,TimeUnit.SECONDS);}
+
+    @Test void schemaAndDatabaseEditorKeepPythonResponseContracts()throws Exception{JsonObject schema=com.google.gson.JsonParser.parseString(get("/schema").body()).getAsJsonObject();assertEquals("products",schema.getAsJsonObject("products_table").get("table_name").getAsString());assertTrue(schema.getAsJsonObject("products_table").getAsJsonArray("columns").get(0).getAsJsonObject().has("primary_key"));JsonObject info=com.google.gson.JsonParser.parseString(get("/api/table/products/info").body()).getAsJsonObject();assertEquals("id",info.get("pk_column").getAsString());assertTrue(info.has("columns"));String boundary="----PetsfortBoundary";String multipart="--"+boundary+"\r\nContent-Disposition: form-data; name=\"id\"\r\n\r\nFORM-1\r\n--"+boundary+"\r\nContent-Disposition: form-data; name=\"product_id\"\r\n\r\nFORM-SKU\r\n--"+boundary+"\r\nContent-Disposition: form-data; name=\"product_name\"\r\n\r\nForm Product\r\n--"+boundary+"--\r\n";HttpRequest add=HttpRequest.newBuilder(URI.create(base+"/api/table/products/row")).header("Content-Type","multipart/form-data; boundary="+boundary).POST(HttpRequest.BodyPublishers.ofString(multipart)).build();HttpResponse<String>added=client.send(add,HttpResponse.BodyHandlers.ofString());assertEquals(201,added.statusCode(),added.body());assertTrue(com.google.gson.JsonParser.parseString(added.body()).getAsJsonObject().has("row_id"));JsonObject data=com.google.gson.JsonParser.parseString(get("/api/table/products/data").body()).getAsJsonObject();assertEquals("FORM-SKU",data.getAsJsonArray("data").get(0).getAsJsonObject().get("product_id").getAsString());}
+
+    @Test void managedBackupHttpAuthorizationAndCallsMatchPython()throws Exception{assertEquals(401,get("/backups/list").statusCode());HttpRequest denied=HttpRequest.newBuilder(URI.create(base+"/backups/list")).header("Authorization","Bearer user-token").GET().build();assertEquals(403,client.send(denied,HttpResponse.BodyHandlers.ofString()).statusCode());HttpRequest create=HttpRequest.newBuilder(URI.create(base+"/backups/create")).header("Authorization","Bearer admin-token").POST(HttpRequest.BodyPublishers.noBody()).build();assertEquals(200,client.send(create,HttpResponse.BodyHandlers.ofString()).statusCode());HttpRequest list=HttpRequest.newBuilder(URI.create(base+"/backups/list")).header("Authorization","Bearer admin-token").GET().build();JsonObject response=com.google.gson.JsonParser.parseString(client.send(list,HttpResponse.BodyHandlers.ofString()).body()).getAsJsonObject();assertEquals(2,response.getAsJsonArray("backups").size());}
+
+    private HttpResponse<String>get(String path)throws Exception{return client.send(HttpRequest.newBuilder(URI.create(base+path)).timeout(Duration.ofSeconds(10)).GET().build(),HttpResponse.BodyHandlers.ofString());}
+    private HttpResponse<String>post(String path,JsonObject body)throws Exception{return client.send(HttpRequest.newBuilder(URI.create(base+path)).timeout(Duration.ofSeconds(10)).header("Content-Type","application/json").POST(HttpRequest.BodyPublishers.ofString(body.toString())).build(),HttpResponse.BodyHandlers.ofString());}
+}

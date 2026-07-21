@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: in.petsfort.crm.CrmParityTest
+-------------------------------------------------------------------------------
+Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.557 s -- in in.petsfort.crm.CrmParityTest
