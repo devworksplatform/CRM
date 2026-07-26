@@ -2,17 +2,11 @@ package crmapp.petsfort.JLogics;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Handler;
-import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.gson.Gson;
 import com.google.gson.internal.LinkedTreeMap;
@@ -21,41 +15,20 @@ import com.google.gson.reflect.TypeToken;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import crmapp.petsfort.JLogics.Models.Category;
 import crmapp.petsfort.JLogics.Models.SubCategory;
 import crmapp.petsfort.JLogics.Models.User;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import crmapp.petsfort.JLogics.Models.Product;
 import crmapp.petsfort.R;
 
 public class Business {
-//    private static final String ServerURL = "http://ec2-13-235-78-112.ap-south-1.compute.amazonaws.com:8000";
-//    private static final String ServerURL = "https://server.petsfort.in";
-    private static final String FALLBACK_SERVER_URL = "https://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com";
-    private static final String SERVER_CONFIG_PREFS = "server_config_cache";
-    private static final String SERVER_CONFIG_KEY = "base_url";
-    private static final String SERVER_CONFIG_DB_PATH = "appConfig/server/baseUrl";
-    private static final long SERVER_CONFIG_WAIT_TIMEOUT_MS = 5000;
-    private static volatile String serverUrl = FALLBACK_SERVER_URL;
-    private static volatile boolean serverConfigFetchStarted = false;
-    private static volatile boolean serverConfigLoaded = false;
-    private static volatile boolean hasCachedServerConfig = false;
-    private static final CountDownLatch serverConfigLatch = new CountDownLatch(1);
+    private static volatile Context applicationContext;
     Context context;
     public Business(Context context) {
         this.context = context;
@@ -67,110 +40,15 @@ public class Business {
             return;
         }
 
-        Context appContext = context.getApplicationContext();
-        SharedPreferences prefs = appContext.getSharedPreferences(SERVER_CONFIG_PREFS, Context.MODE_PRIVATE);
-        String cachedUrl = prefs.getString(SERVER_CONFIG_KEY, null);
-        if (cachedUrl != null && !cachedUrl.trim().isEmpty()) {
-            serverUrl = normalizeServerUrl(cachedUrl);
-            hasCachedServerConfig = true;
-        }
-
-        if (serverConfigFetchStarted) {
-            return;
-        }
-        serverConfigFetchStarted = true;
-
-        FirebaseDatabase.getInstance()
-                .getReference(SERVER_CONFIG_DB_PATH)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        String remoteUrl = snapshot.getValue(String.class);
-                        if (remoteUrl != null && !remoteUrl.trim().isEmpty()) {
-                            serverUrl = normalizeServerUrl(remoteUrl);
-                            prefs.edit().putString(SERVER_CONFIG_KEY, serverUrl).apply();
-                            hasCachedServerConfig = true;
-                        }
-                        serverConfigLoaded = true;
-                        serverConfigLatch.countDown();
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        serverConfigLoaded = true;
-                        serverConfigLatch.countDown();
-                    }
-                });
+        applicationContext = context.getApplicationContext();
     }
 
-    private static String normalizeServerUrl(String url) {
-        if (url == null || url.trim().isEmpty()) {
-            return FALLBACK_SERVER_URL;
+    private static PetsFortJrpcClient rpcClient() {
+        if (applicationContext == null) {
+            throw new IllegalStateException("Business has not been initialized.");
         }
-        return url.trim().replaceAll("/+$", "");
+        return PetsFortJrpcClient.get(applicationContext);
     }
-
-    private static String getServerUrl() {
-        waitForServerConfigIfNeeded();
-        return normalizeServerUrl(serverUrl);
-    }
-
-    private static void waitForServerConfigIfNeeded() {
-        if (hasCachedServerConfig || serverConfigLoaded || !serverConfigFetchStarted) {
-            return;
-        }
-
-        try {
-            serverConfigLatch.await(SERVER_CONFIG_WAIT_TIMEOUT_MS, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-
-    public static OkHttpClient client;
-    static {
-        try {
-            // Create a trust manager that does not validate certificate chains
-            final javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[] {
-                    new javax.net.ssl.X509TrustManager() {
-                        @Override
-                        public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
-                        }
-
-                        @Override
-                        public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
-                        }
-
-                        @Override
-                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                            return new java.security.cert.X509Certificate[]{};
-                        }
-                    }
-            };
-
-            // Install the all-trusting trust manager
-            final javax.net.ssl.SSLContext sslContext = javax.net.ssl.SSLContext.getInstance("SSL");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
-
-            // Create an SSL socket factory with our all-trusting manager
-            final javax.net.ssl.SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-
-            okhttp3.OkHttpClient.Builder builder = new okhttp3.OkHttpClient.Builder();
-            builder.sslSocketFactory(sslSocketFactory, (javax.net.ssl.X509TrustManager)trustAllCerts[0]);
-            builder.hostnameVerifier(new javax.net.ssl.HostnameVerifier() {
-                @Override
-                public boolean verify(String hostname, javax.net.ssl.SSLSession session) {
-                    return true;
-                }
-            });
-
-            client = builder.build();
-        } catch (Exception e) {
-            throw new RuntimeException(e); // Throw a RuntimeException to indicate initialization failure.
-        }
-    }
-
     public enum JOrderStatus {
         ORDER_PENDING("ORDER_PENDING", "#FFFF00", "Pending", R.drawable.shape_status_background_pending),
         ORDER_IN_PROGRESS("ORDER_IN_PROGRESS", "#0000FF", "In Progress", R.drawable.shape_status_background_progress),
@@ -462,101 +340,51 @@ public class Business {
 
     public static class UserDataApiClient {
 //        private static final OkHttpClient client = new OkHttpClient();
-        private static String getUserUrl() { return getServerUrl() + "/user/"; }
-        private static String getUserdataUrl() { return getServerUrl() + "/userdata/"; }
 
         public static void putUserDataCallApi(String userId, User user, Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    HashMap<String,Object> dataMap = new HashMap<>();
-                    dataMap.put("name",user.name);
-                    dataMap.put("email",user.email);
-                    dataMap.put("role",user.role);
-                    dataMap.put("address",user.address);
-                    dataMap.put("creditse",user.creditse);
-                    dataMap.put("credits",user.credits);
-                    dataMap.put("isblocked",user.isBlocked);
-                    dataMap.put("pwd","");
-
-                    JSONObject jsonBody = new JSONObject(dataMap);
-                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
-
-                    Request request = new Request.Builder()
-                            .url(getUserdataUrl() + userId)
-                            .addHeader("Content-Type", "application/json")
-                            .put(body)
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        if (responseBody.contains("successfully")) {
-                            callback.onReceived(new UserDataApiResponse(response.code(), user));
-                        } else {
-                            callback.onReceived(new UserDataApiResponse(500, (User) null));
-                        }
-                    });
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(500, (User) null));
-                    });
+            HashMap<String,Object> dataMap = new HashMap<>();
+            dataMap.put("name",user.name);
+            dataMap.put("contact",user.contact);
+            dataMap.put("gstin",user.gstin);
+            dataMap.put("email",user.email);
+            dataMap.put("role",user.role);
+            dataMap.put("address",user.address);
+            dataMap.put("creditse",user.creditse);
+            dataMap.put("credits",user.credits);
+            dataMap.put("isblocked",user.isBlocked);
+            dataMap.put("pwd","");
+            com.google.gson.JsonObject request = PetsFortJrpcClient.requestWithBody(dataMap);
+            request.addProperty("user_id", userId);
+            rpcClient().call(CrmRpc.PUT_USERDATA, request, new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    callback.onReceived(new UserDataApiResponse(200, user));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new UserDataApiResponse(statusCode, (User) null));
                 }
             });
         }
         public static void getUserDataCallApi(String userId, Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    Request request = new Request.Builder()
-                            .url(getUserUrl() + userId)
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    User user = parseUser(responseBody);
-
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(response.code(), user));
-                    });
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(500, (User) null));
-                    });
+            com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+            request.addProperty("user_id", userId);
+            rpcClient().call(CrmRpc.GET_USER, request, new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    callback.onReceived(new UserDataApiResponse(200, parseUser(response.toString())));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new UserDataApiResponse(statusCode, (User) null));
                 }
             });
         }
 
         public static void getAllUsersCallApi(Callbacker.ApiResponseWaiters.UserDataApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    Request request = new Request.Builder()
-                            .url(getUserdataUrl()) // already set as "/userdata/"
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    List<User> users = parseUsers(responseBody);
-
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(response.code(), users));
-                    });
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new UserDataApiResponse(500, (List<User>) null));
-                    });
+            rpcClient().call(CrmRpc.GET_USERDATA, new com.google.gson.JsonObject(), new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    String data = response.has("data") ? response.get("data").toString() : "[]";
+                    callback.onReceived(new UserDataApiResponse(200, parseUsers(data)));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new UserDataApiResponse(statusCode, (List<User>) null));
                 }
             });
         }
@@ -586,6 +414,8 @@ public class Business {
                 String uid = obj.getString("uid");
                 String id = obj.getString("id");
                 String name = obj.getString("name");
+                String contact = obj.getString("contact");
+                String gstin = obj.getString("gstin");
                 String email = obj.getString("email");
                 String role = obj.getString("role");
                 String address = obj.getString("address");
@@ -593,7 +423,8 @@ public class Business {
                 double credits = obj.getDouble("credits");
                 int isBlocked = obj.getInt("isblocked");
 
-                return new User(uid, id, name, email, role, address, credits, creditse, isBlocked);
+                return new User(uid, id, name, contact, gstin, email, role, address,
+                        credits, creditse, isBlocked);
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -624,33 +455,16 @@ public class Business {
     }
 
     public static class CategoriesApiClient {
-        private static String getUrl() { return getServerUrl() + "/categories"; }
 //        private static final OkHttpClient client = new OkHttpClient();
 
         public static void getCategoriesCallApi(Callbacker.ApiResponseWaiters.CategoriesApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    Request request = new Request.Builder()
-                            .url(getUrl())
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    ArrayList<Category> categoryList = parseCategories(responseBody);
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new CategoriesApiClient.CategoriesApiResponse(response.code(), categoryList));
-                    });
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new CategoriesApiClient.CategoriesApiResponse(500,new ArrayList<>()));
-                    });
+            rpcClient().call(CrmRpc.GET_CATEGORIES, new com.google.gson.JsonObject(), new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    String data = response.has("data") ? response.get("data").toString() : "[]";
+                    callback.onReceived(new CategoriesApiResponse(200, parseCategories(data)));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new CategoriesApiResponse(statusCode, new ArrayList<>()));
                 }
             });
         }
@@ -692,33 +506,18 @@ public class Business {
     }
 
     public static class SubCategoriesApiClient {
-        private static String getUrl() { return getServerUrl() + "/subcats/"; }
 //        private static final OkHttpClient client = new OkHttpClient();
 
         public static void getSubCategoriesCallApi(String category_id, Callbacker.ApiResponseWaiters.SubCategoriesApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    Request request = new Request.Builder()
-                            .url(getUrl().concat(category_id))
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    ArrayList<SubCategory> categoryList = parseCategories(responseBody);
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new SubCategoriesApiClient.SubCategoriesApiResponse(response.code(), categoryList));
-                    });
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new SubCategoriesApiClient.SubCategoriesApiResponse(500,new ArrayList<>()));
-                    });
+            com.google.gson.JsonObject request = new com.google.gson.JsonObject();
+            request.addProperty("category_id", category_id);
+            rpcClient().call(CrmRpc.GET_SUBCATEGORIES_BY_CATEGORY, request, new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    String data = response.has("data") ? response.get("data").toString() : "[]";
+                    callback.onReceived(new SubCategoriesApiResponse(200, parseCategories(data)));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new SubCategoriesApiResponse(statusCode, new ArrayList<>()));
                 }
             });
         }
@@ -761,36 +560,21 @@ public class Business {
     }
 
     public static class QueryApiClient {
-        private static String getUrl() { return getServerUrl() + "/products/query"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.QueryApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    JSONObject jsonBody = new JSONObject(data);
-                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
-                    Request request = new Request.Builder()
-                            .url(getUrl())
-                            .addHeader("Content-Type", "application/json")
-                            .post(body)
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    ArrayList<Product> productList = parseProducts(responseBody);
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new QueryApiResponse(response.code(), productList));
-                    });
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                    // Switch back to the main thread to update the UI
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            rpcClient().call(CrmRpc.POST_PRODUCTS_QUERY, PetsFortJrpcClient.requestWithBody(data),
+                    new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    try {
+                        String result = response.has("data") ? response.get("data").toString() : "[]";
+                        callback.onReceived(new QueryApiResponse(200, parseProducts(result)));
+                    } catch (JSONException error) {
                         callback.onReceived(new QueryApiResponse(500, new ArrayList<>()));
-                    });
+                    }
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new QueryApiResponse(statusCode, new ArrayList<>()));
                 }
             });
         }
@@ -852,34 +636,20 @@ public class Business {
 
     }
     public static class BulkDetailsApiClient {
-        private static String getUrl() { return getServerUrl() + "/products/bulk-details"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, Callbacker.ApiResponseWaiters.BulkDetailsApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    JSONObject jsonBody = new JSONObject(data);
-                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
-                    Request request = new Request.Builder()
-                            .url(getUrl())
-                            .addHeader("Content-Type", "application/json")
-                            .post(body)
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    BulkDetailsApiResponse apiResponse = parseResponse(responseBody);
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new BulkDetailsApiResponse(response.code(), apiResponse));
-                    });
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                    new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            rpcClient().call(CrmRpc.POST_PRODUCTS_BULK_DETAILS, PetsFortJrpcClient.requestWithBody(data),
+                    new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    try {
+                        callback.onReceived(new BulkDetailsApiResponse(200, parseResponse(response.toString())));
+                    } catch (JSONException error) {
                         callback.onReceived(new BulkDetailsApiResponse(500, new BulkDetailsApiResponse()));
-                    });
+                    }
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new BulkDetailsApiResponse(statusCode, new BulkDetailsApiResponse()));
                 }
             });
         }
@@ -989,7 +759,6 @@ public class Business {
     }
     public static class OrderCheckoutApiClient {
 
-        private static String getBaseUrl() { return getServerUrl() + "/orders/checkout/"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         /**
@@ -1001,86 +770,28 @@ public class Business {
          * @param callback The callback to handle the API response.
          */
         public void callApi(String userId, HashMap<String, Object> data, Callbacker.ApiResponseWaiters.OrderCheckoutApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                String url = getBaseUrl() + userId; // Append user ID to the base URL
-                try {
-                    JSONObject jsonBody = new JSONObject(data);
-                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
-                    Request request = new Request.Builder()
-                            .url(url) // Use the constructed URL with user ID
-                            .addHeader("Content-Type", "application/json")
-                            .post(body)
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-                    int statusCode = response.code();
-
-                    OrderCheckoutApiResponse apiResponse = null;
-
-                    // According to the *new* API spec, even errors might return HTTP 200.
-                    // We need to parse the body regardless of statusCode to get the "status" field.
-                    String parsedStatus = null;
-                    String errorMessage = null; // Store potential error message
-                    String order_id = "";
-                    try {
-                        JSONObject responseObject = new JSONObject(responseBody);
-                        order_id = responseObject.optString("order_id", "");
-                        String msg = responseObject.optString("message", "");
-                        if(msg.equals("OutOfStock")) {
-                            errorMessage = "OutOfStock,"+responseObject.optString("product_available_stock", "0")+","+responseObject.optString("product_id", "0")+","+responseObject.optString("product_name","product");
-                            if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
-                        } else {
-                            parsedStatus = responseObject.optString("order_status", null); // Get the status field
-                            if (parsedStatus == null) {
-                                // If status field is missing, treat it as an unexpected response format
-                                errorMessage = "API response missing 'status' field.";
-                                if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
-                            }
-                        }
-                    } catch (JSONException e) {
-                        // Failed to parse JSON - means unexpected response format
-                        System.err.println("Order Checkout API - JSON Parsing Error: " + e.getMessage());
-                        errorMessage = "Invalid JSON response from server.";
-                        if (statusCode >= 200 && statusCode < 300) statusCode = 500; // Treat as server error if status was 2xx but format wrong
-                        parsedStatus = "failed"; // Default to failed if parsing fails
-
-                        errorMessage = responseBody;
+            com.google.gson.JsonObject request = PetsFortJrpcClient.requestWithBody(data);
+            request.addProperty("user_id", userId);
+            rpcClient().call(CrmRpc.POST_ORDERS_CHECKOUT, request, new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    String orderId = response.has("order_id") ? response.get("order_id").getAsString() : "";
+                    String status = response.has("order_status") ? response.get("order_status").getAsString() : null;
+                    String error = null;
+                    int statusCode = 200;
+                    if (response.has("message") && "OutOfStock".equals(response.get("message").getAsString())) {
+                        error = "OutOfStock,"
+                                + (response.has("product_available_stock") ? response.get("product_available_stock").getAsString() : "0") + ","
+                                + (response.has("product_id") ? response.get("product_id").getAsString() : "0") + ","
+                                + (response.has("product_name") ? response.get("product_name").getAsString() : "product");
+                        statusCode = 500;
+                    } else if (status == null) {
+                        error = "API response missing 'status' field.";
+                        statusCode = 500;
                     }
-
-                    // Create the response object using the parsed status and original HTTP code
-                    apiResponse = new OrderCheckoutApiResponse(order_id, statusCode, parsedStatus, errorMessage);
-
-
-                    // Post result back to the main thread
-                    OrderCheckoutApiResponse finalApiResponse = apiResponse; // Need final variable for lambda
-//                    callback.onReceived(finalApiResponse);
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(finalApiResponse);
-                    });
-
-                } catch (IOException e) {
-                    // Handle exceptions during request execution (Network error)
-                    System.err.println("Order Checkout API - Network Error: " + e.getMessage());
-                    e.printStackTrace();
-                    // Create error response for client-side network issue
-                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse("",503, "failed", "Network Error: " + e.getMessage()); // 503 Service Unavailable might fit
-//                    callback.onReceived(errorResponse);
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(errorResponse);
-                    });
-
-                } catch (Exception e) {
-                    // Handle exceptions during JSON conversion of the *request* body
-                    System.err.println("Order Checkout API - Request JSON Error: " + e.getMessage());
-                    e.printStackTrace();
-                    OrderCheckoutApiResponse errorResponse = new OrderCheckoutApiResponse("",400, "failed", "Invalid request data format."); // 400 Bad Request
-//                    callback.onReceived(errorResponse);
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(errorResponse);
-                    });
-
+                    callback.onReceived(new OrderCheckoutApiResponse(orderId, statusCode, status, error));
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new OrderCheckoutApiResponse("", statusCode, "failed", message));
                 }
             });
         }
@@ -1159,36 +870,21 @@ public class Business {
 
     }
     public static class OrderQueryApiClient {
-        private static String getUrl() { return getServerUrl() + "/orders/query"; }
 //        private final OkHttpClient client = new OkHttpClient();
 
         public void callApi(HashMap<String, Object> data, OrderApiCallback callback) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.execute(() -> {
-                try {
-                    JSONObject jsonBody = new JSONObject(data);
-                    RequestBody body = RequestBody.create(jsonBody.toString(), MediaType.get("application/json; charset=utf-8"));
-                    Request request = new Request.Builder()
-                            .url(getUrl())
-                            .addHeader("Content-Type", "application/json")
-                            .post(body)
-                            .build();
-
-                    Response response = client.newCall(request).execute();
-                    String responseBody = response.body() != null ? response.body().string() : "";
-
-                    ArrayList<Order> orderList = parseOrders(responseBody);
-                    // Switch back to the main thread to update the UI
-                    new Handler(Looper.getMainLooper()).post(() -> {
-                        callback.onReceived(new OrderQueryApiResponse(response.code(), orderList));
-                    });
-
-                } catch (IOException | JSONException e) {
-                    e.printStackTrace();
-                    // Switch back to the main thread to update the UI
-                    new Handler(Looper.getMainLooper()).post(() -> {
+            rpcClient().call(CrmRpc.POST_ORDERS_QUERY, PetsFortJrpcClient.requestWithBody(data),
+                    new PetsFortJrpcClient.Callback() {
+                @Override public void onSuccess(com.google.gson.JsonObject response) {
+                    try {
+                        String result = response.has("data") ? response.get("data").toString() : "[]";
+                        callback.onReceived(new OrderQueryApiResponse(200, parseOrders(result)));
+                    } catch (JSONException error) {
                         callback.onReceived(new OrderQueryApiResponse(500, new ArrayList<>()));
-                    });
+                    }
+                }
+                @Override public void onError(int statusCode, String message) {
+                    callback.onReceived(new OrderQueryApiResponse(statusCode, new ArrayList<>()));
                 }
             });
         }

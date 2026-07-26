@@ -3,6 +3,8 @@ package crmapp.petsfort.JLogics.Models;
 public class User {
     public String uid, id;
     public final String name;
+    public final String contact;
+    public final String gstin;
     public final String email;
     public final String role;
     public final String address;
@@ -10,10 +12,13 @@ public class User {
     public double credits;
     public final int isBlocked;
 
-    public User(String uid, String id, String name, String email, String role, String address, double credits,String creditse, int isBlocked) {
+    public User(String uid, String id, String name, String contact, String gstin, String email,
+                String role, String address, double credits, String creditse, int isBlocked) {
         this.uid = uid;
         this.id = id;
         this.name = name;
+        this.contact = contact;
+        this.gstin = gstin;
         this.email = email;
         this.role = role;
         this.address = address;

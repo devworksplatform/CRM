@@ -1,5 +1,19 @@
 # PetsFort CRM - Complete Application Documentation
 
+## Android JRPC transport
+
+The Android business API uses Firebase Realtime Database to exchange JRPC
+envelopes with the `PetsFort-CRM` server. It no longer needs a public backend
+URL. Firebase Authentication, Messaging, and the existing UI/data models are
+unchanged.
+
+The transport is implemented in
+`app/src/main/java/crmapp/petsfort/JLogics/PetsFortJrpcClient.java`. The
+ordinal-compatible client enum is `CrmRpc.java`; existing values must never be
+reordered.
+
+Keep JRPC Studio and the `PetsFort-CRM` worker running while using the app.
+
 ## Table of Contents
 1. [Overview](#overview)
 2. [Tech Stack](#tech-stack)
