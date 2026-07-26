@@ -79,5 +79,5 @@ Studio at `http://127.0.0.1:8080`. Keep its console window open.
 The GitHub-ready application artifact is also copied to:
 
 ```text
-resources/petsfort-crm-jrpc-1.0.0.jar
+resources/petsfort-crm-jrpc-1.0.1.jar
 ```
