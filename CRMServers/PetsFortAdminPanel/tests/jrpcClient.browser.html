@@ -1,0 +1,65 @@
+<!doctype html>
+<meta charset="utf-8">
+<script src="../public/basic/jrpcClient.js"></script>
+<pre id="result">RUNNING</pre>
+<script>
+    const R = PetsFortJrpc.RPC;
+    const cases = [
+        ["POST", "products/", R.POST_PRODUCTS],
+        ["POST", "products/query", R.POST_PRODUCTS_QUERY],
+        ["GET", "products/SKU-1", R.GET_PRODUCT],
+        ["PUT", "products/SKU-1", R.PUT_PRODUCT],
+        ["DELETE", "products/SKU-1", R.DELETE_PRODUCT],
+        ["GET", "offer-groups", R.GET_OFFER_GROUPS],
+        ["POST", "offer-groups", R.POST_OFFER_GROUP],
+        ["PUT", "offer-groups/7", R.PUT_OFFER_GROUP],
+        ["POST", "offer-groups/7/apply", R.POST_OFFER_GROUP_APPLY],
+        ["POST", "offer-groups/7/cancel", R.POST_OFFER_GROUP_CANCEL],
+        ["DELETE", "offer-groups/7", R.DELETE_OFFER_GROUP],
+        ["GET", "bills/42", R.GET_BILL],
+        ["POST", "orders/query", R.POST_ORDERS_QUERY],
+        ["PUT", "orders/42", R.PUT_ORDER],
+        ["DELETE", "orders/42", R.DELETE_ORDER],
+        ["GET", "categories", R.GET_CATEGORIES],
+        ["POST", "categories", R.POST_CATEGORY],
+        ["DELETE", "categories/dogs", R.DELETE_CATEGORY],
+        ["GET", "subcategories", R.GET_SUBCATEGORIES],
+        ["POST", "subcategories", R.POST_SUBCATEGORY],
+        ["DELETE", "subcategories/food", R.DELETE_SUBCATEGORY],
+        ["GET", "user/u1", R.GET_USER],
+        ["GET", "userdata", R.GET_USERDATA],
+        ["POST", "userdata", R.POST_USERDATA],
+        ["PUT", "userdata/u1", R.PUT_USERDATA],
+        ["DELETE", "userdata/u1", R.DELETE_USERDATA],
+        ["GET", "analytics/summary", R.GET_ANALYTICS_SUMMARY],
+        ["GET", "gst/dashboard", R.GET_GST_DASHBOARD],
+        ["GET", "gst/sales-register", R.GET_GST_SALES_REGISTER],
+        ["POST", "gst/credit-notes", R.POST_GST_CREDIT_NOTE],
+        ["GET", "gst/credit-notes", R.GET_GST_CREDIT_NOTES],
+        ["DELETE", "gst/credit-notes/3", R.DELETE_GST_CREDIT_NOTE],
+        ["POST", "gst/debit-notes", R.POST_GST_DEBIT_NOTE],
+        ["GET", "gst/debit-notes", R.GET_GST_DEBIT_NOTES],
+        ["DELETE", "gst/debit-notes/3", R.DELETE_GST_DEBIT_NOTE],
+        ["GET", "gst/party-ledger", R.GET_GST_PARTY_LEDGER],
+        ["GET", "gst/day-book", R.GET_GST_DAY_BOOK],
+        ["GET", "gst/profit-loss", R.GET_GST_PROFIT_LOSS],
+        ["GET", "gst/stock-summary", R.GET_GST_STOCK_SUMMARY],
+        ["GET", "gst/outstanding", R.GET_GST_OUTSTANDING],
+        ["GET", "gst/tax-ledger", R.GET_GST_TAX_LEDGER],
+        ["GET", "gst/dashboard-extras", R.GET_GST_DASHBOARD_EXTRAS]
+    ];
+    try {
+        for (const [method, url, expected] of cases) {
+            const actual = PetsFortJrpc.resolveEndpoint(method, url, {}).rpc;
+            if (actual !== expected) throw new Error(`${method} ${url}: ${actual} !== ${expected}`);
+        }
+        let unsupported = false;
+        try { PetsFortJrpc.resolveEndpoint("GET", "logs"); } catch (error) {
+            unsupported = error.status === 501;
+        }
+        if (!unsupported) throw new Error("Excluded endpoints must return 501");
+        document.getElementById("result").textContent = `PASS ${cases.length} routes`;
+    } catch (error) {
+        document.getElementById("result").textContent = `FAIL ${error.stack}`;
+    }
+</script>

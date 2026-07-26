@@ -1,13 +1,8 @@
 // basic/initHelp.js
 
-// const SERVER_URL = "https://server.petsfort.in/";
-// const SERVER_URL = "http://ec2-13-203-205-116.ap-south-1.compute.amazonaws.com/";
- const SERVER_URL = "https://asia-south1-pets-fort.cloudfunctions.net/proxy_request/";
-const SERVER_CONFIG_FUNCTION_URL = "https://asia-south1-pets-fort.cloudfunctions.net/server_config";
-const SERVER_CONFIG_DB_PATH = "appConfig/server";
 const SERVER_CONFIG_ADMIN_EMAIL = "dev@petsfort.in";
-const FALLBACK_TARGET_URL = "https://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com";
-//const SERVER_URL = "http://jay-fastapi.fly.dev/";
+const DEFAULT_JRPC_SERVER_ID = "PetsFort-CRM";
+const JRPC_CONFIG_STORAGE_KEY = "petsfortJrpcConfig";
 // --- LocalStorage Helpers ---
 const StorageHelper = {
     save: (key, data) => {
@@ -122,34 +117,14 @@ console.log("Firebase loaded and ready");
 
 let serverConfigCache = null;
 let serverConfigPromise = null;
-
-function normalizeBaseUrl(url) {
-    const value = (url || FALLBACK_TARGET_URL).trim();
-    return value.replace(/\/+$/, '');
-}
-
-function buildDefaultTerminalWsUrl(baseUrl) {
-    try {
-        const parsed = new URL(normalizeBaseUrl(baseUrl));
-        const protocol = parsed.protocol === 'https:' ? 'wss:' : 'ws:';
-        return `${protocol}//${parsed.hostname}:8000/ws/terminal`;
-    } catch (error) {
-        console.warn("Falling back to default terminal websocket URL", error);
-        return "wss://ec2-3-27-240-197.ap-southeast-2.compute.amazonaws.com:8000/ws/terminal";
-    }
-}
+let jrpcTransport = null;
 
 function normalizeServerConfig(rawConfig = {}) {
-    const targetUrl = normalizeBaseUrl(rawConfig.baseUrl || rawConfig.targetUrl || FALLBACK_TARGET_URL);
-    const terminalWsUrl = (rawConfig.terminalWsUrl || "").trim() || buildDefaultTerminalWsUrl(targetUrl);
-
     return {
-        baseUrl: targetUrl,
-        targetUrl,
-        terminalWsUrl,
+        serverId: (rawConfig.serverId || DEFAULT_JRPC_SERVER_ID).trim(),
+        timeoutMs: Math.max(1000, Number(rawConfig.timeoutMs) || 45000),
         updatedAt: rawConfig.updatedAt || null,
-        updatedByEmail: rawConfig.updatedByEmail || "",
-        updatedByUid: rawConfig.updatedByUid || ""
+        updatedByEmail: rawConfig.updatedByEmail || ""
     };
 }
 
@@ -175,13 +150,10 @@ function canEditServerConfig() {
 }
 
 function syncServerConfigNavVisibility() {
-    const navItems = [
-        document.getElementById("server-config-nav"),
-        document.getElementById("backup-manager-nav")
-    ];
-    navItems.forEach((navItem) => {
-        if (navItem) navItem.style.display = canEditServerConfig() ? "" : "none";
-    });
+    const configNav = document.getElementById("server-config-nav");
+    const backupNav = document.getElementById("backup-manager-nav");
+    if (configNav) configNav.style.display = canEditServerConfig() ? "" : "none";
+    if (backupNav) backupNav.style.display = "none";
 }
 
 async function loadServerConfig(forceRefresh = false) {
@@ -189,14 +161,9 @@ async function loadServerConfig(forceRefresh = false) {
         return serverConfigPromise;
     }
 
-    serverConfigPromise = database.ref(SERVER_CONFIG_DB_PATH).once("value")
-        .then((snapshot) => {
-            serverConfigCache = normalizeServerConfig(snapshot.val() || {});
-            return serverConfigCache;
-        })
-        .catch((error) => {
-            console.error("Failed to load server config from Firebase RTDB:", error);
-            serverConfigCache = normalizeServerConfig({});
+    serverConfigPromise = Promise.resolve()
+        .then(() => {
+            serverConfigCache = normalizeServerConfig(StorageHelper.load(JRPC_CONFIG_STORAGE_KEY, {}));
             return serverConfigCache;
         });
 
@@ -216,31 +183,24 @@ async function saveServerConfig(nextConfig) {
         throw new Error("Please login first.");
     }
 
-    const idToken = await user.getIdToken();
-    const response = await fetch(SERVER_CONFIG_FUNCTION_URL, {
-        method: "PUT",
-        headers: {
-            "Authorization": `Bearer ${idToken}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(nextConfig)
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `Failed to save config (${response.status})`);
+    if (!canEditServerConfig()) {
+        throw new Error("Only the server administrator can change this configuration.");
     }
-
-    const result = await response.json();
-    serverConfigCache = normalizeServerConfig(result?.config || nextConfig);
+    serverConfigCache = normalizeServerConfig({
+        ...nextConfig,
+        updatedAt: Date.now(),
+        updatedByEmail: user.email || ""
+    });
+    StorageHelper.save(JRPC_CONFIG_STORAGE_KEY, serverConfigCache);
+    serverConfigPromise = Promise.resolve(serverConfigCache);
+    jrpcTransport = null;
     return serverConfigCache;
 }
 
 window.serverConfigService = {
     canEdit: canEditServerConfig,
     getCachedServerConfig,
-    getTargetUrl: () => getCachedServerConfig().targetUrl,
-    getTerminalWebSocketUrl: () => getCachedServerConfig().terminalWsUrl,
+    getServerId: () => getCachedServerConfig().serverId,
     load: loadServerConfig,
     save: saveServerConfig,
     syncNavVisibility: syncServerConfigNavVisibility
@@ -303,42 +263,14 @@ function checkPermissionForAction(action, param1) {
 }
 
 async function callApi(method, url, body = null, parseJson = true) {
-
-    const options = {
-        method: method.toUpperCase(),
-        headers: {
-          'Content-Type': 'application/json'
-        }
-    };
-
-    if (body && ['POST', 'PUT'].includes(options.method)) {
-        options.body = JSON.stringify(body);
-    }
-
+    const config = await loadServerConfig();
     try {
-      const response = await fetch(SERVER_URL+url, options);
-
-        if (!response.ok) {
-          let detail = null;
-          try {
-            const errorBody = await response.json();
-            detail = errorBody.detail ?? errorBody.message ?? null;
-          } catch (_) {
-            // Some endpoints return no JSON body on failure.
-          }
-          const detailMessage = typeof detail === 'string' ? detail : detail?.message;
-          const error = new Error(detailMessage || `HTTP ${response.status} - ${response.statusText}`);
-          error.status = response.status;
-          error.detail = detail;
-          throw error;
+        if (!jrpcTransport) {
+            const client = new PetsFortJrpc.FirebaseJrpcClient(
+                database, auth, config.serverId, config.timeoutMs);
+            jrpcTransport = new PetsFortJrpc.PetsFortJrpcTransport(client);
         }
-
-        if(parseJson) {
-          return await response.json();
-        } else {
-          return await response.text();
-        }
-
+        return await jrpcTransport.callApi(method, url, body, parseJson);
     } catch (err) {
         console.error('API call error:', err.message);
         throw err;

@@ -3,7 +3,7 @@
         <div class="server-config-header">
             <div>
                 <h3>Server Configuration</h3>
-                <p>Manage the shared backend URL used by the app, admin panel tools, and Firebase Functions.</p>
+                <p>Choose the JRPC server name used by this browser. Requests travel through Firebase Realtime Database.</p>
             </div>
             <button id="server-config-refresh" class="btn btn-outline">
                 <i data-feather="refresh-ccw"></i> Refresh
@@ -16,14 +16,13 @@
 
         <form id="server-config-form" class="server-config-form">
             <div class="form-group">
-                <label for="server-config-base-url">Backend Base URL</label>
-                <input type="url" id="server-config-base-url" class="form-control" placeholder="https://ec2-xx-xx-xx-xx.region.compute.amazonaws.com" required>
+                <label for="server-config-server-id">JRPC Server Name</label>
+                <input type="text" id="server-config-server-id" class="form-control" placeholder="PetsFort-CRM" required>
             </div>
 
             <div class="form-group">
-                <label for="server-config-terminal-ws-url">Terminal WebSocket URL (optional override)</label>
-                <input type="url" id="server-config-terminal-ws-url" class="form-control" placeholder="Leave empty to auto-generate from base URL">
-                <small id="server-config-terminal-preview" class="server-config-help"></small>
+                <label for="server-config-timeout">Request Timeout (milliseconds)</label>
+                <input type="number" min="1000" step="1000" id="server-config-timeout" class="form-control" value="45000" required>
             </div>
 
             <div class="server-config-meta">
