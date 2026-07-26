@@ -1,0 +1,48 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.petsfort'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly files('../../../ServerlessCommunication/jrpc-samples/dist/jrpc-studio.jar')
+    implementation 'org.xerial:sqlite-jdbc:3.46.1.3'
+    implementation 'com.google.firebase:firebase-admin:9.2.0'
+
+    testImplementation files('../../../ServerlessCommunication/jrpc-samples/dist/jrpc-studio.jar')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'petsfort.db.path',
+            System.getProperty('petsfort.db.path', '../backups_sqliteDBs_2026-07-26--12-49-45.db')
+}
+
+tasks.register('applicationJar', Jar) {
+    dependsOn configurations.runtimeClasspath
+    archiveBaseName = 'petsfort-crm-jrpc'
+    archiveClassifier = 'all'
+    destinationDirectory = file('dist')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Jrpc-Lifecycle-Class': 'com.petsfort.jrpc.PetsFortApplication'
+    }
+    from sourceSets.main.output
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    exclude 'com/jay/**'
+    exclude 'com/google/gson/**'
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
