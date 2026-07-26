@@ -63,3 +63,21 @@ rolled back by their handlers.
 HTML, sitemap, backup/restore, system-statistics streaming, and terminal
 operations are intentionally outside the business migration scope. HTML enum
 operations return `HTTP_501`.
+
+## Start Studio on Windows
+
+Run this from PowerShell:
+
+```powershell
+.\start-studio.ps1
+```
+
+Alternatively, double-click `start-studio.cmd`. The launcher validates Java,
+the SQLite database, Firebase credentials, and the Studio JAR before starting
+Studio at `http://127.0.0.1:8080`. Keep its console window open.
+
+The GitHub-ready application artifact is also copied to:
+
+```text
+resources/petsfort-crm-jrpc-1.0.0.jar
+```
