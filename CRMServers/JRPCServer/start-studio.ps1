@@ -26,7 +26,13 @@ try {
     $resolvedCredentials = Resolve-RequiredFile -Path $FirebaseCredentials -Description "Firebase service-account JSON"
     $resolvedStudioJar = Resolve-RequiredFile -Path $StudioJar -Description "JRPC Studio JAR"
 
-    $java = Get-Command java -ErrorAction Stop
+    $preferredJava = "C:\Users\acer\.gradle\jdks\eclipse_adoptium-17-amd64-windows.2\bin\java.exe"
+    if (Test-Path -LiteralPath $preferredJava -PathType Leaf) {
+        $javaPath = (Resolve-Path -LiteralPath $preferredJava).Path
+    }
+    else {
+        $javaPath = (Get-Command java -ErrorAction Stop).Source
+    }
 
     $env:PETS_FORT_DB_PATH = $resolvedDatabase
     $env:PETS_FORT_FIREBASE_CREDENTIALS = $resolvedCredentials
@@ -44,7 +50,8 @@ try {
     Write-Host "Keep this window open. Press Ctrl+C to stop Studio and its workers." -ForegroundColor Yellow
     Write-Host ""
 
-    & $java.Source -jar $resolvedStudioJar
+    Write-Host "Java:       $javaPath"
+    & $javaPath -jar $resolvedStudioJar
     if ($LASTEXITCODE -ne 0) {
         throw "JRPC Studio exited with code $LASTEXITCODE."
     }
