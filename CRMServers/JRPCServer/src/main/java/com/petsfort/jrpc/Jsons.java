@@ -5,6 +5,8 @@ import com.google.gson.*;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.regex.Pattern;
 
 final class Jsons {
@@ -84,6 +86,7 @@ final class Jsons {
     }
 
     static double round2(double value) {
-        return Math.round(value * 100.0d) / 100.0d;
+        // Python round(float, 2) uses ties-to-even on the binary float value.
+        return new BigDecimal(value).setScale(2, RoundingMode.HALF_EVEN).doubleValue();
     }
 }

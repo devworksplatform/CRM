@@ -98,7 +98,9 @@ final class AccountingReports {
                 "MAX(o.created_at) last_order_date FROM userdata u LEFT JOIN orders o ON u.uid=o.user_id GROUP BY u.uid ORDER BY u.credits DESC",List.of());
         double credits=0,due=0;int withCredit=0,withDue=0;
         for(JsonElement e:rows){JsonObject r=e.getAsJsonObject();double v=n(r,"credits");r.addProperty("credits",Jsons.round2(v));
-            r.addProperty("total_purchased",Jsons.round2(n(r,"total_purchased")));r.addProperty("last_order",s(r,"last_order_date"));
+            r.addProperty("total_purchased",Jsons.round2(n(r,"total_purchased")));
+            if(!r.has("last_order_date")||r.get("last_order_date").isJsonNull())r.add("last_order",JsonNull.INSTANCE);
+            else r.addProperty("last_order",r.get("last_order_date").getAsString());
             r.remove("last_order_date");credits+=v;if(v<0){due+=-v;withDue++;}else if(v>0)withCredit++;}
         JsonObject sum=new JsonObject();sum.addProperty("total_parties",rows.size());sum.addProperty("total_credits",Jsons.round2(credits));
         sum.addProperty("total_outstanding",Jsons.round2(due));sum.addProperty("parties_with_credit",withCredit);
@@ -119,36 +121,139 @@ final class AccountingReports {
                 "WHERE o.created_at>=? AND o.created_at<=? ORDER BY o.created_at DESC LIMIT 10",List.of(d[0],d[1])));
     }
 
-    static void partyLedger(CrmService db,JsonObject q,JsonObject out)throws Exception{ledgerLike(db,q,out,false);}
-    static void dayBook(CrmService db,JsonObject q,JsonObject out)throws Exception{ledgerLike(db,q,out,true);}
-    private static void ledgerLike(CrmService db,JsonObject q,JsonObject out,boolean day)throws Exception{
+    static void partyLedger(CrmService db,JsonObject q,JsonObject out)throws Exception{
         String from=Jsons.optionalString(q,"from_date",null),to=Jsons.optionalString(q,"to_date",null);
-        if(from==null||to==null)throw new ApiFailure(400,day?"from_date and to_date required":"from_date and to_date are required");
-        JsonArray entries=new JsonArray();JsonArray orders=db.selectArray("SELECT o.*,u.name user_name FROM orders o "+
-                "LEFT JOIN userdata u ON o.user_id=u.uid WHERE o.created_at>=? AND o.created_at<=? ORDER BY o.created_at",
-                List.of(from+"T00:00:00",to+"T23:59:59"));
-        double debit=0,credit=0;for(JsonElement e:orders){JsonObject x=e.getAsJsonObject(),v=new JsonObject();
-            v.addProperty("date",s(x,"created_at"));v.addProperty("type","Sales");v.addProperty("voucher_no","INV-"+s(x,"order_id"));
-            v.addProperty(day?"party":"party_name",s(x,"user_name"));double amount=n(x,"total");v.addProperty(day?"amount":"debit",Jsons.round2(amount));
-            if(!day)v.addProperty("credit",0);entries.add(v);debit+=amount;}
-        out.add("entries",entries);if(day){JsonObject summary=new JsonObject();summary.addProperty("total_entries",entries.size());
-            summary.addProperty("sales_count",entries.size());summary.addProperty("cn_count",0);summary.addProperty("dn_count",0);
-            summary.addProperty("total_sales",Jsons.round2(debit));summary.addProperty("total_cn",0);summary.addProperty("total_dn",0);
-            summary.addProperty("net_amount",Jsons.round2(debit));out.add("summary",summary);}
-        else{out.addProperty("total_debit",Jsons.round2(debit));out.addProperty("total_credit",Jsons.round2(credit));
-            out.addProperty("net_balance",Jsons.round2(debit-credit));}
+        if(from==null||to==null)throw new ApiFailure(400,"from_date and to_date are required");
+        String user=Jsons.optionalString(q,"user_id",null),start=from+"T00:00:00",end=to+"T23:59:59";
+        List<Object> params=user==null?List.of(start,end):List.of(user,start,end);
+        String condition=user==null?"":"o.user_id=? AND ";
+        JsonArray entries=new JsonArray(),orders=db.selectArray("SELECT o.order_id,o.user_id,o.created_at,o.total,b.bill,"+
+                "u.name user_name FROM orders o LEFT JOIN bills b ON o.order_id=b.order_id LEFT JOIN userdata u "+
+                "ON o.user_id=u.uid WHERE "+condition+"o.created_at>=? AND o.created_at<=? ORDER BY o.created_at",params);
+        for(JsonElement e:orders){JsonObject x=e.getAsJsonObject(),v=new JsonObject(),b=bill(x.get("bill"));
+            String invoice=b==null?"":s(b.getAsJsonObject("details"),"invoiceNo");
+            v.addProperty("date",s(x,"created_at"));v.addProperty("type","Sale");
+            v.addProperty("voucher_no",invoice.isEmpty()?"INV-"+s(x,"order_id"):invoice);
+            if(!x.has("user_name")||x.get("user_name").isJsonNull())v.add("party_name",JsonNull.INSTANCE);
+            else v.add("party_name",x.get("user_name"));v.addProperty("debit",Jsons.round2(n(x,"total")));
+            v.addProperty("credit",0);entries.add(v);}
+        addNotes(db,entries,true,user,start,end);addNotes(db,entries,false,user,start,end);
+        sortEntries(entries);double debit=0,credit=0;for(JsonElement e:entries){debit+=n(e.getAsJsonObject(),"debit");credit+=n(e.getAsJsonObject(),"credit");}
+        out.add("entries",entries);out.addProperty("total_debit",Jsons.round2(debit));
+        out.addProperty("total_credit",Jsons.round2(credit));out.addProperty("net_balance",Jsons.round2(debit-credit));
+    }
+    private static void addNotes(CrmService db,JsonArray entries,boolean credit,String user,String start,String end)throws Exception{
+        String kind=credit?"credit_notes":"debit_notes",prefix=credit?"cn":"dn";
+        List<Object> params=user==null?List.of(start,end):List.of(user,start,end);
+        JsonArray notes=db.selectArray("SELECT * FROM "+kind+" WHERE "+(user==null?"":"user_id=? AND ")+
+                "created_at>=? AND created_at<=? ORDER BY created_at",params);
+        for(JsonElement e:notes){JsonObject x=e.getAsJsonObject(),v=new JsonObject();v.addProperty("date",s(x,"created_at"));
+            v.addProperty("type",credit?"Credit Note":"Debit Note");v.addProperty("voucher_no",s(x,prefix+"_number"));
+            v.addProperty("party_name",s(x,"user_name"));v.addProperty("debit",credit?0:Jsons.round2(n(x,"total")));
+            v.addProperty("credit",credit?Jsons.round2(n(x,"total")):0);entries.add(v);}
+    }
+    private static void sortEntries(JsonArray array){
+        List<JsonElement> values=new ArrayList<>();array.forEach(values::add);
+        values.sort(Comparator.comparing(v->s(v.getAsJsonObject(),"date")));while(array.size()>0)array.remove(0);values.forEach(array::add);
+    }
+    static void dayBook(CrmService db,JsonObject q,JsonObject out)throws Exception{
+        String from=Jsons.optionalString(q,"from_date",null),to=Jsons.optionalString(q,"to_date",null);
+        if(from==null||to==null)throw new ApiFailure(400,"from_date and to_date required");
+        String start=from+"T00:00:00",end=to+"T23:59:59";JsonArray entries=new JsonArray();
+        JsonArray orders=db.selectArray("SELECT o.order_id,o.user_id,o.created_at,o.total,o.total_rate,o.total_gst,"+
+                "o.total_discount,o.order_status,b.bill,u.name user_name FROM orders o LEFT JOIN bills b "+
+                "ON o.order_id=b.order_id LEFT JOIN userdata u ON o.user_id=u.uid WHERE o.created_at>=? "+
+                "AND o.created_at<=? ORDER BY o.created_at",List.of(start,end));
+        for(JsonElement e:orders){JsonObject x=e.getAsJsonObject(),v=new JsonObject(),b=bill(x.get("bill"));
+            String invoice=b==null?"":s(b.getAsJsonObject("details"),"invoiceNo");v.addProperty("date",s(x,"created_at"));
+            v.addProperty("type","Sales");v.addProperty("voucher_no",invoice.isEmpty()?"INV-"+s(x,"order_id"):invoice);
+            String party=s(x,"user_name");if(party.isEmpty())party=s(x,"user_id");v.addProperty("party",party);
+            v.addProperty("amount",Jsons.round2(n(x,"total")));v.addProperty("taxable",Jsons.round2(n(x,"total_rate")));
+            v.addProperty("tax",Jsons.round2(n(x,"total_gst")));v.addProperty("status",s(x,"order_status"));
+            v.addProperty("order_id",s(x,"order_id"));entries.add(v);}
+        addDayNotes(db,entries,true,start,end);addDayNotes(db,entries,false,start,end);sortEntries(entries);
+        double sales=0,cn=0,dn=0;int sc=0,cc=0,dc=0;for(JsonElement e:entries){JsonObject v=e.getAsJsonObject();
+            switch(s(v,"type")){case"Sales":sales+=n(v,"amount");sc++;break;case"Credit Note":cn+=n(v,"amount");cc++;break;default:dn+=n(v,"amount");dc++;}}
+        JsonObject sum=new JsonObject();sum.addProperty("total_entries",entries.size());sum.addProperty("sales_count",sc);
+        sum.addProperty("cn_count",cc);sum.addProperty("dn_count",dc);sum.addProperty("total_sales",Jsons.round2(sales));
+        sum.addProperty("total_cn",Jsons.round2(cn));sum.addProperty("total_dn",Jsons.round2(dn));
+        sum.addProperty("net_amount",Jsons.round2(sales-cn+dn));out.add("entries",entries);out.add("summary",sum);
+    }
+    private static void addDayNotes(CrmService db,JsonArray entries,boolean credit,String start,String end)throws Exception{
+        String table=credit?"credit_notes":"debit_notes",prefix=credit?"cn":"dn";
+        for(JsonElement e:db.selectArray("SELECT * FROM "+table+" WHERE created_at>=? AND created_at<=? ORDER BY created_at",List.of(start,end))){
+            JsonObject x=e.getAsJsonObject(),v=new JsonObject();v.addProperty("date",s(x,"created_at"));
+            v.addProperty("type",credit?"Credit Note":"Debit Note");v.addProperty("voucher_no",s(x,prefix+"_number"));
+            String party=s(x,"user_name");if(party.isEmpty())party=s(x,"user_id");v.addProperty("party",party);
+            v.addProperty("amount",Jsons.round2(n(x,"total")));v.addProperty("taxable",Jsons.round2(n(x,"subtotal")));
+            v.addProperty("tax",Jsons.round2(n(x,"cgst_total")+n(x,"sgst_total")));v.addProperty("status","Issued");
+            v.addProperty("order_id",s(x,"original_invoice"));entries.add(v);}
     }
     static void profitLoss(CrmService db,JsonObject q,JsonObject out)throws Exception{
-        String[] d=fy(q);double revenue=db.scalarDouble("SELECT COALESCE(SUM(total),0) FROM orders WHERE order_status!='ORDER_CANCELLED' AND created_at>=? AND created_at<=?",d[0],d[1]);
-        double taxable=db.scalarDouble("SELECT COALESCE(SUM(total_rate),0) FROM orders WHERE order_status!='ORDER_CANCELLED' AND created_at>=? AND created_at<=?",d[0],d[1]);
-        double tax=db.scalarDouble("SELECT COALESCE(SUM(total_gst),0) FROM orders WHERE order_status!='ORDER_CANCELLED' AND created_at>=? AND created_at<=?",d[0],d[1]);
-        out.addProperty("fy",Jsons.optionalString(q,"fy","current"));JsonObject rev=new JsonObject();rev.addProperty("net_sales_taxable",Jsons.round2(taxable));
-        rev.addProperty("total_tax_collected",Jsons.round2(tax));rev.addProperty("total_revenue",Jsons.round2(revenue));rev.addProperty("net_revenue",Jsons.round2(revenue));out.add("revenue",rev);
+        String[] d=fy(q);JsonArray rows=db.selectArray("SELECT o.order_id,o.total,o.total_rate,o.total_gst,"+
+                "o.total_discount,o.order_status,o.created_at,b.bill FROM orders o LEFT JOIN bills b "+
+                "ON o.order_id=b.order_id WHERE o.created_at>=? AND o.created_at<=?",List.of(d[0],d[1]));
+        double revenue=0,taxable=0,cgst=0,sgst=0,mrp=0,discount=0,cancelledValue=0;int cancelled=0;JsonObject monthly=new JsonObject();
+        for(JsonElement e:rows){JsonObject x=e.getAsJsonObject();if("ORDER_CANCELLED".equals(s(x,"order_status"))){cancelled++;cancelledValue+=n(x,"total");continue;}
+            JsonObject b=bill(x.get("bill"));revenue+=n(x,"total");taxable+=n(x,"total_rate");discount+=n(x,"total_discount");
+            if(b!=null){JsonObject totals=b.getAsJsonObject("totals");cgst+=n(totals,"cgstAmount");sgst+=n(totals,"sgstAmount");
+                JsonArray items=b.has("items")?b.getAsJsonArray("items"):new JsonArray();for(JsonElement ie:items){JsonObject item=ie.getAsJsonObject();
+                    String quantity=s(item,"quantityBilled").replaceAll("\\D","");int qty=quantity.isEmpty()?0:Integer.parseInt(quantity);
+                    mrp+=n(item,"mrp")*qty;}}else{cgst+=n(x,"total_gst")/2;sgst+=n(x,"total_gst")/2;}
+            String month=s(x,"created_at");if(month.length()>=7){month=month.substring(0,7);JsonObject m=monthly.has(month)?monthly.getAsJsonObject(month):new JsonObject();
+                m.addProperty("revenue",n(m,"revenue")+n(x,"total"));m.addProperty("taxable",n(m,"taxable")+n(x,"total_rate"));
+                m.addProperty("tax",n(m,"tax")+n(x,"total_gst"));m.addProperty("discount",n(m,"discount")+n(x,"total_discount"));
+                m.addProperty("count",m.has("count")?m.get("count").getAsInt()+1:1);monthly.add(month,m);}}
+        JsonObject cn=db.selectArray("SELECT COALESCE(SUM(total),0) total,COALESCE(SUM(subtotal),0) subtotal,"+
+                "COALESCE(SUM(cgst_total),0) cgst,COALESCE(SUM(sgst_total),0) sgst FROM credit_notes "+
+                "WHERE created_at>=? AND created_at<=?",List.of(d[0],d[1])).get(0).getAsJsonObject();
+        JsonObject dn=db.selectArray("SELECT COALESCE(SUM(total),0) total,COALESCE(SUM(subtotal),0) subtotal,"+
+                "COALESCE(SUM(cgst_total),0) cgst,COALESCE(SUM(sgst_total),0) sgst FROM debit_notes "+
+                "WHERE created_at>=? AND created_at<=?",List.of(d[0],d[1])).get(0).getAsJsonObject();
+        double tax=cgst+sgst;out.addProperty("fy",Jsons.optionalString(q,"fy","current"));JsonObject rev=new JsonObject();
+        rev.addProperty("gross_sales_mrp",Jsons.round2(mrp));rev.addProperty("discount_given",Jsons.round2(discount));
+        rev.addProperty("net_sales_taxable",Jsons.round2(taxable));rev.addProperty("cgst_collected",Jsons.round2(cgst));
+        rev.addProperty("sgst_collected",Jsons.round2(sgst));rev.addProperty("total_tax_collected",Jsons.round2(tax));
+        rev.addProperty("total_revenue",Jsons.round2(revenue));rev.addProperty("credit_note_adj",Jsons.round2(n(cn,"total")));
+        rev.addProperty("debit_note_adj",Jsons.round2(n(dn,"total")));rev.addProperty("net_revenue",Jsons.round2(revenue-n(cn,"total")+n(dn,"total")));out.add("revenue",rev);
+        JsonObject orders=new JsonObject();orders.addProperty("total_orders",rows.size());orders.addProperty("active_orders",rows.size()-cancelled);
+        orders.addProperty("cancelled_orders",cancelled);orders.addProperty("cancelled_value",Jsons.round2(cancelledValue));out.add("orders",orders);
+        JsonObject profitability=new JsonObject();profitability.addProperty("gross_mrp_value",Jsons.round2(mrp));
+        profitability.addProperty("discount_given",Jsons.round2(discount));profitability.addProperty("effective_selling_price",Jsons.round2(taxable));
+        profitability.addProperty("margin_on_mrp",mrp>0?Jsons.round2(mrp-taxable):0);
+        profitability.addProperty("margin_percentage",mrp>0?Jsons.round2((mrp-taxable)/mrp*100):0);out.add("profitability",profitability);
+        JsonObject ts=new JsonObject();ts.addProperty("output_cgst",Jsons.round2(cgst));ts.addProperty("output_sgst",Jsons.round2(sgst));
+        ts.addProperty("total_output_tax",Jsons.round2(tax));ts.addProperty("cn_tax_adj",Jsons.round2(n(cn,"cgst")+n(cn,"sgst")));
+        ts.addProperty("dn_tax_adj",Jsons.round2(n(dn,"cgst")+n(dn,"sgst")));
+        ts.addProperty("net_tax_payable",Jsons.round2(tax-n(cn,"cgst")-n(cn,"sgst")+n(dn,"cgst")+n(dn,"sgst")));
+        out.add("tax_summary",ts);out.add("monthly",monthly);
     }
     static void taxLedger(CrmService db,JsonObject q,JsonObject out)throws Exception{
         String from=Jsons.optionalString(q,"from_date",null),to=Jsons.optionalString(q,"to_date",null);
         if(from==null||to==null)throw new ApiFailure(400,"from_date and to_date required");
-        out.add("rate_summary",new JsonObject());out.add("entries",new JsonArray());JsonObject totals=new JsonObject();
-        totals.addProperty("total_taxable",0);totals.addProperty("total_tax",0);out.add("totals",totals);
+        JsonArray rows=db.selectArray("SELECT o.order_id,o.created_at,o.total,b.bill,u.name user_name FROM orders o "+
+                "LEFT JOIN bills b ON o.order_id=b.order_id LEFT JOIN userdata u ON o.user_id=u.uid "+
+                "WHERE o.created_at>=? AND o.created_at<=? ORDER BY o.created_at",List.of(from+"T00:00:00",to+"T23:59:59"));
+        JsonObject rates=new JsonObject();JsonArray entries=new JsonArray();
+        for(JsonElement e:rows){JsonObject x=e.getAsJsonObject(),b=bill(x.get("bill"));if(b==null)continue;
+            JsonArray details=b.has("gstDetails")?b.getAsJsonArray("gstDetails"):new JsonArray();
+            for(JsonElement ge:details){JsonObject g=ge.getAsJsonObject();String text=s(g,"cgstRate").replace("%","");
+                double rate=(text.isEmpty()?0:Double.parseDouble(text))*2;String key=rate+"%";double tv=n(g,"taxableValue"),
+                        ca=n(g,"cgstAmount"),sa=n(g,"sgstUtgstAmount"),tt=n(g,"totalTaxAmount");
+                JsonObject sum=rates.has(key)?rates.getAsJsonObject(key):new JsonObject();sum.addProperty("rate",rate);
+                sum.addProperty("taxable",n(sum,"taxable")+tv);sum.addProperty("cgst",n(sum,"cgst")+ca);
+                sum.addProperty("sgst",n(sum,"sgst")+sa);sum.addProperty("total_tax",n(sum,"total_tax")+tt);
+                sum.addProperty("invoices",sum.has("invoices")?sum.get("invoices").getAsInt()+1:1);rates.add(key,sum);
+                JsonObject entry=new JsonObject();entry.addProperty("date",s(x,"created_at"));
+                JsonObject invoiceDetails=b.getAsJsonObject("details");String invoice=s(invoiceDetails,"invoiceNo");
+                entry.addProperty("invoice",invoice.isEmpty()?"INV-"+s(x,"order_id"):invoice);
+                if(!x.has("user_name")||x.get("user_name").isJsonNull())entry.add("party",JsonNull.INSTANCE);else entry.add("party",x.get("user_name"));
+                entry.addProperty("hsn",s(g,"hsnSac"));entry.addProperty("rate",rate);entry.addProperty("taxable",Jsons.round2(tv));
+                entry.addProperty("cgst",Jsons.round2(ca));entry.addProperty("sgst",Jsons.round2(sa));entry.addProperty("total_tax",Jsons.round2(tt));entries.add(entry);}}
+        double taxable=0,tax=0;for(Map.Entry<String,JsonElement> e:rates.entrySet()){JsonObject v=e.getValue().getAsJsonObject();
+            for(String key:List.of("taxable","cgst","sgst","total_tax"))v.addProperty(key,Jsons.round2(n(v,key)));
+            taxable+=n(v,"taxable");tax+=n(v,"total_tax");}
+        JsonObject totals=new JsonObject();totals.addProperty("total_taxable",Jsons.round2(taxable));totals.addProperty("total_tax",Jsons.round2(tax));
+        out.add("rate_summary",rates);out.add("entries",entries);out.add("totals",totals);
     }
 }

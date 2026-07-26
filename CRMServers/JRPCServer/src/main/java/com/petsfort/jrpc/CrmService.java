@@ -140,10 +140,12 @@ final class CrmService implements AutoCloseable {
         String productId = Jsons.optionalString(product, "product_id", UUID.randomUUID().toString());
         String id = UUID.randomUUID().toString();
         String now = LocalDateTime.now().toString();
+        boolean hasGroup=product.has("offer_group_id");
         String sql = "INSERT INTO products(id,product_id,product_name,product_desc,product_hsn," +
                 "product_cid,product_img,cat_id,cat_sub,cost_rate,cost_mrp,cost_gst,cost_dis," +
-                "offer_buy_qty,offer_free_qty,offer_active,offer_group_id,stock,created_at,updated_at)" +
-                " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                "offer_buy_qty,offer_free_qty,offer_active,"+(hasGroup?"offer_group_id,":"")+
+                "stock,created_at,updated_at) VALUES("+(hasGroup?
+                "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?":"?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?")+")";
         try (Connection connection = database.connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
             int i = 1;
             statement.setString(i++, id);
@@ -162,7 +164,7 @@ final class CrmService implements AutoCloseable {
             statement.setInt(i++, Jsons.optionalInt(product, "offer_buy_qty", 0));
             statement.setInt(i++, Jsons.optionalInt(product, "offer_free_qty", 0));
             statement.setInt(i++, Jsons.optionalBoolean(product, "offer_active", false) ? 1 : 0);
-            setNullableString(statement, i++, product.get("offer_group_id"));
+            if(hasGroup)setNullableString(statement, i++, product.get("offer_group_id"));
             statement.setInt(i++, requiredInt(product, "stock"));
             statement.setString(i++, now);
             statement.setString(i, now);
@@ -174,7 +176,9 @@ final class CrmService implements AutoCloseable {
                 }
                 throw error;
             }
-            Jsons.copy(findProduct(connection, id), response);
+            JsonObject created=findProduct(connection, id);
+            Jsons.copy(created, response);
+            if(created.get("offer_active").getAsBoolean())publishOffer(created,true);
         }
     }
 
@@ -210,6 +214,28 @@ final class CrmService implements AutoCloseable {
         try (Connection connection = database.connect()) {
             JsonObject current = findProduct(connection, identifier);
             if (current == null) throw new ApiFailure(404, "Product not found");
+            JsonObject detachedGroup=null;
+            boolean offerWasChanged=Jsons.optionalBoolean(updates,"offer_active",false)!=current.get("offer_active").getAsBoolean()
+                    ||Jsons.optionalInt(updates,"offer_buy_qty",0)!=nullableInt(current,"offer_buy_qty")
+                    ||Jsons.optionalInt(updates,"offer_free_qty",0)!=nullableInt(current,"offer_free_qty");
+            String originalGroup=current.has("offer_group_id")&&!current.get("offer_group_id").isJsonNull()
+                    ?current.get("offer_group_id").getAsString():null;
+            if(originalGroup!=null&&!originalGroup.isEmpty()){
+                if(offerWasChanged){
+                    updates.add("offer_group_id",JsonNull.INSTANCE);
+                    JsonArray groups=selectArrayOn(connection,"SELECT * FROM offer_groups WHERE id=?",List.of(originalGroup));
+                    if(groups.size()>0){detachedGroup=groups.get(0).getAsJsonObject();
+                        JsonArray ids=Jsons.parseOr(detachedGroup.get("product_ids"),new JsonArray()).getAsJsonArray(),remaining=new JsonArray();
+                        String oldId=current.get("product_id").getAsString();ids.forEach(v->{if(!v.getAsString().equals(oldId))remaining.add(v);});
+                        String now=Instant.now().toString();detachedGroup.add("product_ids",remaining);detachedGroup.addProperty("updated_at",now);
+                        if(remaining.size()>0)executeOn(connection,"UPDATE offer_groups SET product_ids=?,updated_at=? WHERE id=?",
+                                Jsons.json(remaining),now,originalGroup);
+                        else{detachedGroup.addProperty("status","CANCELED");detachedGroup.addProperty("canceled_at",now);
+                            executeOn(connection,"UPDATE offer_groups SET product_ids=?,status='CANCELED',updated_at=?,canceled_at=? WHERE id=?",
+                                    "[]",now,now,originalGroup);}
+                    }
+                }else updates.addProperty("offer_group_id",originalGroup);
+            }
             String sql = "UPDATE products SET product_id=?,product_name=?,product_desc=?,product_hsn=?," +
                     "product_cid=?,product_img=?,cat_id=?,cat_sub=?,cost_rate=?,cost_mrp=?,cost_gst=?," +
                     "cost_dis=?,offer_buy_qty=?,offer_free_qty=?,offer_active=?,offer_group_id=?,stock=?," +
@@ -237,7 +263,12 @@ final class CrmService implements AutoCloseable {
                 statement.setString(i, current.get("id").getAsString());
                 statement.executeUpdate();
             }
-            Jsons.copy(findProduct(connection, current.get("id").getAsString()), response);
+            JsonObject changed=findProduct(connection,current.get("id").getAsString());
+            Jsons.copy(changed,response);
+            if(detachedGroup!=null)publishOfferGroup(detachedGroup,false);
+            if(changed.has("offer_group_id")&&!changed.get("offer_group_id").isJsonNull()){
+                try{FirebaseBridge.instance().deleteValue("datas/announcement/all/"+offerKey(changed));}catch(Exception ignored){}
+            }else publishOffer(changed,changed.get("offer_active").getAsBoolean()&&offerWasChanged);
         }
     }
 
@@ -252,7 +283,32 @@ final class CrmService implements AutoCloseable {
             }
             response.addProperty("message", "Product deleted successfully");
             response.add("deleted_product", product);
+            product.addProperty("offer_active",false);
+            publishOffer(product,false);
         }
+    }
+
+    private void publishOffer(JsonObject product,boolean notify){
+        try{
+            String productId=Jsons.optionalString(product,"product_id",Jsons.optionalString(product,"id",""));
+            String key=offerKey(product);
+            int buy=nullableInt(product,"offer_buy_qty"),free=nullableInt(product,"offer_free_qty");
+            boolean active=Jsons.optionalBoolean(product,"offer_active",false)&&buy>0&&free>0;
+            if(!active){FirebaseBridge.instance().deleteValue("datas/announcement/all/"+key);return;}
+            JsonObject value=new JsonObject();String name=Jsons.optionalString(product,"product_name","selected product");
+            String title="Buy "+buy+", get "+free+" FREE";
+            String body=name+": every "+buy+" paid items includes "+free+" extra free.";
+            value.addProperty("type","offer");value.addProperty("product_id",productId);value.addProperty("title",title);
+            value.addProperty("subtitle",body);JsonElement images=product.get("product_img");
+            value.addProperty("img",images!=null&&images.isJsonArray()&&images.getAsJsonArray().size()>0?
+                    images.getAsJsonArray().get(0).getAsString():"");
+            FirebaseBridge.instance().setValue("datas/announcement/all/"+key,new Gson().fromJson(value,Object.class));
+            if(notify)FirebaseBridge.instance().sendTopic("all_users","New Petsfort offer",body);
+        }catch(Exception ignored){/* Python logs and keeps the committed database mutation. */}
+    }
+    private String offerKey(JsonObject product){
+        String productId=Jsons.optionalString(product,"product_id",Jsons.optionalString(product,"id",""));
+        return "offer_"+productId.replaceAll("[^A-Za-z0-9_-]","_");
     }
 
     private JsonObject findProduct(Connection connection, String identifier) throws SQLException {
@@ -498,7 +554,14 @@ final class CrmService implements AutoCloseable {
                     read.setString(1, id);
                     try (ResultSet rows = read.executeQuery()) {
                         if (!rows.next()) throw new ApiFailure(404, "Order not found after update attempt.");
-                        Jsons.copy(orderRow(rows), response);
+                        JsonObject changed=orderRow(rows);Jsons.copy(changed,response);
+                        String status=Jsons.optionalString(changed,"order_status","");
+                        if(status.equals("ORDER_PENDING"))status="pending";
+                        else if(status.equals("ORDER_IN_PROGRESS"))status="in progress";
+                        else if(status.equals("ORDER_DELIVERED"))status="delivered";
+                        else if(status.equals("ORDER_CANCELLED"))status="cancelled";
+                        try{FirebaseBridge.instance().sendTopic("user_"+changed.get("user_id").getAsString(),
+                                "Order Status Updated","Hi, your order is "+status+"!");}catch(Exception ignored){}
                     }
                 }
             }
@@ -819,6 +882,7 @@ final class CrmService implements AutoCloseable {
                         .get(0).getAsJsonObject();
                 changed.add("product_ids", Jsons.parseOr(changed.get("product_ids"), new JsonArray()));
                 Jsons.copy(changed, response);
+                publishOfferGroup(changed,active);
             } catch (Exception error) {
                 c.rollback();
                 throw error;
@@ -844,6 +908,26 @@ final class CrmService implements AutoCloseable {
         JsonArray result = new JsonArray();
         values.forEach(result::add);
         return result;
+    }
+
+    private void publishOfferGroup(JsonObject group,boolean notify){
+        try{
+            String id=group.get("id").getAsString(),key="offer_group_"+id;
+            if(!"ACTIVE".equals(Jsons.optionalString(group,"status",""))){
+                FirebaseBridge.instance().deleteValue("datas/announcement/all/"+key);return;}
+            JsonArray ids=group.getAsJsonArray("product_ids");JsonObject first=null;
+            if(ids!=null&&ids.size()>0)try(Connection c=database.connect()){first=findProduct(c,ids.get(0).getAsString());}
+            JsonObject value=new JsonObject();String title=group.get("name").getAsString()+" · Buy "+
+                    group.get("buy_qty").getAsInt()+", get "+group.get("free_qty").getAsInt()+" FREE";
+            String body=Jsons.optionalString(group,"description","");
+            if(body.isEmpty())body="Available on "+(ids==null?0:ids.size())+" selected products.";
+            value.addProperty("type","offer_group");value.addProperty("offer_group_id",id);
+            value.addProperty("title",title);value.addProperty("subtitle",body);value.add("product_ids",ids);
+            String image="";if(first!=null&&first.get("product_img").isJsonArray()&&first.getAsJsonArray("product_img").size()>0)
+                image=first.getAsJsonArray("product_img").get(0).getAsString();value.addProperty("img",image);
+            FirebaseBridge.instance().setValue("datas/announcement/all/"+key,new Gson().fromJson(value,Object.class));
+            if(notify)FirebaseBridge.instance().sendTopic("all_users","New Petsfort offer",body);
+        }catch(Exception ignored){}
     }
 
     private void normalizeJsonColumn(JsonArray rows, String column, JsonElement fallback) {
@@ -898,9 +982,8 @@ final class CrmService implements AutoCloseable {
                 added.add(name);
                 current.add(name);
             }
-            r.addProperty("message", "Schema update completed");
-            r.add("columns_added", added);
-            r.add("columns_already_exist", existing);
+            r.addProperty("message", "Columns added successfully (or skipped if existing)");
+            r.add("added_columns", added);
         }, req, res);
     }
 
@@ -921,21 +1004,52 @@ final class CrmService implements AutoCloseable {
             if (!absent.isEmpty()) throw new ApiFailure(400, "Columns don't exist: " + String.join(", ", absent));
             if (remove.contains("id")) throw new ApiFailure(400, "Cannot remove the primary key 'id' column");
             if (remove.size() >= current.size()) throw new ApiFailure(400, "Cannot remove all columns.");
-            try (Connection c = database.connect(); Statement s = c.createStatement()) {
-                for (String name : remove) s.execute("ALTER TABLE products DROP COLUMN " + Jsons.identifier(name));
+            JsonArray info=selectArray("PRAGMA table_info(products)",List.of());
+            List<String> kept=new ArrayList<>(),definitions=new ArrayList<>();
+            for(JsonElement value:info){JsonObject column=value.getAsJsonObject();String name=column.get("name").getAsString();
+                if(remove.contains(name))continue;kept.add(name);StringBuilder definition=new StringBuilder(name)
+                        .append(' ').append(column.get("type").getAsString());
+                if(column.get("pk").getAsInt()!=0)definition.append(" PRIMARY KEY");
+                if(column.get("notnull").getAsInt()!=0)definition.append(" NOT NULL");
+                JsonElement defaultValue=column.get("dflt_value");
+                if(defaultValue!=null&&!defaultValue.isJsonNull()){String raw=defaultValue.getAsString();
+                    if(raw.startsWith("'")&&raw.endsWith("'"))definition.append(" DEFAULT ").append(raw);
+                    else definition.append(" DEFAULT '").append(raw.replace("'","''")).append('\'');}
+                definitions.add(definition.toString());
             }
-            r.addProperty("message", "Schema update completed");
-            r.add("columns_removed", toArray(remove));
+            try (Connection c = database.connect(); Statement s = c.createStatement()) {
+                c.setAutoCommit(false);
+                try{
+                    s.execute("CREATE TABLE products_new ("+String.join(", ",definitions)+")");
+                    s.execute("INSERT INTO products_new ("+String.join(", ",kept)+") SELECT "+
+                            String.join(", ",kept)+" FROM products");
+                    s.execute("DROP TABLE products");s.execute("ALTER TABLE products_new RENAME TO products");c.commit();
+                }catch(Exception error){c.rollback();throw error;}
+            }
+            r.addProperty("message", "Columns removed successfully by recreating the table");
+            r.add("removed_columns", toArray(remove));
         }, req, res);
     }
 
     private void getSchema(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
         execute((q, r) -> {
-            JsonArray columns = selectArray("PRAGMA table_info(products)", List.of());
-            if (columns.size() == 0) throw new ApiFailure(404, "Products table schema not found or table is empty.");
-            r.addProperty("table", "products");
-            r.add("columns", columns);
+            JsonArray products = schemaColumns("products");
+            if (products.size() == 0) throw new ApiFailure(404, "Products table schema not found or table is empty.");
+            JsonObject productTable=new JsonObject();productTable.addProperty("table_name","products");
+            productTable.add("columns",products);r.add("products_table",productTable);
+            JsonObject orderTable=new JsonObject();orderTable.addProperty("table_name","orders");
+            orderTable.add("columns",schemaColumns("orders"));r.add("orders_table",orderTable);
         }, req, res);
+    }
+
+    private JsonArray schemaColumns(String table)throws Exception{
+        JsonArray raw=selectArray("PRAGMA table_info("+Jsons.identifier(table)+")",List.of()),result=new JsonArray();
+        for(JsonElement value:raw){JsonObject source=value.getAsJsonObject(),column=new JsonObject();
+            column.add("name",source.get("name"));column.add("type",source.get("type"));
+            column.addProperty("not_null",source.get("notnull").getAsInt()!=0);
+            column.add("default_value",source.get("dflt_value"));
+            column.addProperty("primary_key",source.get("pk").getAsInt()!=0);result.add(column);}
+        return result;
     }
 
     private Set<String> tableColumns(String table) throws Exception {
@@ -948,16 +1062,31 @@ final class CrmService implements AutoCloseable {
     private void getBulkProducts(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
         execute((q, r) -> {
             JsonObject body = payload(q);
-            JsonArray ids = body.has("product_ids") ? body.getAsJsonArray("product_ids")
-                    : body.has("ids") ? body.getAsJsonArray("ids") : new JsonArray();
-            JsonArray products = new JsonArray();
+            JsonArray products = new JsonArray(),warnings=new JsonArray();double mrpTotal=0,rateTotal=0,gstTotal=0,discountTotal=0,total=0;
             try (Connection c = database.connect()) {
-                for (JsonElement value : ids) {
-                    JsonObject product = findProduct(c, value.getAsString());
-                    if (product != null) products.add(product);
+                for (Map.Entry<String,JsonElement> entry:body.entrySet()) {
+                    String id=entry.getKey();int count=0;
+                    if(entry.getValue().isJsonObject()&&entry.getValue().getAsJsonObject().has("count")){
+                        JsonElement countValue=entry.getValue().getAsJsonObject().get("count");
+                        if(countValue.isJsonPrimitive()&&countValue.getAsJsonPrimitive().isNumber())count=Math.max(0,countValue.getAsInt());}
+                    JsonObject product=findProduct(c,id);
+                    if(product==null){warnings.add("Product ID '"+id+"' not found.");continue;}
+                    int buy=nullableInt(product,"offer_buy_qty"),freeQty=nullableInt(product,"offer_free_qty");
+                    int free=product.get("offer_active").getAsBoolean()&&buy>0&&freeQty>0?(count/buy)*freeQty:0;
+                    product.addProperty("requested_count",count);product.addProperty("paid_count",count);
+                    product.addProperty("free_count",free);product.addProperty("fulfilled_count",count+free);products.add(product);
+                    double mrp=nullableDouble(product,"cost_mrp"),rate=nullableDouble(product,"cost_rate"),
+                            gst=rate*nullableDouble(product,"cost_gst")/100,discount=mrp*nullableDouble(product,"cost_dis")/100;
+                    mrpTotal+=mrp*count;rateTotal+=rate*count;gstTotal+=gst*count;discountTotal+=discount*count;total+=(rate+gst)*count;
                 }
             }
-            r.add("data", products);
+            List<JsonElement> sorted=new ArrayList<>();products.forEach(sorted::add);
+            sorted.sort((a,b)->pickKey(a.getAsJsonObject()).compareTo(pickKey(b.getAsJsonObject())));
+            while(products.size()>0)products.remove(0);sorted.forEach(products::add);
+            JsonObject cost=new JsonObject();cost.addProperty("total_mrp",Jsons.round2(mrpTotal));
+            cost.addProperty("total_rate",Jsons.round2(rateTotal));cost.addProperty("total_gst",Jsons.round2(gstTotal));
+            cost.addProperty("total_discount",Jsons.round2(discountTotal));cost.addProperty("total",Jsons.round2(total));
+            r.add("product_details",products);r.add("cost",cost);if(warnings.size()>0)r.add("warnings",warnings);
         }, req, res);
     }
 
@@ -987,7 +1116,7 @@ final class CrmService implements AutoCloseable {
                     JsonElement countValue=entry.getValue().getAsJsonObject().get("count");
                     if(!countValue.isJsonPrimitive()||!countValue.getAsJsonPrimitive().isNumber())continue;
                     int paid=countValue.getAsInt();if(paid<=0)continue;
-                    JsonObject product=findProduct(c,pid);if(product==null){notFound.add(pid);continue;}
+                    JsonObject product=findRawProduct(c,pid);if(product==null){notFound.add(pid);continue;}
                     int buy=nullableInt(product,"offer_buy_qty"),freeQty=nullableInt(product,"offer_free_qty");
                     boolean active=product.get("offer_active").getAsBoolean()&&buy>0&&freeQty>0;
                     int free=active?(paid/buy)*freeQty:0,fulfilled=paid+free;
@@ -1000,8 +1129,17 @@ final class CrmService implements AutoCloseable {
                         c.rollback();return;
                     }
                     newStocks.put(pid,stock-fulfilled);
-                    JsonObject item=product.deepCopy();
+                    JsonObject item=new JsonObject();
+                    for(String field:List.of("id","product_id","product_name","product_desc","product_hsn",
+                            "product_cid","product_img","cat_id","cat_sub","created_at","updated_at","cost_mrp",
+                            "cost_gst","stock","cost_dis")){
+                        JsonElement fieldValue=product.get(field);
+                        item.add(field,fieldValue==null?JsonNull.INSTANCE:fieldValue.deepCopy());
+                    }
+                    double itemMrp=nullableDouble(item,"cost_mrp"),itemDiscount=nullableDouble(item,"cost_dis");
+                    item.addProperty("cost_rate",itemMrp-(itemMrp*itemDiscount/100));
                     item.addProperty("count",fulfilled);item.addProperty("paid_count",paid);item.addProperty("free_count",free);
+                    item.addProperty("offer_buy_qty",buy);item.addProperty("offer_free_qty",freeQty);
                     details.add(item);
                     JsonObject count=new JsonObject();count.addProperty("count",fulfilled);
                     count.addProperty("paid_count",paid);count.addProperty("free_count",free);orderItems.add(pid,count);
@@ -1011,6 +1149,9 @@ final class CrmService implements AutoCloseable {
                 }
                 if(!notFound.isEmpty())throw new ApiFailure(404,"Products not found: "+String.join(", ",notFound));
                 if(orderItems.size()==0)throw new ApiFailure(400,"No valid items found in the request to create an order.");
+                List<JsonElement> sortedDetails=new ArrayList<>();details.forEach(sortedDetails::add);
+                sortedDetails.sort((left,right)->pickKey(left.getAsJsonObject()).compareTo(pickKey(right.getAsJsonObject())));
+                while(details.size()>0)details.remove(0);sortedDetails.forEach(details::add);
                 JsonArray users=selectArrayOn(c,"SELECT * FROM userdata WHERE id=? OR uid=?",List.of(userId,userId));
                 if(users.size()==0)throw new ApiFailure(400,"User Not found.");
                 JsonObject user=users.get(0).getAsJsonObject();
@@ -1030,6 +1171,12 @@ final class CrmService implements AutoCloseable {
                 response.addProperty("message","Order created successfully");response.addProperty("order_id",orderId);
                 response.addProperty("user_id",userId);response.addProperty("order_status","ORDER_PENDING");
                 response.addProperty("total",total);
+                try{
+                    FirebaseBridge.instance().sendTopic("user_"+userId,"Order Made",
+                            "Thank you for making order, your order is in pending, we will update you!");
+                    FirebaseBridge.instance().sendTopic("order_checkout","New Order",
+                            Jsons.optionalString(user,"name","Not Found")+" is made a new order of Rs."+total);
+                }catch(Exception ignored){}
             }catch(Exception error){c.rollback();throw error;}
         }
     }
@@ -1039,10 +1186,30 @@ final class CrmService implements AutoCloseable {
         Random random=new Random();for(int i=0;i<2;i++)letters+=(char)('A'+random.nextInt(26));
         return now.format(DateTimeFormatter.ofPattern("yyMMdd"))+letters+String.format("%02d",10+random.nextInt(90));
     }
+    private JsonObject findRawProduct(Connection connection,String identifier)throws SQLException{
+        try(PreparedStatement statement=connection.prepareStatement(
+                "SELECT * FROM products WHERE id=? OR product_id=? LIMIT 1")){
+            statement.setString(1,identifier);statement.setString(2,identifier);
+            try(ResultSet rows=statement.executeQuery()){return rows.next()?Jsons.row(rows):null;}
+        }
+    }
+    private String pickKey(JsonObject product){
+        String cat=Jsons.optionalString(product,"cat_id","").toLowerCase(Locale.ROOT);
+        List<String> subs=new ArrayList<>(Arrays.asList(Jsons.optionalString(product,"cat_sub","").toLowerCase(Locale.ROOT).split(",")));
+        subs.replaceAll(String::trim);subs.removeIf(String::isEmpty);Collections.sort(subs);
+        return cat+"\u0000"+String.join(",",subs)+"\u0000"+naturalKey(Jsons.optionalString(product,"product_name",""))+
+                "\u0000"+Jsons.optionalString(product,"product_id",Jsons.optionalString(product,"id","")).toLowerCase(Locale.ROOT);
+    }
+    private String naturalKey(String value){
+        StringBuilder key=new StringBuilder();java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("(\\d+)|(\\D+)").matcher(value.toLowerCase(Locale.ROOT));
+        while(matcher.find()){if(matcher.group(1)!=null)key.append('\u0001').append(String.format("%020d",Long.parseLong(matcher.group(1))));
+            else key.append('\u0000').append(matcher.group(2));}return key.toString();
+    }
     private void getTables(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
-        execute((q, r) -> r.add("data", selectArray(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
-                List.of())), req, res);
+        execute((q, r) -> {JsonArray rows=selectArray(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",List.of());
+            JsonArray names=new JsonArray();rows.forEach(v->names.add(v.getAsJsonObject().get("name")));r.add("data",names);
+        }, req, res);
     }
     private void getTableInfo(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
         execute((q, r) -> {
@@ -1082,7 +1249,6 @@ final class CrmService implements AutoCloseable {
                 long id = 0;
                 try (ResultSet keys = s.getGeneratedKeys()) { if (keys.next()) id = keys.getLong(1); }
                 r.addProperty("message", "Row added successfully"); r.addProperty("row_id", id);
-                r.addProperty("status_code", 201);
             } catch (SQLException error) {
                 if (error.getMessage().toLowerCase(Locale.ROOT).contains("constraint")) {
                     throw new ApiFailure(400, "Failed to add row (Integrity Error): " + error.getMessage()
@@ -1305,10 +1471,6 @@ final class CrmService implements AutoCloseable {
     }
     private void gstDashboardExtras(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
         execute((q,r)->AccountingReports.dashboardExtras(this,q,r),req,res);
-    }
-
-    private void unsupported(JsonObject request, JsonObject response, String feature) throws RpcException {
-        execute((q, r) -> { throw new ApiFailure(501, feature + " migration is incomplete"); }, request, response);
     }
 
     @Override

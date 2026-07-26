@@ -6,6 +6,8 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.google.firebase.messaging.Message;
+import com.google.firebase.messaging.Notification;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -70,5 +72,20 @@ final class FirebaseBridge {
 
     FirebaseMessaging messaging() {
         return FirebaseMessaging.getInstance(app);
+    }
+
+    void setValue(String path, Object value) throws Exception {
+        database().getReference(path).setValueAsync(value).get();
+    }
+
+    void deleteValue(String path) throws Exception {
+        database().getReference(path).removeValueAsync().get();
+    }
+
+    void sendTopic(String topic, String title, String body) throws Exception {
+        messaging().send(Message.builder()
+                .setTopic(topic)
+                .setNotification(Notification.builder().setTitle(title).setBody(body).build())
+                .build());
     }
 }
