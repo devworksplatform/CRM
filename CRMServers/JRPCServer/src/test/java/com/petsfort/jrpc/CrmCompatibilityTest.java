@@ -110,6 +110,65 @@ final class CrmCompatibilityTest {
         }
     }
 
+    @Test
+    void groupedProductSearchKeepsCategoryAndSubcategoryConstraints() throws Exception {
+        String suffix = java.util.UUID.randomUUID().toString().replace("-", "");
+        String category = "search-category-" + suffix;
+        String subcategory = "search-sub-" + suffix;
+        String needle = "searchneedle" + suffix;
+        CrmDatabase database = new CrmDatabase(CrmConfiguration.fromEnvironment());
+        try (Connection connection = database.connect();
+             PreparedStatement insert = connection.prepareStatement(
+                     "INSERT INTO products(id,product_id,product_name,product_desc,cat_id,cat_sub) " +
+                             "VALUES(?,?,?,?,?,?)")) {
+            insertProduct(insert, "matching-" + suffix, "SKU-A-" + suffix,
+                    needle + " product", "matching description", category, subcategory);
+            insertProduct(insert, "same-sub-" + suffix, "SKU-B-" + suffix,
+                    "unrelated product", "nothing here", category, subcategory);
+            insertProduct(insert, "other-sub-" + suffix, "SKU-C-" + suffix,
+                    needle + " wrong subcategory", "matching description", category, "other-sub");
+        }
+
+        JsonObject body = new JsonObject();
+        JsonArray filters = new JsonArray();
+        filters.add(filter("cat_id", "eq", category));
+        filters.add(filter("cat_sub", "contains", subcategory));
+        body.add("filters", filters);
+        body.addProperty("filter_logic", "AND");
+        body.addProperty("search_value", needle.toUpperCase(java.util.Locale.ROOT));
+        JsonArray fields = new JsonArray();
+        fields.add("product_name");
+        fields.add("product_desc");
+        body.add("search_fields", fields);
+        JsonObject request = new JsonObject();
+        request.add("body", body);
+
+        JsonArray matches = call(CrmRpc.POST_PRODUCTS_QUERY, request).getAsJsonArray("data");
+        assertEquals(1, matches.size());
+        assertEquals("matching-" + suffix,
+                matches.get(0).getAsJsonObject().get("id").getAsString());
+    }
+
+    private static void insertProduct(PreparedStatement insert, String id, String productId,
+                                      String name, String description, String category,
+                                      String subcategory) throws SQLException {
+        insert.setString(1, id);
+        insert.setString(2, productId);
+        insert.setString(3, name);
+        insert.setString(4, description);
+        insert.setString(5, category);
+        insert.setString(6, subcategory);
+        insert.executeUpdate();
+    }
+
+    private static JsonObject filter(String field, String operator, String value) {
+        JsonObject filter = new JsonObject();
+        filter.addProperty("field", field);
+        filter.addProperty("operator", operator);
+        filter.addProperty("value", value);
+        return filter;
+    }
+
     private JsonObject call(CrmRpc rpc, JsonObject request) throws Exception {
         JsonObject response = new JsonObject();
         service.handlerFor(rpc).onRpc(rpc, request, response);

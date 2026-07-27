@@ -99,6 +99,9 @@ public class SearchActivity extends AppCompatActivity {
 
 	DecimalFormat df = new DecimalFormat("#.###");
 	JHelpers.LoadingOverlay loadingOverlay = new JHelpers.LoadingOverlay();
+	private final Handler searchHandler = new Handler(Looper.getMainLooper());
+	private Runnable pendingSearch;
+	private int searchRequestGeneration = 0;
 
 
 	@Override
@@ -180,8 +183,7 @@ public class SearchActivity extends AppCompatActivity {
 		edittext1.addTextChangedListener(new TextWatcher() {
 			@Override
 			public void onTextChanged(CharSequence _param1, int _param2, int _param3, int _param4) {
-				final String _charSeq = _param1.toString();
-				searchForProductAndList(_charSeq, null, null);
+				scheduleProductSearch(_param1.toString());
 			}
 			
 			@Override
@@ -194,6 +196,30 @@ public class SearchActivity extends AppCompatActivity {
 				
 			}
 		});
+	}
+
+	private void scheduleProductSearch(String query) {
+		if (pendingSearch != null) {
+			searchHandler.removeCallbacks(pendingSearch);
+		}
+		// Invalidate any in-flight response as soon as the visible query changes.
+		searchRequestGeneration++;
+		final String normalizedQuery = query == null ? "" : query.trim();
+		pendingSearch = () -> {
+			pendingSearch = null;
+			searchForProductAndList(normalizedQuery, null, null);
+		};
+		searchHandler.postDelayed(pendingSearch, 250);
+	}
+
+	@Override
+	protected void onDestroy() {
+		if (pendingSearch != null) {
+			searchHandler.removeCallbacks(pendingSearch);
+			pendingSearch = null;
+		}
+		searchRequestGeneration++;
+		super.onDestroy();
 	}
 	
 	private void initializeLogic() {
@@ -624,6 +650,12 @@ public class SearchActivity extends AppCompatActivity {
 	}
 
 	private void searchForProductAndList(String product_name, List<HashMap<String, String>> filtersSubCats, SearchCompleteListener searchCompleteListener) {
+		if (pendingSearch != null) {
+			searchHandler.removeCallbacks(pendingSearch);
+			pendingSearch = null;
+		}
+		final int requestGeneration = ++searchRequestGeneration;
+		final String normalizedSearch = product_name == null ? "" : product_name.trim();
 		Business.QueryApiClient queryApiClient = new Business.QueryApiClient();
 
 		// Create filters list
@@ -671,30 +703,15 @@ public class SearchActivity extends AppCompatActivity {
 			filters.add(filterAND);
 		}
 
-		if(!product_name.equals("")) {
-			//Product Name
-			HashMap<String, String> filter3 = new HashMap<>();
-			filter3.put("field", "product_name");
-			filter3.put("operator", "contains");
-			filter3.put("value", product_name);
-			filters.add(filter3);
-
-			filter3 = new HashMap<>();
-			filter3.put("field", "product_hsn");
-			filter3.put("operator", "contains");
-			filter3.put("value", product_name);
-			filters.add(filter3);
-
-			filter3 = new HashMap<>();
-			filter3.put("field", "product_cid");
-			filter3.put("operator", "contains");
-			filter3.put("value", product_name);
-			filters.add(filter3);
-		}
-
 		// Create main HashMap
 		HashMap<String, Object> apiRequestData = new HashMap<>();
 		apiRequestData.put("filters", filters);
+		apiRequestData.put("filter_logic", "AND");
+		if (!normalizedSearch.isEmpty()) {
+			apiRequestData.put("search_value", normalizedSearch);
+			apiRequestData.put("search_fields", Arrays.asList(
+					"product_name", "product_id", "product_hsn", "product_cid", "product_desc"));
+		}
 		apiRequestData.put("limit", 1000);
 		apiRequestData.put("offset", 0);
 		apiRequestData.put("order_by", "product_name");
@@ -706,6 +723,12 @@ public class SearchActivity extends AppCompatActivity {
 		queryApiClient.callApi(apiRequestData, new Callbacker.ApiResponseWaiters.QueryApiCallback(){
 			@Override
 			public void onReceived(Business.QueryApiClient.QueryApiResponse response) {
+				if (requestGeneration != searchRequestGeneration || isFinishing() || isDestroyed()) {
+					if (searchCompleteListener != null) {
+						searchCompleteListener.onSearchCompleted();
+					}
+					return;
+				}
 				if (response.getStatusCode() == 200) {
 					listmap = response.getProducts();
 				} else {
@@ -718,7 +741,7 @@ public class SearchActivity extends AppCompatActivity {
 					main.setVisibility(View.GONE);
 				}
 				if (isOfferGroup && offerGroupSubtitle != null) {
-					if (product_name.isEmpty()) {
+					if (normalizedSearch.isEmpty()) {
 						offerGroupSubtitle.setText(listmap.size() == 1
 								? "1 product included in this offer"
 								: listmap.size() + " products included in this offer");

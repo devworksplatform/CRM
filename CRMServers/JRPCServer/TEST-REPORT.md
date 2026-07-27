@@ -10,7 +10,7 @@ reference database was never opened for writing.
 
 ## Automated results
 
-- Java unit/integration suite: 5 passed
+- Java unit/integration suite: 6 passed
 - Live FastAPI/JRPC differential suite: 9 passed
 - Failures: 0
 
@@ -31,6 +31,7 @@ workflow. See `tests/differential_contract.py`.
 - Firebase Authentication user create, password/profile update, and delete
 - HTML operations return the agreed `HTTP_501`/status 501 result
 - Backup snapshot/restore round trip, including a dynamic column and unique index
+- Grouped product search with category/subcategory constraints and case-insensitive text
 
 Generated IDs and timestamps were normalized only where each isolated runtime
 must generate a different value. All stable fields, nested payloads, numeric

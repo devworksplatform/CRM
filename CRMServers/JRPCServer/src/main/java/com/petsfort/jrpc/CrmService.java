@@ -421,6 +421,7 @@ final class CrmService implements AutoCloseable {
         StringBuilder sql = new StringBuilder("SELECT * FROM ").append(Jsons.identifier(table));
         List<Object> parameters = new ArrayList<>();
         appendFilters(sql, parameters, query);
+        appendSearch(sql, parameters, query);
         appendOrderLimit(sql, parameters, query);
         JsonArray result = new JsonArray();
         try (Connection connection = database.connect();
@@ -472,11 +473,41 @@ final class CrmService implements AutoCloseable {
                 default: throw new ApiFailure(422, "Invalid operator: " + operator);
             }
         }
-        // Deliberately preserves the unusual Python rule: first AND (all remaining ORed).
-        sql.append(" WHERE ").append(parts.get(0));
-        if (parts.size() > 1) {
-            sql.append(" AND (").append(String.join(" OR ", parts.subList(1, parts.size()))).append(')');
+        String logic = Jsons.optionalString(query, "filter_logic", "LEGACY").toUpperCase(Locale.ROOT);
+        if ("AND".equals(logic)) {
+            sql.append(" WHERE ").append(String.join(" AND ", parts));
+        } else {
+            // Default to the original Python contract for existing clients.
+            sql.append(" WHERE ").append(parts.get(0));
+            if (parts.size() > 1) {
+                sql.append(" AND (").append(String.join(" OR ", parts.subList(1, parts.size()))).append(')');
+            }
         }
+    }
+
+    private void appendSearch(StringBuilder sql, List<Object> parameters, JsonObject query)
+            throws ApiFailure {
+        String value = Jsons.optionalString(query, "search_value", "").trim();
+        JsonElement rawFields = query.get("search_fields");
+        if (value.isEmpty() || rawFields == null || !rawFields.isJsonArray()
+                || rawFields.getAsJsonArray().size() == 0) {
+            return;
+        }
+        List<String> searchParts = new ArrayList<>();
+        String pattern = "%" + escapeLike(value) + "%";
+        for (JsonElement rawField : rawFields.getAsJsonArray()) {
+            if (!rawField.isJsonPrimitive() || !rawField.getAsJsonPrimitive().isString()) {
+                throw new ApiFailure(422, "Every search field must be a string.");
+            }
+            String field = Jsons.identifier(rawField.getAsString());
+            searchParts.add(field + " LIKE ? ESCAPE '\\' COLLATE NOCASE");
+            parameters.add(pattern);
+        }
+        sql.append(" AND (").append(String.join(" OR ", searchParts)).append(')');
+    }
+
+    private String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 
     private void appendOrderLimit(StringBuilder sql, List<Object> parameters, JsonObject query)
