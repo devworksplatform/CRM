@@ -9,16 +9,20 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 final class CrmService implements AutoCloseable {
     private static final Set<String> HTML_OPERATIONS = Set.of(
             "GET_ROOT_HTML", "GET_PRIVACY_POLICY_HTML", "GET_DATABASE_HTML", "GET_ANALYTICS_HTML");
     private final CrmDatabase database;
+    private final CrmBackupService backups;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final Object checkoutLock = new Object();
+    private final ReentrantReadWriteLock operationLock = new ReentrantReadWriteLock(true);
 
     private CrmService(CrmDatabase database) {
         this.database = database;
+        this.backups = new CrmBackupService(database);
     }
 
     static CrmService open(CrmConfiguration configuration) {
@@ -83,6 +87,13 @@ final class CrmService implements AutoCloseable {
             case GET_GST_OUTSTANDING: return this::gstOutstanding;
             case GET_GST_TAX_LEDGER: return this::gstTaxLedger;
             case GET_GST_DASHBOARD_EXTRAS: return this::gstDashboardExtras;
+            case GET_BACKUPS: return this::getBackups;
+            case POST_BACKUP: return this::postBackup;
+            case DELETE_BACKUPS_OLDER_THAN_DAYS: return this::deleteBackupsOlderThanDays;
+            case DELETE_BACKUP: return this::deleteBackup;
+            case POST_BACKUPS_DELETE_SELECTED: return this::deleteSelectedBackups;
+            case POST_BACKUPS_RESET_CURRENT: return this::resetBackups;
+            case POST_BACKUP_RESTORE: return this::restoreBackup;
             default: return this::notImplementedHtml;
         }
     }
@@ -92,6 +103,26 @@ final class CrmService implements AutoCloseable {
     }
 
     private void execute(Action action, JsonObject request, JsonObject response) throws RpcException {
+        operationLock.readLock().lock();
+        try {
+            executeLocked(action, request, response);
+        } finally {
+            operationLock.readLock().unlock();
+        }
+    }
+
+    private void executeExclusive(Action action, JsonObject request, JsonObject response)
+            throws RpcException {
+        operationLock.writeLock().lock();
+        try {
+            executeLocked(action, request, response);
+        } finally {
+            operationLock.writeLock().unlock();
+        }
+    }
+
+    private void executeLocked(Action action, JsonObject request, JsonObject response)
+            throws RpcException {
         if (closed.get()) throw new RpcException("SERVER_CLOSED", "CRM service is closed");
         try {
             action.run(request, response);
@@ -1471,6 +1502,27 @@ final class CrmService implements AutoCloseable {
     }
     private void gstDashboardExtras(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
         execute((q,r)->AccountingReports.dashboardExtras(this,q,r),req,res);
+    }
+    private void getBackups(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        execute(backups::list, req, res);
+    }
+    private void postBackup(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        executeExclusive(backups::create, req, res);
+    }
+    private void deleteBackupsOlderThanDays(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        execute(backups::deleteOlderThan, req, res);
+    }
+    private void deleteBackup(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        execute(backups::delete, req, res);
+    }
+    private void deleteSelectedBackups(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        execute(backups::deleteSelected, req, res);
+    }
+    private void resetBackups(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        executeExclusive(backups::reset, req, res);
+    }
+    private void restoreBackup(CrmRpc rpc, JsonObject req, JsonObject res) throws RpcException {
+        executeExclusive(backups::restore, req, res);
     }
 
     @Override

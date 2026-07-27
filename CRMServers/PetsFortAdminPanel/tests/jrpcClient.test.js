@@ -1,7 +1,7 @@
 "use strict";
 
 const assert = require("node:assert/strict");
-const { RPC, PetsFortJrpcTransport, resolveEndpoint } =
+const { RPC, FirebaseJrpcClient, PetsFortJrpcTransport, resolveEndpoint } =
     require("../public/basic/jrpcClient.js");
 
 const cases = [
@@ -46,7 +46,15 @@ const cases = [
     ["GET", "gst/stock-summary", null, RPC.GET_GST_STOCK_SUMMARY],
     ["GET", "gst/outstanding", null, RPC.GET_GST_OUTSTANDING],
     ["GET", "gst/tax-ledger", null, RPC.GET_GST_TAX_LEDGER],
-    ["GET", "gst/dashboard-extras", null, RPC.GET_GST_DASHBOARD_EXTRAS]
+    ["GET", "gst/dashboard-extras", null, RPC.GET_GST_DASHBOARD_EXTRAS],
+    ["GET", "backups/list", null, RPC.GET_BACKUPS],
+    ["POST", "backups/create", {}, RPC.POST_BACKUP],
+    ["DELETE", "backups/older-than-days/7", null, RPC.DELETE_BACKUPS_OLDER_THAN_DAYS, ["days", "7"]],
+    ["DELETE", "backups/2026-07-28--12-30-00", null, RPC.DELETE_BACKUP,
+        ["backup_id", "2026-07-28--12-30-00"]],
+    ["POST", "backups/delete-selected", { ids: ["latest"] }, RPC.POST_BACKUPS_DELETE_SELECTED],
+    ["POST", "backups/reset-current", {}, RPC.POST_BACKUPS_RESET_CURRENT],
+    ["POST", "backups/latest/restore", {}, RPC.POST_BACKUP_RESTORE, ["backup_id", "latest"]]
 ];
 
 for (const [method, url, body, expectedRpc, expectedField] of cases) {
@@ -69,6 +77,37 @@ assert.throws(() => resolveEndpoint("GET", "backups"), error => error.status ===
     });
     assert.deepEqual(await transport.callApi("GET", "categories"), [{ id: 1 }]);
     assert.equal(calls[0].rpc, RPC.GET_CATEGORIES);
+
+    let responseListener;
+    let sentPayload;
+    const database = {
+        ref(path) {
+            const response = path.startsWith("ServerResp/");
+            return {
+                on(_event, listener) {
+                    if (response) responseListener = listener;
+                },
+                off() {},
+                remove: async () => {},
+                async set(payload) {
+                    sentPayload = payload;
+                    queueMicrotask(() => responseListener({
+                        exists: () => true,
+                        val: () => ({ success: true, responseJson: "{\"ok\":true}" })
+                    }));
+                }
+            };
+        }
+    };
+    const authenticatedClient = new FirebaseJrpcClient(database, {
+        currentUser: {
+            uid: "admin-uid",
+            getIdToken: async () => "verified-id-token"
+        }
+    }, "PetsFort-CRM", 1000);
+    assert.deepEqual(await authenticatedClient.call(RPC.GET_BACKUPS, {}), { ok: true });
+    assert.equal(JSON.parse(sentPayload.requestJson)._auth_token, "verified-id-token");
+
     console.log(`JRPC web adapter: ${cases.length} route cases passed`);
 })().catch(error => {
     console.error(error);

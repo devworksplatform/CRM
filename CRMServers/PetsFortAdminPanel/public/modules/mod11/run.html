@@ -7,7 +7,7 @@
         <div class="backup-toolbar">
             <div>
                 <h3>Backup Manager</h3>
-                <p>Review Firebase Realtime Database backups and create a fresh backup from the live SQLite database.</p>
+                <p>Create and restore full-schema SQLite snapshots through the authenticated JRPC server.</p>
             </div>
             <button id="backup-refresh" class="btn btn-outline">
                 <i data-feather="refresh-ccw"></i> Refresh
@@ -22,7 +22,7 @@
                 <i data-feather="trash-2"></i> Delete Selected
             </button>
             <button id="backup-reset-current" class="btn btn-error">
-                <i data-feather="rotate-ccw"></i> Delete All & Create Now
+                <i data-feather="rotate-ccw"></i> Replace Backup History
             </button>
             <button id="backup-delete-old" class="btn btn-outline">
                 <i data-feather="calendar"></i> Delete Older Than 1 Week
@@ -32,6 +32,15 @@
         <div class="backup-summary">
             <span id="backup-count">0 backups</span>
             <span id="backup-last">Last backup: -</span>
+        </div>
+        <div id="backup-status" class="backup-status" role="status" aria-live="polite"></div>
+
+        <div class="backup-safety-note">
+            <i data-feather="shield"></i>
+            <div>
+                <strong>Restore protection</strong>
+                <span>A safety backup of the current live database is created automatically before every restore.</span>
+            </div>
         </div>
 
         <div class="backup-table-wrap">
@@ -43,8 +52,9 @@
                         </th>
                         <th>Backup</th>
                         <th>Created</th>
+                        <th>Contents</th>
                         <th>Path</th>
-                        <th>Action</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="backup-table-body"></tbody>

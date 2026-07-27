@@ -1,6 +1,13 @@
 package com.petsfort.jrpc;
 
+import com.google.gson.*;
+
 import java.sql.*;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 final class CrmDatabase implements AutoCloseable {
     private final String jdbcUrl;
@@ -22,6 +29,248 @@ final class CrmDatabase implements AutoCloseable {
             statement.execute("PRAGMA busy_timeout=15000");
         }
         return connection;
+    }
+
+    JsonObject createBackupSnapshot() throws Exception {
+        JsonObject snapshot = new JsonObject();
+        snapshot.addProperty("__format_version", 2);
+        snapshot.addProperty("__created_at", OffsetDateTime.now().toString());
+        JsonObject tables = new JsonObject();
+        JsonArray schemaObjects = new JsonArray();
+
+        try (Connection connection = connect()) {
+            connection.setAutoCommit(false);
+            try {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "SELECT name, sql FROM sqlite_master " +
+                                "WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+                     ResultSet tableRows = statement.executeQuery()) {
+                    while (tableRows.next()) {
+                        String tableName = tableRows.getString("name");
+                        JsonObject table = new JsonObject();
+                        table.addProperty("schema", tableRows.getString("sql"));
+                        JsonArray rows = new JsonArray();
+                        try (Statement select = connection.createStatement();
+                             ResultSet data = select.executeQuery(
+                                     "SELECT * FROM " + Jsons.identifier(tableName))) {
+                            while (data.next()) rows.add(Jsons.row(data));
+                        }
+                        table.add("rows", rows);
+                        tables.add(tableName, table);
+                    }
+                }
+                try (Statement statement = connection.createStatement();
+                     ResultSet objects = statement.executeQuery(
+                             "SELECT type, name, sql FROM sqlite_master " +
+                                     "WHERE type IN ('index','trigger','view') AND sql IS NOT NULL " +
+                                     "AND name NOT LIKE 'sqlite_%' ORDER BY type, name")) {
+                    while (objects.next()) {
+                        JsonObject object = new JsonObject();
+                        object.addProperty("type", objects.getString("type"));
+                        object.addProperty("name", objects.getString("name"));
+                        object.addProperty("sql", objects.getString("sql"));
+                        schemaObjects.add(object);
+                    }
+                }
+                connection.commit();
+            } catch (Exception failure) {
+                connection.rollback();
+                throw failure;
+            }
+        }
+        snapshot.add("__tables", tables);
+        snapshot.add("__schema_objects", schemaObjects);
+        return snapshot;
+    }
+
+    void restoreBackupSnapshot(JsonObject snapshot) throws Exception {
+        if (snapshot == null || snapshot.isEmpty()) {
+            throw new ApiFailure(422, "Backup contains no database data.");
+        }
+        boolean versionTwo = snapshot.has("__format_version") && snapshot.has("__tables");
+        JsonObject tables = versionTwo ? snapshot.getAsJsonObject("__tables") : snapshot;
+        if (tables == null || tables.isEmpty()) {
+            throw new ApiFailure(422, "Backup contains no tables.");
+        }
+
+        try (Connection connection = connect()) {
+            try (Statement pragma = connection.createStatement()) {
+                pragma.execute("PRAGMA foreign_keys=OFF");
+            }
+            connection.setAutoCommit(false);
+            try {
+                if (versionTwo) {
+                    recreateTables(connection, tables);
+                } else {
+                    clearExistingTables(connection);
+                }
+                insertBackupRows(connection, tables, versionTwo);
+                if (versionTwo) restoreSchemaObjects(connection, snapshot);
+                connection.commit();
+            } catch (Exception failure) {
+                connection.rollback();
+                throw failure;
+            } finally {
+                connection.setAutoCommit(true);
+                try (Statement pragma = connection.createStatement()) {
+                    pragma.execute("PRAGMA foreign_keys=ON");
+                }
+            }
+        }
+    }
+
+    private void recreateTables(Connection connection, JsonObject tables) throws Exception {
+        dropSchemaObjects(connection);
+        for (String tableName : existingTableNames(connection)) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("DROP TABLE " + Jsons.identifier(tableName));
+            }
+        }
+        for (Map.Entry<String, JsonElement> entry : tables.entrySet()) {
+            Jsons.identifier(entry.getKey());
+            JsonObject table = requireObject(entry.getValue(), "table " + entry.getKey());
+            String schema = Jsons.requiredString(table, "schema");
+            String normalized = schema.trim().toUpperCase(java.util.Locale.ROOT);
+            if (!normalized.startsWith("CREATE TABLE")) {
+                throw new ApiFailure(422, "Invalid schema in backup for table " + entry.getKey());
+            }
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(schema);
+            }
+        }
+    }
+
+    private void dropSchemaObjects(Connection connection) throws Exception {
+        List<String[]> objects = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet rows = statement.executeQuery(
+                     "SELECT type, name FROM sqlite_master " +
+                             "WHERE type IN ('index','trigger','view') AND sql IS NOT NULL " +
+                             "AND name NOT LIKE 'sqlite_%'")) {
+            while (rows.next()) objects.add(new String[]{rows.getString("type"), rows.getString("name")});
+        }
+        for (String[] object : objects) {
+            String keyword;
+            switch (object[0]) {
+                case "index": keyword = "INDEX"; break;
+                case "trigger": keyword = "TRIGGER"; break;
+                case "view": keyword = "VIEW"; break;
+                default: throw new ApiFailure(422, "Invalid database object type.");
+            }
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("DROP " + keyword + " " + Jsons.identifier(object[1]));
+            }
+        }
+    }
+
+    private void restoreSchemaObjects(Connection connection, JsonObject snapshot) throws Exception {
+        JsonElement rawObjects = snapshot.get("__schema_objects");
+        if (rawObjects == null || rawObjects.isJsonNull()) return;
+        if (!rawObjects.isJsonArray()) {
+            throw new ApiFailure(422, "Invalid schema objects in backup.");
+        }
+        for (JsonElement rawObject : rawObjects.getAsJsonArray()) {
+            JsonObject object = requireObject(rawObject, "schema object");
+            String type = Jsons.requiredString(object, "type");
+            if (!Set.of("index", "trigger", "view").contains(type)) {
+                throw new ApiFailure(422, "Invalid schema object type in backup.");
+            }
+            String sql = Jsons.requiredString(object, "sql").trim();
+            String normalized = sql.toUpperCase(java.util.Locale.ROOT);
+            String expected = "CREATE " + type.toUpperCase(java.util.Locale.ROOT);
+            boolean valid = normalized.startsWith(expected)
+                    || ("index".equals(type) && normalized.startsWith("CREATE UNIQUE INDEX"));
+            if (!valid) {
+                throw new ApiFailure(422, "Invalid " + type + " definition in backup.");
+            }
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
+        }
+    }
+
+    private void clearExistingTables(Connection connection) throws Exception {
+        for (String tableName : existingTableNames(connection)) {
+            try (Statement statement = connection.createStatement()) {
+                statement.executeUpdate("DELETE FROM " + Jsons.identifier(tableName));
+            }
+        }
+    }
+
+    private List<String> existingTableNames(Connection connection) throws SQLException {
+        List<String> names = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet rows = statement.executeQuery(
+                     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")) {
+            while (rows.next()) names.add(rows.getString(1));
+        }
+        return names;
+    }
+
+    private void insertBackupRows(Connection connection, JsonObject tables, boolean versionTwo)
+            throws Exception {
+        for (Map.Entry<String, JsonElement> entry : tables.entrySet()) {
+            String tableName = entry.getKey();
+            Jsons.identifier(tableName);
+            JsonElement rawRows = versionTwo
+                    ? requireObject(entry.getValue(), "table " + tableName).get("rows")
+                    : entry.getValue();
+            if (rawRows == null || rawRows.isJsonNull()) continue;
+
+            if (rawRows.isJsonArray()) {
+                for (JsonElement row : rawRows.getAsJsonArray()) {
+                    insertRow(connection, tableName, requireObject(row, "row in " + tableName));
+                }
+            } else if (rawRows.isJsonObject()) {
+                for (Map.Entry<String, JsonElement> row : rawRows.getAsJsonObject().entrySet()) {
+                    insertRow(connection, tableName,
+                            requireObject(row.getValue(), "row " + row.getKey() + " in " + tableName));
+                }
+            } else {
+                throw new ApiFailure(422, "Invalid rows in backup for table " + tableName);
+            }
+        }
+    }
+
+    private void insertRow(Connection connection, String tableName, JsonObject row) throws Exception {
+        if (row.isEmpty()) return;
+        List<String> columns = new ArrayList<>();
+        StringBuilder placeholders = new StringBuilder();
+        for (String column : row.keySet()) {
+            columns.add(Jsons.identifier(column));
+            if (placeholders.length() > 0) placeholders.append(',');
+            placeholders.append('?');
+        }
+        String sql = "INSERT INTO " + Jsons.identifier(tableName) + " (" +
+                String.join(",", columns) + ") VALUES (" + placeholders + ")";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            int index = 1;
+            for (JsonElement value : row.asMap().values()) {
+                bind(statement, index++, value);
+            }
+            statement.executeUpdate();
+        }
+    }
+
+    private void bind(PreparedStatement statement, int index, JsonElement value) throws SQLException {
+        if (value == null || value.isJsonNull()) {
+            statement.setObject(index, null);
+        } else if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()) {
+            statement.setInt(index, value.getAsBoolean() ? 1 : 0);
+        } else if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isNumber()) {
+            statement.setBigDecimal(index, value.getAsBigDecimal());
+        } else if (value.isJsonPrimitive()) {
+            statement.setString(index, value.getAsString());
+        } else {
+            statement.setString(index, value.toString());
+        }
+    }
+
+    private JsonObject requireObject(JsonElement value, String description) throws ApiFailure {
+        if (value == null || !value.isJsonObject()) {
+            throw new ApiFailure(422, "Invalid " + description + " in backup.");
+        }
+        return value.getAsJsonObject();
     }
 
     private void migrate() throws SQLException {
@@ -95,4 +344,3 @@ final class CrmDatabase implements AutoCloseable {
         // Connections are operation-scoped; no persistent pool is owned here.
     }
 }
-

@@ -19,11 +19,14 @@ change the server name and timeout from **Server Config**. This setting is kept
 in the browser's local storage under `petsfortJrpcConfig`; no configuration
 Function is required.
 
-Backups, server status/log streaming, and terminal operations remain excluded
-from JRPC and are not loaded by the admin panel.
+The administrator-only Backup Manager uses JRPC for list, create, delete,
+retention cleanup, history reset, and restore operations. Firebase ID tokens
+are attached by the transport and verified by the Java server. Server
+status/log streaming and terminal operations remain excluded and are not
+loaded by the admin panel.
 
 ## Test
 
 Open `tests/jrpcClient.browser.html` in a browser. It checks all routes currently
-used by the active admin modules and reports `PASS 42 routes`. A Node-compatible
+used by the active admin modules and reports `PASS 49 routes`. A Node-compatible
 version is also available at `tests/jrpcClient.test.js`.

@@ -153,7 +153,7 @@ function syncServerConfigNavVisibility() {
     const configNav = document.getElementById("server-config-nav");
     const backupNav = document.getElementById("backup-manager-nav");
     if (configNav) configNav.style.display = canEditServerConfig() ? "" : "none";
-    if (backupNav) backupNav.style.display = "none";
+    if (backupNav) backupNav.style.display = canEditServerConfig() ? "" : "none";
 }
 
 async function loadServerConfig(forceRefresh = false) {

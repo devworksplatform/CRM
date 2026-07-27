@@ -4,7 +4,11 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
@@ -12,6 +16,8 @@ import com.google.firebase.messaging.Notification;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /** Lazy Firebase Admin access, matching firebaseAuth.py without making init network-dependent. */
 final class FirebaseBridge {
@@ -80,6 +86,37 @@ final class FirebaseBridge {
 
     void deleteValue(String path) throws Exception {
         database().getReference(path).removeValueAsync().get();
+    }
+
+    Object getValue(String path) throws Exception {
+        CompletableFuture<Object> result = new CompletableFuture<>();
+        database().getReference(path).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                result.complete(snapshot.getValue());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                result.completeExceptionally(error.toException());
+            }
+        });
+        return result.get(30, TimeUnit.SECONDS);
+    }
+
+    void requireBackupAdministrator(String idToken) throws Exception {
+        if (idToken == null || idToken.trim().isEmpty()) {
+            throw new ApiFailure(401, "A Firebase ID token is required.");
+        }
+        FirebaseToken token;
+        try {
+            token = FirebaseAuth.getInstance(app).verifyIdToken(idToken);
+        } catch (Exception failure) {
+            throw new ApiFailure(401, "Invalid or expired Firebase ID token.");
+        }
+        if (!"dev@petsfort.in".equalsIgnoreCase(token.getEmail())) {
+            throw new ApiFailure(403, "Only dev@petsfort.in can manage backups.");
+        }
     }
 
     void sendTopic(String topic, String title, String body) throws Exception {

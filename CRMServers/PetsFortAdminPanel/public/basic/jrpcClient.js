@@ -18,7 +18,10 @@
         GET_GST_CREDIT_NOTES: 44, DELETE_GST_CREDIT_NOTE: 45, POST_GST_DEBIT_NOTE: 46,
         GET_GST_DEBIT_NOTES: 47, DELETE_GST_DEBIT_NOTE: 48, GET_GST_PARTY_LEDGER: 49,
         GET_GST_DAY_BOOK: 50, GET_GST_PROFIT_LOSS: 51, GET_GST_STOCK_SUMMARY: 52,
-        GET_GST_OUTSTANDING: 53, GET_GST_TAX_LEDGER: 54, GET_GST_DASHBOARD_EXTRAS: 55
+        GET_GST_OUTSTANDING: 53, GET_GST_TAX_LEDGER: 54, GET_GST_DASHBOARD_EXTRAS: 55,
+        GET_BACKUPS: 60, POST_BACKUP: 61, DELETE_BACKUPS_OLDER_THAN_DAYS: 62,
+        DELETE_BACKUP: 63, POST_BACKUPS_DELETE_SELECTED: 64,
+        POST_BACKUPS_RESET_CURRENT: 65, POST_BACKUP_RESTORE: 66
     });
 
     const LIST_RESULTS = new Set([
@@ -69,7 +72,10 @@
             "GET gst/party-ledger": RPC.GET_GST_PARTY_LEDGER, "GET gst/day-book": RPC.GET_GST_DAY_BOOK,
             "GET gst/profit-loss": RPC.GET_GST_PROFIT_LOSS, "GET gst/stock-summary": RPC.GET_GST_STOCK_SUMMARY,
             "GET gst/outstanding": RPC.GET_GST_OUTSTANDING, "GET gst/tax-ledger": RPC.GET_GST_TAX_LEDGER,
-            "GET gst/dashboard-extras": RPC.GET_GST_DASHBOARD_EXTRAS
+            "GET gst/dashboard-extras": RPC.GET_GST_DASHBOARD_EXTRAS,
+            "GET backups/list": RPC.GET_BACKUPS, "POST backups/create": RPC.POST_BACKUP,
+            "POST backups/delete-selected": RPC.POST_BACKUPS_DELETE_SELECTED,
+            "POST backups/reset-current": RPC.POST_BACKUPS_RESET_CURRENT
         };
         let rpc = staticRoutes[`${method} ${path}`];
         const dynamic = [
@@ -96,7 +102,10 @@
             ["PUT", /^database\/tables\/([^/]+)\/rows\/([^/]+)$/, RPC.PUT_DATABASE_TABLE_ROW, ["table_name", "pk_value"]],
             ["DELETE", /^database\/tables\/([^/]+)\/rows\/([^/]+)$/, RPC.DELETE_DATABASE_TABLE_ROW, ["table_name", "pk_value"]],
             ["DELETE", /^gst\/credit-notes\/([^/]+)$/, RPC.DELETE_GST_CREDIT_NOTE, "cn_id"],
-            ["DELETE", /^gst\/debit-notes\/([^/]+)$/, RPC.DELETE_GST_DEBIT_NOTE, "dn_id"]
+            ["DELETE", /^gst\/debit-notes\/([^/]+)$/, RPC.DELETE_GST_DEBIT_NOTE, "dn_id"],
+            ["DELETE", /^backups\/older-than-days\/(\d+)$/, RPC.DELETE_BACKUPS_OLDER_THAN_DAYS, "days"],
+            ["POST", /^backups\/([^/]+)\/restore$/, RPC.POST_BACKUP_RESTORE, "backup_id"],
+            ["DELETE", /^backups\/([^/]+)$/, RPC.DELETE_BACKUP, "backup_id"]
         ];
         if (rpc == null) {
             for (const [verb, pattern, ordinal, keys] of dynamic) {
@@ -133,6 +142,9 @@
         async call(rpc, request) {
             const user = this.auth.currentUser;
             if (!user) throw new JrpcApiError("Please login first.", 401);
+            const authenticatedRequest = Object.assign({}, request || {}, {
+                _auth_token: await user.getIdToken()
+            });
             const requestId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
             const relativePath = `${this.serverId}/${user.uid}/rpc/${requestId}`;
             const requestRef = this.database.ref(`ServerReq/${relativePath}`);
@@ -172,7 +184,7 @@
                 requestRef.set({
                     createdAtEpochMs: Date.now(),
                     rpcs: [rpc],
-                    requestJson: JSON.stringify(request || {})
+                    requestJson: JSON.stringify(authenticatedRequest)
                 }).catch(error => finish(() => reject(new JrpcApiError(error.message, 503))));
             });
         }

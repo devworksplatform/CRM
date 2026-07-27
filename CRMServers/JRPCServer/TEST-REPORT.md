@@ -10,7 +10,7 @@ reference database was never opened for writing.
 
 ## Automated results
 
-- Java unit/integration suite: 4 passed
+- Java unit/integration suite: 5 passed
 - Live FastAPI/JRPC differential suite: 9 passed
 - Failures: 0
 
@@ -30,6 +30,7 @@ workflow. See `tests/differential_contract.py`.
 - Credit and debit note create/list/delete
 - Firebase Authentication user create, password/profile update, and delete
 - HTML operations return the agreed `HTTP_501`/status 501 result
+- Backup snapshot/restore round trip, including a dynamic column and unique index
 
 Generated IDs and timestamps were normalized only where each isolated runtime
 must generate a different value. All stable fields, nested payloads, numeric
@@ -38,7 +39,6 @@ types, rounding, status/error details, and stored business data were compared.
 ## Agreed exclusions
 
 - Sitemap
-- Backup and restore endpoints
 - System statistics and SSE streaming
 - Terminal WebSocket
 - Rendering HTML; HTML enum operations return `NOT_IMPLEMENTED` behavior

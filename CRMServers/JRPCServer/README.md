@@ -60,9 +60,15 @@ dedicated Java method. It does not start or close the supplied `JServer`.
 connections are operation-scoped, so in-flight transactions are committed or
 rolled back by their handlers.
 
-HTML, sitemap, backup/restore, system-statistics streaming, and terminal
-operations are intentionally outside the business migration scope. HTML enum
-operations return `HTTP_501`.
+HTML, sitemap, system-statistics streaming, and terminal operations remain
+outside the business migration scope. HTML enum operations return `HTTP_501`.
+
+Backup administration is available through the appended `GET_BACKUPS` through
+`POST_BACKUP_RESTORE` RPCs. These operations require a valid Firebase ID token
+for `dev@petsfort.in`. Backups are stored under `tables/{backupId}` in Firebase
+Realtime Database. New backups retain table schemas and rows; restore also
+accepts the legacy Python row-map format and creates a safety backup before
+changing the live database.
 
 ## Start Studio on Windows
 
@@ -81,3 +87,33 @@ The GitHub-ready application artifact is also copied to:
 ```text
 resources/petsfort-crm-jrpc-1.0.1.jar
 ```
+
+## Start and stop Studio on Ubuntu
+
+The Ubuntu launchers use Linux paths for the same database, Firebase
+credentials, and Studio JAR:
+
+```bash
+./start-studio.sh
+```
+
+Keep that terminal open. Press `Ctrl+C`, or stop Studio from another terminal:
+
+```bash
+./stop-studio.sh
+```
+
+Paths and the port can be overridden with command-line options:
+
+```bash
+./start-studio.sh \
+  --database /path/to/products.db \
+  --credentials /path/to/firebase-service-account.json \
+  --studio-jar /path/to/jrpc-studio.jar \
+  --port 8080
+./stop-studio.sh --port 8080
+```
+
+The corresponding environment variables are `PETS_FORT_DB_PATH`,
+`PETS_FORT_FIREBASE_CREDENTIALS`, `JRPC_STUDIO_JAR`, and
+`JRPC_STUDIO_PORT`.

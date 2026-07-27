@@ -46,7 +46,14 @@
         ["GET", "gst/stock-summary", R.GET_GST_STOCK_SUMMARY],
         ["GET", "gst/outstanding", R.GET_GST_OUTSTANDING],
         ["GET", "gst/tax-ledger", R.GET_GST_TAX_LEDGER],
-        ["GET", "gst/dashboard-extras", R.GET_GST_DASHBOARD_EXTRAS]
+        ["GET", "gst/dashboard-extras", R.GET_GST_DASHBOARD_EXTRAS],
+        ["GET", "backups/list", R.GET_BACKUPS],
+        ["POST", "backups/create", R.POST_BACKUP],
+        ["DELETE", "backups/older-than-days/7", R.DELETE_BACKUPS_OLDER_THAN_DAYS],
+        ["DELETE", "backups/2026-07-28--12-30-00", R.DELETE_BACKUP],
+        ["POST", "backups/delete-selected", R.POST_BACKUPS_DELETE_SELECTED],
+        ["POST", "backups/reset-current", R.POST_BACKUPS_RESET_CURRENT],
+        ["POST", "backups/latest/restore", R.POST_BACKUP_RESTORE]
     ];
     try {
         for (const [method, url, expected] of cases) {
